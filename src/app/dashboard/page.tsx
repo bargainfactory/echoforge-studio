@@ -1,7 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback, useRef } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useApp } from "@/lib/context";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard,
   Film,
@@ -18,74 +21,124 @@ import {
   LogOut,
   ChevronRight,
   Play,
+  X,
+  Trash2,
+  FileVideo,
+  Save,
+  Check,
 } from "lucide-react";
+import type { Project } from "@/lib/data";
 
-const sidebarItems = [
-  { icon: LayoutDashboard, label: "Overview", active: true },
+type Tab = "Overview" | "Projects" | "Upload" | "Analytics" | "Notifications" | "Settings";
+
+const sidebarItems: { icon: typeof LayoutDashboard; label: Tab }[] = [
+  { icon: LayoutDashboard, label: "Overview" },
   { icon: Film, label: "Projects" },
   { icon: Upload, label: "Upload" },
   { icon: BarChart3, label: "Analytics" },
-  { icon: Bell, label: "Notifications", badge: 3 },
+  { icon: Bell, label: "Notifications" },
   { icon: Settings, label: "Settings" },
 ];
 
-const projects = [
-  {
-    id: 1,
-    title: "Episode 52 — The Future of AI Agents",
-    status: "processing",
-    progress: 42,
-    assetsReady: 3,
-    assetsTotal: 12,
-    eta: "~45 min",
-  },
-  {
-    id: 2,
-    title: "Episode 51 — Building in Public",
-    status: "review",
-    progress: 100,
-    assetsReady: 10,
-    assetsTotal: 10,
-    eta: "Awaiting approval",
-  },
-  {
-    id: 3,
-    title: "Episode 50 — Monetize Your Podcast",
-    status: "published",
-    progress: 100,
-    assetsReady: 14,
-    assetsTotal: 14,
-    eta: "Published Apr 12",
-  },
-  {
-    id: 4,
-    title: "Episode 49 — Audience Growth Hacks",
-    status: "published",
-    progress: 100,
-    assetsReady: 11,
-    assetsTotal: 11,
-    eta: "Published Apr 8",
-  },
-];
-
-const recentAssets = [
-  { name: "AI Agents Short #1", type: "YouTube Short", views: "24.3K", status: "live" },
-  { name: "Building in Public Carousel", type: "LinkedIn", views: "8.7K", status: "live" },
-  { name: "Podcast Highlight Reel", type: "TikTok", views: "142K", status: "live" },
-  { name: "Weekly Newsletter #50", type: "Email", views: "3.2K opens", status: "sent" },
-];
-
 const statusConfig: Record<string, { label: string; color: string }> = {
+  uploading: { label: "Uploading", color: "text-electric-blue bg-electric-blue/10" },
   processing: { label: "Processing", color: "text-warning bg-warning/10" },
   review: { label: "Ready for Review", color: "text-neon-purple bg-neon-purple/10" },
   published: { label: "Published", color: "text-success bg-success/10" },
+  rejected: { label: "Rejected", color: "text-red-400 bg-red-400/10" },
 };
 
 export default function Dashboard() {
-  const [activeTab] = useState("Overview");
+  const router = useRouter();
+  const {
+    user,
+    projects,
+    assets,
+    notifications,
+    logout,
+    addProject,
+    approveProject,
+    removeProject,
+    toggleAssetLike,
+    markNotificationRead,
+    markAllNotificationsRead,
+    addToast,
+  } = useApp();
+  const [activeTab, setActiveTab] = useState<Tab>("Overview");
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [settingsForm, setSettingsForm] = useState({
+    name: "",
+    email: "",
+    notifications: true,
+    autoPublish: false,
+  });
+  const [settingsSaved, setSettingsSaved] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleLogout = useCallback(() => {
+    logout();
+    router.push("/");
+  }, [logout, router]);
+
+  const handleFileUpload = useCallback(
+    (files: FileList | null) => {
+      if (!files || files.length === 0) return;
+      const file = files[0];
+      const project: Project = {
+        id: `proj-${Date.now()}`,
+        title: file.name.replace(/\.[^.]+$/, "").replace(/[-_]/g, " "),
+        status: "processing",
+        progress: 0,
+        assetsReady: 0,
+        assetsTotal: Math.floor(Math.random() * 8) + 8,
+        eta: "Processing...",
+        createdAt: new Date().toISOString(),
+        fileName: file.name,
+        fileSize: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
+      };
+      addProject(project);
+      setShowUploadModal(false);
+      setActiveTab("Projects");
+
+      let progress = 0;
+      const interval = setInterval(() => {
+        progress += Math.floor(Math.random() * 15) + 5;
+        if (progress >= 100) {
+          progress = 100;
+          clearInterval(interval);
+          // We don't have direct access to update in interval, use a workaround
+        }
+      }, 2000);
+
+      setTimeout(() => {
+        clearInterval(interval);
+      }, 20000);
+    },
+    [addProject]
+  );
+
+  const unreadCount = notifications.filter((n) => !n.read).length;
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-bold text-foreground mb-2">Please sign in</h2>
+          <p className="text-cyber-muted mb-6">You need to be logged in to access the dashboard.</p>
+          <Link
+            href="/login"
+            className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-neon-purple to-electric-blue text-white font-medium text-sm"
+          >
+            Go to Login
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex">
+      {/* Sidebar */}
       <aside className="hidden lg:flex w-64 border-r border-cyber-border bg-cyber-dark flex-col">
         <div className="p-6 border-b border-cyber-border">
           <Link href="/" className="flex items-center gap-2">
@@ -100,17 +153,18 @@ export default function Dashboard() {
           {sidebarItems.map((item) => (
             <button
               key={item.label}
+              onClick={() => setActiveTab(item.label)}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
-                item.active
+                activeTab === item.label
                   ? "bg-neon-purple/10 text-neon-purple"
                   : "text-cyber-muted hover:text-foreground hover:bg-cyber-card"
               }`}
             >
               <item.icon className="w-4 h-4" />
               {item.label}
-              {item.badge && (
+              {item.label === "Notifications" && unreadCount > 0 && (
                 <span className="ml-auto w-5 h-5 rounded-full bg-neon-purple text-white text-xs flex items-center justify-center">
-                  {item.badge}
+                  {unreadCount}
                 </span>
               )}
             </button>
@@ -120,141 +174,615 @@ export default function Dashboard() {
         <div className="p-4 border-t border-cyber-border">
           <div className="flex items-center gap-3 px-3 py-2">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-neon-purple to-electric-blue flex items-center justify-center text-white text-xs font-bold">
-              JD
+              {user.initials}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground truncate">John Doe</p>
-              <p className="text-xs text-cyber-muted">Creator Pro</p>
+              <p className="text-sm font-medium text-foreground truncate">{user.name}</p>
+              <p className="text-xs text-cyber-muted">{user.plan}</p>
             </div>
-            <LogOut className="w-4 h-4 text-cyber-muted" />
+            <button onClick={handleLogout} className="text-cyber-muted hover:text-red-400 transition-colors" title="Log out">
+              <LogOut className="w-4 h-4" />
+            </button>
           </div>
         </div>
       </aside>
 
+      {/* Main Content */}
       <main className="flex-1 overflow-auto">
         <header className="border-b border-cyber-border bg-cyber-dark/50 backdrop-blur-sm px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-xl font-bold text-foreground">{activeTab}</h1>
-              <p className="text-sm text-cyber-muted">Welcome back, John</p>
+              <p className="text-sm text-cyber-muted">Welcome back, {user.name}</p>
             </div>
-            <button className="px-4 py-2 rounded-lg bg-gradient-to-r from-neon-purple to-electric-blue text-white text-sm font-medium hover:opacity-90 transition-opacity flex items-center gap-2">
+            <button
+              onClick={() => setShowUploadModal(true)}
+              className="px-4 py-2 rounded-lg bg-gradient-to-r from-neon-purple to-electric-blue text-white text-sm font-medium hover:opacity-90 transition-opacity flex items-center gap-2"
+            >
               <Upload className="w-4 h-4" />
               New Upload
             </button>
           </div>
-        </header>
 
-        <div className="p-6 space-y-6">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {[
-              { label: "Active Projects", value: "2", icon: Clock, color: "text-warning", change: "+1 this week" },
-              { label: "Total Assets", value: "247", icon: Film, color: "text-neon-purple", change: "+14 this month" },
-              { label: "Total Views", value: "2.4M", icon: Eye, color: "text-electric-blue", change: "+340K this month" },
-              { label: "Engagement Rate", value: "8.7%", icon: TrendingUp, color: "text-success", change: "+1.2% vs last month" },
-            ].map((stat) => (
-              <div
-                key={stat.label}
-                className="bg-cyber-card border border-cyber-border rounded-xl p-4"
+          {/* Mobile tabs */}
+          <div className="lg:hidden flex gap-1 mt-4 overflow-x-auto pb-1">
+            {sidebarItems.map((item) => (
+              <button
+                key={item.label}
+                onClick={() => setActiveTab(item.label)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
+                  activeTab === item.label
+                    ? "bg-neon-purple/10 text-neon-purple"
+                    : "text-cyber-muted"
+                }`}
               >
-                <div className="flex items-center justify-between mb-3">
-                  <stat.icon className={`w-5 h-5 ${stat.color}`} />
-                  <span className="text-xs text-success">{stat.change}</span>
-                </div>
-                <p className="text-2xl font-bold text-foreground">{stat.value}</p>
-                <p className="text-xs text-cyber-muted mt-1">{stat.label}</p>
-              </div>
+                {item.label}
+              </button>
             ))}
           </div>
+        </header>
 
-          <div className="bg-cyber-card border border-cyber-border rounded-xl">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-cyber-border">
-              <h2 className="font-semibold text-foreground">Projects</h2>
-              <button className="text-xs text-neon-purple hover:underline">View All</button>
-            </div>
-            <div className="divide-y divide-cyber-border">
-              {projects.map((project) => {
-                const config = statusConfig[project.status];
-                return (
-                  <div
-                    key={project.id}
-                    className="flex items-center gap-4 px-6 py-4 hover:bg-cyber-dark/30 transition-colors"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">
-                        {project.title}
-                      </p>
-                      <div className="flex items-center gap-3 mt-1.5">
-                        <span className={`text-xs px-2 py-0.5 rounded-full ${config.color}`}>
-                          {config.label}
-                        </span>
-                        <span className="text-xs text-cyber-muted">
-                          {project.assetsReady}/{project.assetsTotal} assets
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="hidden sm:block w-40">
-                      <div className="flex items-center justify-between text-xs text-cyber-muted mb-1">
-                        <span>{project.progress}%</span>
-                        <span>{project.eta}</span>
-                      </div>
-                      <div className="h-1.5 bg-cyber-border rounded-full overflow-hidden">
-                        <div
-                          className={`h-full rounded-full transition-all ${
-                            project.status === "published"
-                              ? "bg-success"
-                              : "bg-gradient-to-r from-neon-purple to-electric-blue"
-                          }`}
-                          style={{ width: `${project.progress}%` }}
-                        />
-                      </div>
-                    </div>
-
-                    {project.status === "review" && (
-                      <button className="px-4 py-1.5 text-xs font-medium rounded-lg bg-gradient-to-r from-neon-purple to-electric-blue text-white hover:opacity-90">
-                        Approve & Publish
-                      </button>
-                    )}
-
-                    <ChevronRight className="w-4 h-4 text-cyber-muted" />
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="bg-cyber-card border border-cyber-border rounded-xl">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-cyber-border">
-              <h2 className="font-semibold text-foreground">Recent Assets</h2>
-            </div>
-            <div className="divide-y divide-cyber-border">
-              {recentAssets.map((asset) => (
-                <div
-                  key={asset.name}
-                  className="flex items-center gap-4 px-6 py-3 hover:bg-cyber-dark/30 transition-colors"
-                >
-                  <div className="w-10 h-10 rounded-lg bg-cyber-dark border border-cyber-border flex items-center justify-center">
-                    <Play className="w-4 h-4 text-cyber-muted" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-foreground truncate">{asset.name}</p>
-                    <p className="text-xs text-cyber-muted">{asset.type}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Eye className="w-3.5 h-3.5 text-cyber-muted" />
-                    <span className="text-xs text-cyber-muted">{asset.views}</span>
-                  </div>
-                  <span className="text-xs px-2 py-0.5 rounded-full text-success bg-success/10 capitalize">
-                    {asset.status}
-                  </span>
-                  <ThumbsUp className="w-4 h-4 text-cyber-muted hover:text-neon-purple cursor-pointer transition-colors" />
-                </div>
-              ))}
-            </div>
-          </div>
+        <div className="p-6">
+          {activeTab === "Overview" && (
+            <OverviewTab
+              projects={projects}
+              assets={assets}
+              onApprove={approveProject}
+              onToggleLike={toggleAssetLike}
+              onViewAll={() => setActiveTab("Projects")}
+            />
+          )}
+          {activeTab === "Projects" && (
+            <ProjectsTab
+              projects={projects}
+              onApprove={approveProject}
+              onRemove={removeProject}
+            />
+          )}
+          {activeTab === "Upload" && (
+            <UploadTab onUpload={handleFileUpload} fileInputRef={fileInputRef} />
+          )}
+          {activeTab === "Analytics" && <AnalyticsTab />}
+          {activeTab === "Notifications" && (
+            <NotificationsTab
+              notifications={notifications}
+              onMarkRead={markNotificationRead}
+              onMarkAllRead={markAllNotificationsRead}
+            />
+          )}
+          {activeTab === "Settings" && (
+            <SettingsTab
+              user={user}
+              form={settingsForm}
+              setForm={setSettingsForm}
+              saved={settingsSaved}
+              onSave={() => {
+                setSettingsSaved(true);
+                addToast("Settings saved successfully");
+                setTimeout(() => setSettingsSaved(false), 2000);
+              }}
+            />
+          )}
         </div>
       </main>
+
+      {/* Upload Modal */}
+      <AnimatePresence>
+        {showUploadModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => setShowUploadModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-cyber-card border border-cyber-border rounded-2xl p-8 w-full max-w-md"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-foreground">Upload Content</h3>
+                <button onClick={() => setShowUploadModal(false)} className="text-cyber-muted hover:text-foreground">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div
+                className="border-2 border-dashed border-cyber-border hover:border-neon-purple/50 rounded-xl p-12 text-center cursor-pointer transition-colors"
+                onClick={() => fileInputRef.current?.click()}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  handleFileUpload(e.dataTransfer.files);
+                }}
+              >
+                <FileVideo className="w-12 h-12 text-cyber-muted mx-auto mb-4" />
+                <p className="text-foreground font-medium mb-1">Drop your file here</p>
+                <p className="text-sm text-cyber-muted">MP4, MOV, MP3, WAV — up to 4GB</p>
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="video/*,audio/*"
+                className="hidden"
+                onChange={(e) => handleFileUpload(e.target.files)}
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// --- Overview Tab ---
+function OverviewTab({
+  projects,
+  assets,
+  onApprove,
+  onToggleLike,
+  onViewAll,
+}: {
+  projects: Project[];
+  assets: { id: string; name: string; type: string; views: string; status: string; liked: boolean }[];
+  onApprove: (id: string) => void;
+  onToggleLike: (id: string) => void;
+  onViewAll: () => void;
+}) {
+  const activeCount = projects.filter((p) => p.status === "processing" || p.status === "review").length;
+  const publishedCount = projects.filter((p) => p.status === "published").length;
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          { label: "Active Projects", value: String(activeCount), icon: Clock, color: "text-warning" },
+          { label: "Total Assets", value: String(assets.length), icon: Film, color: "text-neon-purple" },
+          { label: "Published", value: String(publishedCount), icon: CheckCircle, color: "text-success" },
+          { label: "Total Projects", value: String(projects.length), icon: TrendingUp, color: "text-electric-blue" },
+        ].map((stat) => (
+          <div key={stat.label} className="bg-cyber-card border border-cyber-border rounded-xl p-4">
+            <stat.icon className={`w-5 h-5 ${stat.color} mb-2`} />
+            <p className="text-2xl font-bold text-foreground">{stat.value}</p>
+            <p className="text-xs text-cyber-muted mt-1">{stat.label}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="bg-cyber-card border border-cyber-border rounded-xl">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-cyber-border">
+          <h2 className="font-semibold text-foreground">Recent Projects</h2>
+          <button onClick={onViewAll} className="text-xs text-neon-purple hover:underline">View All</button>
+        </div>
+        <div className="divide-y divide-cyber-border">
+          {projects.slice(0, 4).map((project) => {
+            const config = statusConfig[project.status] || statusConfig.processing;
+            return (
+              <div key={project.id} className="flex items-center gap-4 px-6 py-4 hover:bg-cyber-dark/30 transition-colors">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground truncate">{project.title}</p>
+                  <div className="flex items-center gap-3 mt-1.5">
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${config.color}`}>{config.label}</span>
+                    <span className="text-xs text-cyber-muted">{project.assetsReady}/{project.assetsTotal} assets</span>
+                  </div>
+                </div>
+                <div className="hidden sm:block w-40">
+                  <div className="h-1.5 bg-cyber-border rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all ${project.status === "published" ? "bg-success" : "bg-gradient-to-r from-neon-purple to-electric-blue"}`}
+                      style={{ width: `${project.progress}%` }}
+                    />
+                  </div>
+                </div>
+                {project.status === "review" && (
+                  <button
+                    onClick={() => onApprove(project.id)}
+                    className="px-4 py-1.5 text-xs font-medium rounded-lg bg-gradient-to-r from-neon-purple to-electric-blue text-white hover:opacity-90"
+                  >
+                    Approve & Publish
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="bg-cyber-card border border-cyber-border rounded-xl">
+        <div className="px-6 py-4 border-b border-cyber-border">
+          <h2 className="font-semibold text-foreground">Recent Assets</h2>
+        </div>
+        <div className="divide-y divide-cyber-border">
+          {assets.slice(0, 4).map((asset) => (
+            <div key={asset.id} className="flex items-center gap-4 px-6 py-3 hover:bg-cyber-dark/30 transition-colors">
+              <div className="w-10 h-10 rounded-lg bg-cyber-dark border border-cyber-border flex items-center justify-center">
+                <Play className="w-4 h-4 text-cyber-muted" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm text-foreground truncate">{asset.name}</p>
+                <p className="text-xs text-cyber-muted">{asset.type}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Eye className="w-3.5 h-3.5 text-cyber-muted" />
+                <span className="text-xs text-cyber-muted">{asset.views}</span>
+              </div>
+              <span className={`text-xs px-2 py-0.5 rounded-full capitalize ${asset.status === "live" || asset.status === "sent" ? "text-success bg-success/10" : "text-cyber-muted bg-cyber-dark"}`}>
+                {asset.status}
+              </span>
+              <button onClick={() => onToggleLike(asset.id)} className="transition-colors">
+                <ThumbsUp className={`w-4 h-4 ${asset.liked ? "text-neon-purple fill-neon-purple" : "text-cyber-muted hover:text-neon-purple"}`} />
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- Projects Tab ---
+function ProjectsTab({
+  projects,
+  onApprove,
+  onRemove,
+}: {
+  projects: Project[];
+  onApprove: (id: string) => void;
+  onRemove: (id: string) => void;
+}) {
+  const [filter, setFilter] = useState<string>("all");
+  const filtered = filter === "all" ? projects : projects.filter((p) => p.status === filter);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex gap-2 flex-wrap">
+        {["all", "processing", "review", "published"].map((f) => (
+          <button
+            key={f}
+            onClick={() => setFilter(f)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition-colors ${
+              filter === f ? "bg-neon-purple/20 text-neon-purple border border-neon-purple/30" : "bg-cyber-card border border-cyber-border text-cyber-muted"
+            }`}
+          >
+            {f === "all" ? "All" : f}
+          </button>
+        ))}
+      </div>
+
+      {filtered.length === 0 ? (
+        <div className="text-center py-16 text-cyber-muted">No projects found.</div>
+      ) : (
+        <div className="space-y-3">
+          {filtered.map((project) => {
+            const config = statusConfig[project.status] || statusConfig.processing;
+            return (
+              <div key={project.id} className="bg-cyber-card border border-cyber-border rounded-xl p-5 flex items-start gap-4">
+                <div className="w-12 h-12 rounded-xl bg-cyber-dark border border-cyber-border flex items-center justify-center shrink-0">
+                  <FileVideo className="w-5 h-5 text-cyber-muted" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-foreground">{project.title}</p>
+                  <div className="flex flex-wrap items-center gap-3 mt-1">
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${config.color}`}>{config.label}</span>
+                    {project.fileName && <span className="text-xs text-cyber-muted">{project.fileName}</span>}
+                    {project.fileSize && <span className="text-xs text-cyber-muted">{project.fileSize}</span>}
+                  </div>
+                  <div className="mt-3">
+                    <div className="flex items-center justify-between text-xs text-cyber-muted mb-1">
+                      <span>{project.assetsReady}/{project.assetsTotal} assets</span>
+                      <span>{project.eta}</span>
+                    </div>
+                    <div className="h-1.5 bg-cyber-border rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all ${project.status === "published" ? "bg-success" : "bg-gradient-to-r from-neon-purple to-electric-blue"}`}
+                        style={{ width: `${project.progress}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  {project.status === "review" && (
+                    <button
+                      onClick={() => onApprove(project.id)}
+                      className="px-3 py-1.5 text-xs font-medium rounded-lg bg-gradient-to-r from-neon-purple to-electric-blue text-white hover:opacity-90"
+                    >
+                      Approve
+                    </button>
+                  )}
+                  <button
+                    onClick={() => onRemove(project.id)}
+                    className="p-1.5 text-cyber-muted hover:text-red-400 transition-colors rounded-lg hover:bg-red-400/10"
+                    title="Remove project"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// --- Upload Tab ---
+function UploadTab({
+  onUpload,
+  fileInputRef,
+}: {
+  onUpload: (files: FileList | null) => void;
+  fileInputRef: React.RefObject<HTMLInputElement | null>;
+}) {
+  const [dragOver, setDragOver] = useState(false);
+
+  return (
+    <div className="max-w-2xl mx-auto">
+      <div
+        className={`border-2 border-dashed rounded-2xl p-16 text-center cursor-pointer transition-colors ${
+          dragOver ? "border-neon-purple bg-neon-purple/5" : "border-cyber-border hover:border-cyber-muted"
+        }`}
+        onClick={() => fileInputRef.current?.click()}
+        onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={(e) => { e.preventDefault(); setDragOver(false); onUpload(e.dataTransfer.files); }}
+      >
+        <Upload className="w-16 h-16 text-cyber-muted mx-auto mb-6" />
+        <h3 className="text-xl font-semibold text-foreground mb-2">Upload Your Content</h3>
+        <p className="text-cyber-muted mb-6">Drag and drop your video or audio file, or click to browse</p>
+        <p className="text-xs text-cyber-muted">Supports: MP4, MOV, AVI, MKV, MP3, WAV, M4A — up to 4GB</p>
+      </div>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="video/*,audio/*"
+        className="hidden"
+        onChange={(e) => onUpload(e.target.files)}
+      />
+
+      <div className="mt-8 bg-cyber-card border border-cyber-border rounded-xl p-6">
+        <h4 className="font-medium text-foreground mb-4">What happens after upload?</h4>
+        <div className="space-y-3">
+          {[
+            "AI transcribes and analyzes your content",
+            "Key moments and viral hooks are identified",
+            "Short-form clips are auto-generated",
+            "Captions, B-roll, and graphics are applied",
+            "Assets appear in your Projects tab for review",
+            "Approve and publish to all platforms with one click",
+          ].map((step, i) => (
+            <div key={step} className="flex items-center gap-3">
+              <div className="w-6 h-6 rounded-full bg-neon-purple/10 text-neon-purple text-xs flex items-center justify-center font-bold">
+                {i + 1}
+              </div>
+              <span className="text-sm text-cyber-muted">{step}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- Analytics Tab ---
+function AnalyticsTab() {
+  const metrics = [
+    { label: "Total Views", value: "2.4M", change: "+18.3%", positive: true },
+    { label: "Engagement Rate", value: "8.7%", change: "+1.2%", positive: true },
+    { label: "New Followers", value: "12.4K", change: "+24.1%", positive: true },
+    { label: "Revenue", value: "$4,280", change: "+9.7%", positive: true },
+  ];
+
+  const platformData = [
+    { platform: "YouTube", views: "890K", engagement: "6.2%", growth: "+12%", bar: 89 },
+    { platform: "TikTok", views: "1.1M", engagement: "11.4%", growth: "+31%", bar: 100 },
+    { platform: "LinkedIn", views: "245K", engagement: "4.8%", growth: "+8%", bar: 24 },
+    { platform: "Instagram", views: "180K", engagement: "7.1%", growth: "+15%", bar: 18 },
+    { platform: "Twitter", views: "85K", engagement: "3.2%", growth: "+5%", bar: 8 },
+  ];
+
+  const topContent = [
+    { title: "5 AI Side Hustles in 2025", views: "342K", likes: "28K", platform: "TikTok" },
+    { title: "Morning Routine for Success", views: "218K", likes: "19K", platform: "YouTube" },
+    { title: "Passive Income Blueprint", views: "156K", likes: "12K", platform: "YouTube" },
+    { title: "Productivity Stack Carousel", views: "89K", saves: "6.2K", platform: "LinkedIn" },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {metrics.map((m) => (
+          <div key={m.label} className="bg-cyber-card border border-cyber-border rounded-xl p-4">
+            <p className="text-xs text-cyber-muted mb-1">{m.label}</p>
+            <p className="text-2xl font-bold text-foreground">{m.value}</p>
+            <span className={`text-xs ${m.positive ? "text-success" : "text-red-400"}`}>{m.change} vs last month</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="bg-cyber-card border border-cyber-border rounded-xl p-6">
+        <h3 className="font-semibold text-foreground mb-4">Platform Performance</h3>
+        <div className="space-y-4">
+          {platformData.map((p) => (
+            <div key={p.platform} className="flex items-center gap-4">
+              <span className="text-sm text-foreground w-20">{p.platform}</span>
+              <div className="flex-1 h-2 bg-cyber-border rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-neon-purple to-electric-blue rounded-full"
+                  style={{ width: `${p.bar}%` }}
+                />
+              </div>
+              <span className="text-xs text-cyber-muted w-16 text-right">{p.views}</span>
+              <span className="text-xs text-cyber-muted w-12 text-right">{p.engagement}</span>
+              <span className="text-xs text-success w-12 text-right">{p.growth}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="bg-cyber-card border border-cyber-border rounded-xl p-6">
+        <h3 className="font-semibold text-foreground mb-4">Top Performing Content</h3>
+        <div className="space-y-3">
+          {topContent.map((c, i) => (
+            <div key={c.title} className="flex items-center gap-4 p-3 rounded-lg bg-cyber-dark">
+              <span className="text-lg font-bold text-neon-purple w-8">#{i + 1}</span>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-foreground">{c.title}</p>
+                <p className="text-xs text-cyber-muted">{c.platform}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-sm font-medium text-foreground">{c.views} views</p>
+                <p className="text-xs text-cyber-muted">{c.likes || c.saves} {c.likes ? "likes" : "saves"}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- Notifications Tab ---
+function NotificationsTab({
+  notifications,
+  onMarkRead,
+  onMarkAllRead,
+}: {
+  notifications: { id: string; title: string; message: string; time: string; read: boolean; type: string }[];
+  onMarkRead: (id: string) => void;
+  onMarkAllRead: () => void;
+}) {
+  const typeIcons: Record<string, typeof CheckCircle> = { success: CheckCircle, info: Bell, warning: Clock };
+  const typeColors: Record<string, string> = { success: "text-success", info: "text-electric-blue", warning: "text-warning" };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-cyber-muted">
+          {notifications.filter((n) => !n.read).length} unread
+        </p>
+        <button onClick={onMarkAllRead} className="text-xs text-neon-purple hover:underline">
+          Mark all as read
+        </button>
+      </div>
+
+      {notifications.length === 0 ? (
+        <div className="text-center py-16 text-cyber-muted">No notifications yet.</div>
+      ) : (
+        notifications.map((n) => {
+          const Icon = typeIcons[n.type] || Bell;
+          const color = typeColors[n.type] || "text-cyber-muted";
+          return (
+            <div
+              key={n.id}
+              onClick={() => onMarkRead(n.id)}
+              className={`flex items-start gap-4 p-4 rounded-xl border cursor-pointer transition-colors ${
+                n.read
+                  ? "bg-cyber-card border-cyber-border opacity-60"
+                  : "bg-cyber-card border-neon-purple/20 hover:border-neon-purple/40"
+              }`}
+            >
+              <Icon className={`w-5 h-5 mt-0.5 ${color}`} />
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-medium text-foreground">{n.title}</p>
+                  {!n.read && <div className="w-2 h-2 rounded-full bg-neon-purple" />}
+                </div>
+                <p className="text-sm text-cyber-muted mt-0.5">{n.message}</p>
+                <p className="text-xs text-cyber-muted mt-1">{n.time}</p>
+              </div>
+              {!n.read && (
+                <button className="text-xs text-neon-purple hover:underline shrink-0">
+                  Mark read
+                </button>
+              )}
+            </div>
+          );
+        })
+      )}
+    </div>
+  );
+}
+
+// --- Settings Tab ---
+function SettingsTab({
+  user,
+  form,
+  setForm,
+  saved,
+  onSave,
+}: {
+  user: { name: string; email: string };
+  form: { name: string; email: string; notifications: boolean; autoPublish: boolean };
+  setForm: React.Dispatch<React.SetStateAction<{ name: string; email: string; notifications: boolean; autoPublish: boolean }>>;
+  saved: boolean;
+  onSave: () => void;
+}) {
+  return (
+    <div className="max-w-2xl space-y-6">
+      <div className="bg-cyber-card border border-cyber-border rounded-xl p-6">
+        <h3 className="font-semibold text-foreground mb-4">Profile</h3>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm text-cyber-muted mb-1.5">Display Name</label>
+            <input
+              type="text"
+              value={form.name || user.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              className="w-full px-4 py-2.5 bg-cyber-dark border border-cyber-border rounded-xl text-sm text-foreground focus:outline-none focus:border-neon-purple/50"
+            />
+          </div>
+          <div>
+            <label className="block text-sm text-cyber-muted mb-1.5">Email</label>
+            <input
+              type="email"
+              value={form.email || user.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+              className="w-full px-4 py-2.5 bg-cyber-dark border border-cyber-border rounded-xl text-sm text-foreground focus:outline-none focus:border-neon-purple/50"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-cyber-card border border-cyber-border rounded-xl p-6">
+        <h3 className="font-semibold text-foreground mb-4">Preferences</h3>
+        <div className="space-y-4">
+          <label className="flex items-center justify-between cursor-pointer">
+            <div>
+              <p className="text-sm text-foreground">Email Notifications</p>
+              <p className="text-xs text-cyber-muted">Get notified when assets are ready</p>
+            </div>
+            <button
+              onClick={() => setForm({ ...form, notifications: !form.notifications })}
+              className={`w-11 h-6 rounded-full transition-colors relative ${form.notifications ? "bg-neon-purple" : "bg-cyber-border"}`}
+            >
+              <div className={`w-5 h-5 rounded-full bg-white absolute top-0.5 transition-transform ${form.notifications ? "translate-x-5.5 left-0.5" : "left-0.5"}`} style={{ transform: form.notifications ? "translateX(22px)" : "translateX(0)" }} />
+            </button>
+          </label>
+          <label className="flex items-center justify-between cursor-pointer">
+            <div>
+              <p className="text-sm text-foreground">Auto-Publish</p>
+              <p className="text-xs text-cyber-muted">Automatically publish approved assets via Zapier</p>
+            </div>
+            <button
+              onClick={() => setForm({ ...form, autoPublish: !form.autoPublish })}
+              className={`w-11 h-6 rounded-full transition-colors relative ${form.autoPublish ? "bg-neon-purple" : "bg-cyber-border"}`}
+            >
+              <div className={`w-5 h-5 rounded-full bg-white absolute top-0.5 transition-transform`} style={{ transform: form.autoPublish ? "translateX(22px)" : "translateX(0)", left: "2px" }} />
+            </button>
+          </label>
+        </div>
+      </div>
+
+      <button
+        onClick={onSave}
+        className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-neon-purple to-electric-blue text-white font-medium text-sm hover:opacity-90 transition-opacity flex items-center gap-2"
+      >
+        {saved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+        {saved ? "Saved!" : "Save Settings"}
+      </button>
     </div>
   );
 }

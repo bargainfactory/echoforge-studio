@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import {
   LayoutDashboard,
@@ -10,26 +12,32 @@ import {
   Bell,
 } from "lucide-react";
 
-const mockProjects = [
+const initialProjects = [
   {
+    id: "t-1",
     title: "Episode 47 — AI Side Hustles",
-    status: "In Progress",
+    status: "processing",
+    statusLabel: "In Progress",
     statusColor: "text-warning bg-warning/10",
     progress: 65,
     assets: 8,
     due: "2h remaining",
   },
   {
+    id: "t-2",
     title: "Episode 46 — Passive Income",
-    status: "Ready to Approve",
+    status: "review",
+    statusLabel: "Ready to Approve",
     statusColor: "text-neon-purple bg-neon-purple/10",
     progress: 100,
     assets: 12,
     due: "Awaiting review",
   },
   {
+    id: "t-3",
     title: "Episode 45 — Morning Routines",
-    status: "Published",
+    status: "published",
+    statusLabel: "Published",
     statusColor: "text-success bg-success/10",
     progress: 100,
     assets: 10,
@@ -38,6 +46,22 @@ const mockProjects = [
 ];
 
 export default function DashboardTeaser() {
+  const [projects, setProjects] = useState(initialProjects);
+
+  function handleApprove(id: string) {
+    setProjects((prev) =>
+      prev.map((p) =>
+        p.id === id
+          ? { ...p, status: "published", statusLabel: "Published", statusColor: "text-success bg-success/10", due: "Just now" }
+          : p
+      )
+    );
+  }
+
+  const activeCount = projects.filter((p) => p.status !== "published").length;
+  const assetsCount = projects.reduce((sum, p) => sum + p.assets, 0);
+  const publishedCount = projects.filter((p) => p.status === "published").length;
+
   return (
     <section className="py-24 bg-cyber-dark relative overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -85,7 +109,7 @@ export default function DashboardTeaser() {
                     className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm ${
                       item.active
                         ? "bg-neon-purple/10 text-neon-purple"
-                        : "text-cyber-muted hover:text-foreground"
+                        : "text-cyber-muted"
                     }`}
                   >
                     <item.icon className="w-4 h-4" />
@@ -97,9 +121,9 @@ export default function DashboardTeaser() {
               <div className="flex-1 p-6">
                 <div className="grid grid-cols-3 gap-4 mb-6">
                   {[
-                    { label: "Active Projects", value: "3", icon: Clock, color: "text-warning" },
-                    { label: "Assets This Month", value: "47", icon: Film, color: "text-neon-purple" },
-                    { label: "Published", value: "142", icon: CheckCircle, color: "text-success" },
+                    { label: "Active Projects", value: String(activeCount), icon: Clock, color: "text-warning" },
+                    { label: "Assets This Month", value: String(assetsCount), icon: Film, color: "text-neon-purple" },
+                    { label: "Published", value: String(publishedCount), icon: CheckCircle, color: "text-success" },
                   ].map((stat) => (
                     <div
                       key={stat.label}
@@ -113,9 +137,9 @@ export default function DashboardTeaser() {
                 </div>
 
                 <div className="space-y-3">
-                  {mockProjects.map((project) => (
+                  {projects.map((project) => (
                     <div
-                      key={project.title}
+                      key={project.id}
                       className="flex items-center gap-4 p-4 bg-cyber-dark rounded-xl border border-cyber-border"
                     >
                       <div className="flex-1 min-w-0">
@@ -126,7 +150,7 @@ export default function DashboardTeaser() {
                           <span
                             className={`text-xs px-2 py-0.5 rounded-full ${project.statusColor}`}
                           >
-                            {project.status}
+                            {project.statusLabel}
                           </span>
                           <span className="text-xs text-cyber-muted">
                             {project.assets} assets
@@ -144,14 +168,24 @@ export default function DashboardTeaser() {
                       <span className="text-xs text-cyber-muted whitespace-nowrap">
                         {project.due}
                       </span>
-                      {project.status === "Ready to Approve" && (
-                        <button className="px-3 py-1.5 text-xs font-medium rounded-lg bg-gradient-to-r from-neon-purple to-electric-blue text-white hover:opacity-90 transition-opacity">
+                      {project.status === "review" && (
+                        <button
+                          onClick={() => handleApprove(project.id)}
+                          className="px-3 py-1.5 text-xs font-medium rounded-lg bg-gradient-to-r from-neon-purple to-electric-blue text-white hover:opacity-90 transition-opacity"
+                        >
                           Approve
                         </button>
                       )}
                     </div>
                   ))}
                 </div>
+
+                <Link
+                  href="/login"
+                  className="mt-4 w-full py-2.5 rounded-lg border border-cyber-border text-sm text-foreground hover:border-neon-purple/50 transition-colors flex items-center justify-center"
+                >
+                  Sign in to access your full dashboard
+                </Link>
               </div>
             </div>
           </div>

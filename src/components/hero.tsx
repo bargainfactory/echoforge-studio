@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Upload,
@@ -24,8 +25,11 @@ const outputTypes = [
 export default function Hero() {
   const [stage, setStage] = useState<"idle" | "uploading" | "processing" | "done">("idle");
   const [dragOver, setDragOver] = useState(false);
+  const [fileName, setFileName] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const simulateUpload = useCallback(() => {
+  const simulateUpload = useCallback((name?: string) => {
+    if (name) setFileName(name);
     setStage("uploading");
     setTimeout(() => setStage("processing"), 1500);
     setTimeout(() => setStage("done"), 4000);
@@ -35,7 +39,16 @@ export default function Hero() {
     (e: React.DragEvent) => {
       e.preventDefault();
       setDragOver(false);
-      simulateUpload();
+      const file = e.dataTransfer.files?.[0];
+      simulateUpload(file?.name || "video.mp4");
+    },
+    [simulateUpload]
+  );
+
+  const handleFileSelect = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) simulateUpload(file.name);
     },
     [simulateUpload]
   );
@@ -72,19 +85,19 @@ export default function Hero() {
                 all monetizable.
               </p>
               <div className="flex flex-wrap gap-4">
-                <a
-                  href="#pricing"
+                <Link
+                  href="/signup"
                   className="px-8 py-3.5 rounded-full bg-gradient-to-r from-neon-purple to-electric-blue text-white font-medium hover:opacity-90 transition-opacity"
                 >
                   Start Forging Content
-                </a>
-                <a
-                  href="#how-it-works"
+                </Link>
+                <Link
+                  href="/#how-it-works"
                   className="px-8 py-3.5 rounded-full border border-cyber-border text-foreground hover:border-neon-purple/50 transition-colors flex items-center gap-2"
                 >
                   <Play className="w-4 h-4" />
                   See How It Works
-                </a>
+                </Link>
               </div>
             </motion.div>
           </div>
@@ -106,6 +119,14 @@ export default function Hero() {
                   </span>
                 </div>
 
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="video/*,audio/*"
+                  className="hidden"
+                  onChange={handleFileSelect}
+                />
+
                 <AnimatePresence mode="wait">
                   {stage === "idle" && (
                     <motion.div
@@ -124,7 +145,7 @@ export default function Hero() {
                       }}
                       onDragLeave={() => setDragOver(false)}
                       onDrop={handleDrop}
-                      onClick={simulateUpload}
+                      onClick={() => fileInputRef.current?.click()}
                     >
                       <Upload className="w-10 h-10 text-cyber-muted mx-auto mb-4" />
                       <p className="text-foreground font-medium mb-1">
@@ -145,7 +166,8 @@ export default function Hero() {
                       className="rounded-xl bg-cyber-dark p-12 text-center"
                     >
                       <div className="w-16 h-16 mx-auto mb-4 rounded-full border-2 border-neon-purple border-t-transparent animate-spin" />
-                      <p className="text-foreground font-medium">Uploading video...</p>
+                      <p className="text-foreground font-medium">Uploading{fileName ? `: ${fileName}` : "..."}
+                      </p>
                       <div className="mt-4 h-1.5 bg-cyber-border rounded-full overflow-hidden max-w-xs mx-auto">
                         <motion.div
                           className="h-full bg-gradient-to-r from-neon-purple to-electric-blue rounded-full"
@@ -213,7 +235,7 @@ export default function Hero() {
                       <div className="flex items-center justify-between mb-4">
                         <p className="text-foreground font-medium">5 Assets Forged</p>
                         <button
-                          onClick={() => setStage("idle")}
+                          onClick={() => { setStage("idle"); setFileName(""); }}
                           className="text-xs text-neon-purple hover:underline"
                         >
                           Try Again
@@ -243,6 +265,12 @@ export default function Hero() {
                           </motion.div>
                         ))}
                       </div>
+                      <Link
+                        href="/signup"
+                        className="mt-4 w-full py-2.5 rounded-lg bg-gradient-to-r from-neon-purple to-electric-blue text-white text-sm font-medium hover:opacity-90 transition-opacity flex items-center justify-center"
+                      >
+                        Get Started — Full Access
+                      </Link>
                     </motion.div>
                   )}
                 </AnimatePresence>

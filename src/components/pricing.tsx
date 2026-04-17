@@ -1,7 +1,9 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Check, Sparkles, Zap, Crown } from "lucide-react";
+import { useApp } from "@/lib/context";
 
 const plans = [
   {
@@ -21,6 +23,7 @@ const plans = [
     ],
     cta: "Get Started",
     popular: false,
+    priceId: "starter",
   },
   {
     name: "Creator Pro",
@@ -41,6 +44,7 @@ const plans = [
     ],
     cta: "Start Creating",
     popular: true,
+    priceId: "creatorPro",
   },
   {
     name: "Agency",
@@ -63,6 +67,7 @@ const plans = [
     ],
     cta: "Contact Sales",
     popular: false,
+    priceId: "agency",
   },
 ];
 
@@ -73,6 +78,37 @@ const oneOffs = [
 ];
 
 export default function Pricing() {
+  const router = useRouter();
+  const { user, addToast } = useApp();
+
+  function handlePlanClick(plan: typeof plans[0]) {
+    if (plan.priceId === "agency") {
+      router.push("/contact");
+      return;
+    }
+    if (!user) {
+      addToast("Please sign up first to select a plan", "info");
+      router.push("/signup");
+      return;
+    }
+    addToast(`${plan.name} plan selected! Redirecting to checkout...`);
+    setTimeout(() => {
+      addToast("Demo mode: Stripe checkout would open here with your selected plan.", "info");
+    }, 1500);
+  }
+
+  function handleOneOffClick(pkg: typeof oneOffs[0]) {
+    if (!user) {
+      addToast("Please sign up first", "info");
+      router.push("/signup");
+      return;
+    }
+    addToast(`${pkg.name} selected — $${pkg.price}`);
+    setTimeout(() => {
+      addToast("Demo mode: One-time Stripe payment would process here.", "info");
+    }, 1500);
+  }
+
   return (
     <section id="pricing" className="py-24 relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -121,7 +157,8 @@ export default function Pricing() {
                 <span className="text-cyber-muted">{plan.period}</span>
               </div>
               <button
-                className={`w-full py-3 rounded-full font-medium text-sm transition-opacity hover:opacity-90 mb-8 ${
+                onClick={() => handlePlanClick(plan)}
+                className={`w-full py-3 rounded-full font-medium text-sm transition-opacity hover:opacity-90 mb-8 cursor-pointer ${
                   plan.popular
                     ? "bg-gradient-to-r from-neon-purple to-electric-blue text-white"
                     : "bg-cyber-dark border border-cyber-border text-foreground hover:border-neon-purple/50"
@@ -151,14 +188,15 @@ export default function Pricing() {
           </h3>
           <div className="grid sm:grid-cols-3 gap-4">
             {oneOffs.map((pkg) => (
-              <div
+              <button
                 key={pkg.name}
-                className="bg-cyber-card border border-cyber-border rounded-xl p-6 text-center card-hover"
+                onClick={() => handleOneOffClick(pkg)}
+                className="bg-cyber-card border border-cyber-border rounded-xl p-6 text-center card-hover cursor-pointer"
               >
                 <p className="font-medium text-foreground mb-1">{pkg.name}</p>
                 <p className="text-2xl font-bold gradient-text mb-1">${pkg.price}</p>
                 <p className="text-sm text-cyber-muted">{pkg.items}</p>
-              </div>
+              </button>
             ))}
           </div>
         </motion.div>

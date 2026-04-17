@@ -3,36 +3,34 @@ import { Zap, Globe, Video, Camera, Briefcase } from "lucide-react";
 
 const footerLinks = {
   Services: [
-    { label: "YouTube Shorts", href: "#services" },
-    { label: "TikTok Content", href: "#services" },
-    { label: "LinkedIn Posts", href: "#services" },
-    { label: "Email Newsletters", href: "#services" },
-    { label: "Carousel Design", href: "#services" },
+    { label: "YouTube Shorts", href: "/#services" },
+    { label: "TikTok Content", href: "/#services" },
+    { label: "LinkedIn Posts", href: "/#services" },
+    { label: "Email Newsletters", href: "/#services" },
+    { label: "Carousel Design", href: "/#services" },
   ],
   Company: [
-    { label: "About", href: "#" },
+    { label: "About", href: "/about" },
     { label: "Blog", href: "/blog" },
-    { label: "Careers", href: "#" },
-    { label: "Contact", href: "#" },
+    { label: "Contact", href: "/contact" },
   ],
   Resources: [
-    { label: "How It Works", href: "#how-it-works" },
+    { label: "How It Works", href: "/#how-it-works" },
     { label: "Pricing", href: "/pricing" },
-    { label: "Success Stories", href: "#success-stories" },
+    { label: "Success Stories", href: "/#success-stories" },
     { label: "Client Dashboard", href: "/dashboard" },
   ],
   Legal: [
-    { label: "Privacy Policy", href: "#" },
-    { label: "Terms of Service", href: "#" },
-    { label: "Cookie Policy", href: "#" },
+    { label: "Privacy Policy", href: "/privacy" },
+    { label: "Terms of Service", href: "/terms" },
   ],
 };
 
 const socials = [
-  { icon: Globe, href: "#", label: "Twitter" },
-  { icon: Video, href: "#", label: "YouTube" },
-  { icon: Camera, href: "#", label: "Instagram" },
-  { icon: Briefcase, href: "#", label: "LinkedIn" },
+  { icon: Globe, href: "https://x.com", label: "Twitter" },
+  { icon: Video, href: "https://youtube.com", label: "YouTube" },
+  { icon: Camera, href: "https://instagram.com", label: "Instagram" },
+  { icon: Briefcase, href: "https://linkedin.com", label: "LinkedIn" },
 ];
 
 export default function Footer() {
@@ -55,6 +53,8 @@ export default function Footer() {
                 <a
                   key={social.label}
                   href={social.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="w-9 h-9 rounded-lg bg-cyber-card border border-cyber-border flex items-center justify-center text-cyber-muted hover:text-neon-purple hover:border-neon-purple transition-all"
                 >
                   <social.icon className="w-4 h-4" />
