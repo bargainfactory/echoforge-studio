@@ -1,30 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import { Zap, Globe, Video, Camera, Briefcase } from "lucide-react";
-
-const footerLinks = {
-  Services: [
-    { label: "YouTube Shorts", href: "/#services" },
-    { label: "TikTok Content", href: "/#services" },
-    { label: "LinkedIn Posts", href: "/#services" },
-    { label: "Email Newsletters", href: "/#services" },
-    { label: "Carousel Design", href: "/#services" },
-  ],
-  Company: [
-    { label: "About", href: "/about" },
-    { label: "Blog", href: "/blog" },
-    { label: "Contact", href: "/contact" },
-  ],
-  Resources: [
-    { label: "How It Works", href: "/#how-it-works" },
-    { label: "Pricing", href: "/pricing" },
-    { label: "Success Stories", href: "/#success-stories" },
-    { label: "Client Dashboard", href: "/dashboard" },
-  ],
-  Legal: [
-    { label: "Privacy Policy", href: "/privacy" },
-    { label: "Terms of Service", href: "/terms" },
-  ],
-};
+import { useTranslation } from "@/lib/i18n";
 
 const socials = [
   { icon: Globe, href: "https://x.com", label: "Twitter" },
@@ -34,6 +12,33 @@ const socials = [
 ];
 
 export default function Footer() {
+  const { t } = useTranslation();
+
+  const footerLinks = {
+    [t("footer.services")]: [
+      { label: "YouTube Shorts", href: "/#services" },
+      { label: "TikTok Content", href: "/#services" },
+      { label: "LinkedIn Posts", href: "/#services" },
+      { label: "Email Newsletters", href: "/#services" },
+      { label: "Carousel Design", href: "/#services" },
+    ],
+    [t("footer.company")]: [
+      { label: t("footer.about"), href: "/about" },
+      { label: t("footer.blog"), href: "/blog" },
+      { label: t("footer.contact"), href: "/contact" },
+    ],
+    [t("footer.resources")]: [
+      { label: t("footer.howItWorks"), href: "/#how-it-works" },
+      { label: t("footer.pricing"), href: "/pricing" },
+      { label: t("footer.successStories"), href: "/#success-stories" },
+      { label: t("footer.dashboard"), href: "/dashboard" },
+    ],
+    [t("footer.legal")]: [
+      { label: t("footer.privacy"), href: "/privacy" },
+      { label: t("footer.terms"), href: "/terms" },
+    ],
+  };
+
   return (
     <footer className="border-t border-cyber-border bg-cyber-dark">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
@@ -46,7 +51,7 @@ export default function Footer() {
               <span className="text-lg font-bold gradient-text">EchoForge</span>
             </Link>
             <p className="text-sm text-cyber-muted mb-6 max-w-xs">
-              AI-powered content repurposing. Turn one long-form piece into 30+ assets automatically.
+              {t("footer.tagline")}
             </p>
             <div className="flex gap-3">
               {socials.map((social) => (
@@ -84,10 +89,10 @@ export default function Footer() {
 
         <div className="mt-12 pt-8 border-t border-cyber-border flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-sm text-cyber-muted">
-            &copy; {new Date().getFullYear()} EchoForge Studio. All rights reserved.
+            &copy; {t("footer.rights", { year: new Date().getFullYear() })}
           </p>
           <p className="text-sm text-cyber-muted">
-            Powered by AI. Built for creators.
+            {t("footer.poweredBy")}
           </p>
         </div>
       </div>

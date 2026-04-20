@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AppProvider } from "@/lib/context";
+import { I18nProvider } from "@/lib/i18n";
 import ToastContainer from "@/components/toast";
 import "./globals.css";
 
@@ -38,10 +39,12 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <AppProvider>
-          {children}
-          <ToastContainer />
-        </AppProvider>
+        <I18nProvider>
+          <AppProvider>
+            {children}
+            <ToastContainer />
+          </AppProvider>
+        </I18nProvider>
       </body>
     </html>
   );

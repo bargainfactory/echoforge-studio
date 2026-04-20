@@ -5,19 +5,22 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, Zap } from "lucide-react";
-
-const links = [
-  { href: "/#services", label: "Services" },
-  { href: "/#portfolio", label: "Portfolio" },
-  { href: "/#how-it-works", label: "How It Works" },
-  { href: "/pricing", label: "Pricing" },
-  { href: "/#success-stories", label: "Stories" },
-  { href: "/blog", label: "Blog" },
-];
+import { useTranslation } from "@/lib/i18n";
+import LanguageSwitcher from "@/components/language-switcher";
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  const { t } = useTranslation();
+
+  const links = [
+    { href: "/#services", label: t("nav.services") },
+    { href: "/#portfolio", label: t("nav.portfolio") },
+    { href: "/#how-it-works", label: t("nav.howItWorks") },
+    { href: "/pricing", label: t("nav.pricing") },
+    { href: "/#success-stories", label: t("nav.stories") },
+    { href: "/blog", label: t("nav.blog") },
+  ];
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-b border-cyber-border">
@@ -45,17 +48,18 @@ export default function Navbar() {
           </div>
 
           <div className="hidden md:flex items-center gap-3">
+            <LanguageSwitcher />
             <Link
               href="/login"
               className="text-sm text-cyber-muted hover:text-foreground transition-colors px-4 py-2"
             >
-              Client Login
+              {t("nav.login")}
             </Link>
             <Link
               href="/signup"
               className="text-sm font-medium px-5 py-2 rounded-full bg-gradient-to-r from-neon-purple to-electric-blue text-white hover:opacity-90 transition-opacity"
             >
-              Get Started
+              {t("nav.getStarted")}
             </Link>
           </div>
 
@@ -89,14 +93,14 @@ export default function Navbar() {
               ))}
               <div className="pt-3 border-t border-cyber-border space-y-2">
                 <Link href="/login" onClick={() => setOpen(false)} className="block text-sm text-cyber-muted py-2">
-                  Client Login
+                  {t("nav.login")}
                 </Link>
                 <Link
                   href="/signup"
                   onClick={() => setOpen(false)}
                   className="block text-center text-sm font-medium px-5 py-2.5 rounded-full bg-gradient-to-r from-neon-purple to-electric-blue text-white"
                 >
-                  Get Started
+                  {t("nav.getStarted")}
                 </Link>
               </div>
             </div>

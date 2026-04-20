@@ -9,59 +9,56 @@ import {
   MessageSquare,
   LayoutGrid,
 } from "lucide-react";
-
-const services = [
-  {
-    icon: Film,
-    title: "YouTube Shorts",
-    description:
-      "Vertical, captioned clips with motion graphics and AI voiceover. Optimized hooks and retention-boosting edits.",
-    stats: "Avg. 12K views/short",
-    color: "from-red-500 to-red-600",
-  },
-  {
-    icon: Music,
-    title: "TikTok Content",
-    description:
-      "Trend-aware editing with viral audio pairings, text overlays, and faceless B-roll compositions.",
-    stats: "Avg. 8.4% engagement",
-    color: "from-cyan-400 to-cyan-500",
-  },
-  {
-    icon: Briefcase,
-    title: "LinkedIn Posts",
-    description:
-      "Authority-building thought leadership posts extracted from your key insights. Carousel-ready.",
-    stats: "3x connection growth",
-    color: "from-blue-500 to-blue-600",
-  },
-  {
-    icon: Mail,
-    title: "Email Newsletters",
-    description:
-      "Weekly digests with repurposed highlights, subscriber magnets, and call-to-action blocks.",
-    stats: "42% avg open rate",
-    color: "from-neon-purple to-neon-purple-light",
-  },
-  {
-    icon: MessageSquare,
-    title: "Threads & Twitter",
-    description:
-      "Multi-part threads with hook-first structure, quote graphics, and engagement triggers.",
-    stats: "5x repost rate",
-    color: "from-sky-400 to-sky-500",
-  },
-  {
-    icon: LayoutGrid,
-    title: "Carousel Design",
-    description:
-      "Swipeable carousel slides for Instagram and LinkedIn with branded templates and data visuals.",
-    stats: "67% save rate",
-    color: "from-pink-500 to-pink-600",
-  },
-];
+import { useTranslation } from "@/lib/i18n";
 
 export default function Services() {
+  const { t } = useTranslation();
+
+  const services = [
+    {
+      icon: Film,
+      title: t("services.youtube"),
+      description: t("services.youtubeDesc"),
+      stats: "Avg. 12K views/short",
+      color: "from-red-500 to-red-600",
+    },
+    {
+      icon: Music,
+      title: t("services.tiktok"),
+      description: t("services.tiktokDesc"),
+      stats: "Avg. 8.4% engagement",
+      color: "from-cyan-400 to-cyan-500",
+    },
+    {
+      icon: Briefcase,
+      title: t("services.linkedin"),
+      description: t("services.linkedinDesc"),
+      stats: "3x connection growth",
+      color: "from-blue-500 to-blue-600",
+    },
+    {
+      icon: Mail,
+      title: t("services.email"),
+      description: t("services.emailDesc"),
+      stats: "42% avg open rate",
+      color: "from-neon-purple to-neon-purple-light",
+    },
+    {
+      icon: MessageSquare,
+      title: t("services.threads"),
+      description: t("services.threadsDesc"),
+      stats: "5x repost rate",
+      color: "from-sky-400 to-sky-500",
+    },
+    {
+      icon: LayoutGrid,
+      title: t("services.carousel"),
+      description: t("services.carouselDesc"),
+      stats: "67% save rate",
+      color: "from-pink-500 to-pink-600",
+    },
+  ];
+
   return (
     <section id="services" className="py-24 relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -72,11 +69,10 @@ export default function Services() {
           className="text-center mb-16"
         >
           <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-            Every Platform. <span className="gradient-text">One Upload.</span>
+            {t("services.title1")} <span className="gradient-text">{t("services.title2")}</span>
           </h2>
           <p className="text-cyber-muted max-w-2xl mx-auto">
-            We forge your long-form content into optimized assets for every major
-            platform — each tailored for maximum engagement.
+            {t("services.description")}
           </p>
         </motion.div>
 

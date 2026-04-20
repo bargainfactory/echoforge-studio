@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Check, X, Sparkles, Zap, Crown, Gift, ArrowRight, Lock } from "lucide-react";
 import { useApp } from "@/lib/context";
+import { useTranslation } from "@/lib/i18n";
 
 interface Feature {
   text: string;
@@ -26,119 +27,119 @@ interface Plan {
   upgradeNote?: string;
 }
 
-const plans: Plan[] = [
-  {
-    name: "Free",
-    description: "See what AI repurposing can do",
-    price: "Free",
-    period: "forever",
-    icon: Gift,
-    color: "from-gray-500 to-gray-600",
-    isFree: true,
-    upgradeNote: "No credit card required",
-    features: [
-      { text: "1 video per month (max 10 min)", included: true },
-      { text: "3 short-form clips", included: true },
-      { text: "Auto-captions (basic)", included: true },
-      { text: "1 platform export (YouTube)", included: true },
-      { text: "720p output quality", included: true },
-      { text: "EchoForge watermark on clips", included: true },
-      { text: "7-day turnaround", included: true },
-      { text: "AI voiceover & music", included: false, upgrade: true },
-      { text: "Custom branding", included: false, upgrade: true },
-      { text: "Dashboard analytics", included: false, upgrade: true },
-    ],
-    cta: "Start Free",
-    popular: false,
-    priceId: "free",
-  },
-  {
-    name: "Starter",
-    description: "Remove limits & grow faster",
-    price: 497,
-    period: "/month",
-    icon: Zap,
-    color: "from-electric-blue to-electric-blue-light",
-    features: [
-      { text: "4 long-form videos/month", included: true },
-      { text: "20 short-form clips", included: true },
-      { text: "Advanced captions & overlays", included: true },
-      { text: "2 platform exports", included: true },
-      { text: "1080p output quality", included: true },
-      { text: "No watermark", included: true },
-      { text: "48-hour turnaround", included: true },
-      { text: "Email support", included: true },
-      { text: "AI voiceover & music", included: false, upgrade: true },
-      { text: "Client dashboard access", included: false, upgrade: true },
-    ],
-    cta: "Get Started",
-    popular: false,
-    priceId: "starter",
-  },
-  {
-    name: "Creator Pro",
-    description: "For serious content creators",
-    price: 997,
-    period: "/month",
-    icon: Sparkles,
-    color: "from-neon-purple to-neon-purple-light",
-    features: [
-      { text: "8 long-form videos/month", included: true },
-      { text: "40+ short-form clips", included: true },
-      { text: "AI voiceover & music", included: true },
-      { text: "All platform exports", included: true },
-      { text: "4K output quality", included: true },
-      { text: "Carousel & newsletter", included: true },
-      { text: "24-hour turnaround", included: true },
-      { text: "Client dashboard access", included: true },
-      { text: "Dedicated Slack channel", included: true },
-      { text: "Priority support", included: true },
-    ],
-    cta: "Start Creating",
-    popular: true,
-    priceId: "creatorPro",
-  },
-  {
-    name: "Agency",
-    description: "For brands & agencies at scale",
-    price: 2497,
-    period: "/month",
-    icon: Crown,
-    color: "from-amber-500 to-amber-600",
-    features: [
-      { text: "Unlimited videos", included: true },
-      { text: "100+ short-form clips", included: true },
-      { text: "Custom branding & templates", included: true },
-      { text: "All platform exports", included: true },
-      { text: "4K output quality", included: true },
-      { text: "Full content suite", included: true },
-      { text: "Same-day turnaround", included: true },
-      { text: "White-label dashboard", included: true },
-      { text: "Zapier automation", included: true },
-      { text: "API access & account manager", included: true },
-    ],
-    cta: "Contact Sales",
-    popular: false,
-    priceId: "agency",
-  },
-];
-
 const oneOffs = [
   { name: "Single Video Package", price: 199, items: "1 video → 8 assets" },
   { name: "Launch Bundle", price: 799, items: "5 videos → 50+ assets" },
   { name: "Course Repurpose", price: 1499, items: "Full course → 100+ assets" },
 ];
 
-const comparisonHighlights = [
-  { free: "720p", paid: "Up to 4K", label: "Output Quality" },
-  { free: "Watermarked", paid: "Clean, branded", label: "Your Clips" },
-  { free: "7 days", paid: "Same day", label: "Turnaround" },
-  { free: "3 clips", paid: "100+ clips", label: "Monthly Output" },
-];
-
 export default function Pricing() {
   const router = useRouter();
   const { user, addToast } = useApp();
+  const { t } = useTranslation();
+
+  const plans: Plan[] = [
+    {
+      name: t("pricing.freeName"),
+      description: t("pricing.freeDesc"),
+      price: "Free",
+      period: t("pricing.forever"),
+      icon: Gift,
+      color: "from-gray-500 to-gray-600",
+      isFree: true,
+      upgradeNote: t("pricing.noCard"),
+      features: [
+        { text: t("feat.1videoMonth"), included: true },
+        { text: t("feat.3clips"), included: true },
+        { text: t("feat.basicCaptions"), included: true },
+        { text: t("feat.1platform"), included: true },
+        { text: t("feat.720p"), included: true },
+        { text: t("feat.watermark"), included: true },
+        { text: t("feat.7dayTurnaround"), included: true },
+        { text: t("feat.aiVoiceover"), included: false, upgrade: true },
+        { text: t("feat.customBranding"), included: false, upgrade: true },
+        { text: t("feat.dashboardAnalytics"), included: false, upgrade: true },
+      ],
+      cta: t("pricing.startFree"),
+      popular: false,
+      priceId: "free",
+    },
+    {
+      name: t("pricing.starterName"),
+      description: t("pricing.starterDesc"),
+      price: 497,
+      period: t("pricing.month"),
+      icon: Zap,
+      color: "from-electric-blue to-electric-blue-light",
+      features: [
+        { text: t("feat.4videos"), included: true },
+        { text: t("feat.20clips"), included: true },
+        { text: t("feat.advancedCaptions"), included: true },
+        { text: t("feat.2platforms"), included: true },
+        { text: t("feat.1080p"), included: true },
+        { text: t("feat.noWatermark"), included: true },
+        { text: t("feat.48hTurnaround"), included: true },
+        { text: t("feat.emailSupport"), included: true },
+        { text: t("feat.aiVoiceover"), included: false, upgrade: true },
+        { text: t("feat.dashboard"), included: false, upgrade: true },
+      ],
+      cta: t("pricing.getStarted"),
+      popular: false,
+      priceId: "starter",
+    },
+    {
+      name: t("pricing.proName"),
+      description: t("pricing.proDesc"),
+      price: 997,
+      period: t("pricing.month"),
+      icon: Sparkles,
+      color: "from-neon-purple to-neon-purple-light",
+      features: [
+        { text: t("feat.8videos"), included: true },
+        { text: t("feat.40clips"), included: true },
+        { text: t("feat.aiVoiceover"), included: true },
+        { text: t("feat.allPlatforms"), included: true },
+        { text: t("feat.4k"), included: true },
+        { text: t("feat.carouselNewsletter"), included: true },
+        { text: t("feat.24hTurnaround"), included: true },
+        { text: t("feat.dashboard"), included: true },
+        { text: t("feat.slack"), included: true },
+        { text: t("feat.priority"), included: true },
+      ],
+      cta: t("pricing.startCreating"),
+      popular: true,
+      priceId: "creatorPro",
+    },
+    {
+      name: t("pricing.agencyName"),
+      description: t("pricing.agencyDesc"),
+      price: 2497,
+      period: t("pricing.month"),
+      icon: Crown,
+      color: "from-amber-500 to-amber-600",
+      features: [
+        { text: t("feat.unlimited"), included: true },
+        { text: t("feat.100clips"), included: true },
+        { text: t("feat.customTemplates"), included: true },
+        { text: t("feat.allPlatforms"), included: true },
+        { text: t("feat.4k"), included: true },
+        { text: t("feat.fullSuite"), included: true },
+        { text: t("feat.sameDayTurnaround"), included: true },
+        { text: t("feat.whiteLabel"), included: true },
+        { text: t("feat.zapier"), included: true },
+        { text: t("feat.apiAccess"), included: true },
+      ],
+      cta: t("pricing.contactSales"),
+      popular: false,
+      priceId: "agency",
+    },
+  ];
+
+  const comparisonHighlights = [
+    { free: t("pricing.watermarked"), paid: t("pricing.cleanBranded"), label: t("pricing.yourClips") },
+    { free: t("pricing.days7"), paid: t("pricing.sameDay"), label: t("pricing.turnaround") },
+    { free: t("pricing.clips3"), paid: t("pricing.clips100"), label: t("pricing.monthlyOutput") },
+  ];
 
   function handlePlanClick(plan: Plan) {
     if (plan.priceId === "agency") {
@@ -147,27 +148,27 @@ export default function Pricing() {
     }
     if (plan.isFree) {
       if (user) {
-        addToast("You're already on the Free plan! Upgrade to unlock more.", "info");
+        addToast(t("pricing.alreadyFree"), "info");
       } else {
-        addToast("Welcome! Create your free account to get started.");
+        addToast(t("pricing.startFree"));
         router.push("/signup");
       }
       return;
     }
     if (!user) {
-      addToast("Please sign up first to select a plan", "info");
+      addToast(t("pricing.signUpFirst"), "info");
       router.push("/signup");
       return;
     }
-    addToast(`${plan.name} plan selected! Redirecting to checkout...`);
+    addToast(t("pricing.planSelected", { plan: plan.name }));
     setTimeout(() => {
-      addToast("Demo mode: Stripe checkout would open here with your selected plan.", "info");
+      addToast(t("pricing.demoMode"), "info");
     }, 1500);
   }
 
   function handleOneOffClick(pkg: typeof oneOffs[0]) {
     if (!user) {
-      addToast("Please sign up first", "info");
+      addToast(t("pricing.signUpFirst"), "info");
       router.push("/signup");
       return;
     }
@@ -187,10 +188,10 @@ export default function Pricing() {
           className="text-center mb-16"
         >
           <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-            Start Free. <span className="gradient-text">Scale When Ready.</span>
+            {t("pricing.title1")} <span className="gradient-text">{t("pricing.title2")}</span>
           </h2>
           <p className="text-cyber-muted max-w-2xl mx-auto">
-            Try EchoForge with zero risk — no credit card needed. Upgrade when you&apos;re ready to remove the watermark and unlock the full pipeline.
+            {t("pricing.description")}
           </p>
         </motion.div>
 
@@ -198,7 +199,7 @@ export default function Pricing() {
         <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-5 mb-16">
           {plans.map((plan, i) => (
             <motion.div
-              key={plan.name}
+              key={plan.priceId}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -213,12 +214,12 @@ export default function Pricing() {
             >
               {plan.popular && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-neon-purple to-electric-blue text-xs font-medium text-white">
-                  Most Popular
+                  {t("pricing.mostPopular")}
                 </div>
               )}
               {plan.isFree && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-cyber-dark border border-cyber-border text-xs font-medium text-cyber-muted">
-                  No Card Required
+                  {t("pricing.noCard")}
                 </div>
               )}
               <div
@@ -281,7 +282,7 @@ export default function Pricing() {
                     onClick={() => handlePlanClick(plans[2])}
                     className="w-full flex items-center justify-center gap-2 text-xs text-neon-purple hover:underline"
                   >
-                    Compare with Creator Pro <ArrowRight className="w-3 h-3" />
+                    {t("pricing.compareWithPro")} <ArrowRight className="w-3 h-3" />
                   </button>
                 </div>
               )}
@@ -298,12 +299,12 @@ export default function Pricing() {
         >
           <div className="bg-gradient-to-r from-neon-purple/5 via-electric-blue/5 to-neon-purple/5 border border-cyber-border rounded-2xl p-8">
             <h3 className="text-lg font-bold text-center text-foreground mb-2">
-              Why Creators Upgrade
+              {t("pricing.whyUpgrade")}
             </h3>
             <p className="text-sm text-cyber-muted text-center mb-8">
               The free plan proves the value. Paid plans remove the ceiling.
             </p>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {comparisonHighlights.map((item) => (
                 <div key={item.label} className="text-center">
                   <p className="text-xs text-cyber-muted mb-2 uppercase tracking-wider">{item.label}</p>
@@ -326,7 +327,7 @@ export default function Pricing() {
                 onClick={() => handlePlanClick(plans[2])}
                 className="px-6 py-2.5 rounded-full bg-gradient-to-r from-neon-purple to-electric-blue text-white text-sm font-medium hover:opacity-90 transition-opacity"
               >
-                Upgrade to Creator Pro — Most Popular
+                {t("pricing.upgradeToPro")}
               </button>
             </div>
           </div>
@@ -339,7 +340,7 @@ export default function Pricing() {
           viewport={{ once: true }}
         >
           <h3 className="text-xl font-bold text-center mb-8">
-            One-Off Packages
+            {t("pricing.oneOffPackages")}
           </h3>
           <div className="grid sm:grid-cols-3 gap-4">
             {oneOffs.map((pkg) => (

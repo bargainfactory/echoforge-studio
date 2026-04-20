@@ -4,11 +4,13 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useApp } from "@/lib/context";
+import { useTranslation } from "@/lib/i18n";
 import { Zap, Eye, EyeOff } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useApp();
+  const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -17,12 +19,12 @@ export default function LoginPage() {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    if (!email) return setError("Email is required");
-    if (!password) return setError("Password is required");
-    if (password.length < 6) return setError("Password must be at least 6 characters");
+    if (!email) return setError(t("auth.emailRequired"));
+    if (!password) return setError(t("auth.passwordRequired"));
+    if (password.length < 6) return setError(t("auth.passwordLength"));
     const ok = login(email, password);
     if (ok) router.push("/dashboard");
-    else setError("Login failed. Please try again.");
+    else setError(t("auth.loginFailed"));
   }
 
   return (
@@ -38,8 +40,8 @@ export default function LoginPage() {
             </div>
             <span className="text-xl font-bold gradient-text">EchoForge</span>
           </Link>
-          <h1 className="text-2xl font-bold text-foreground">Welcome back</h1>
-          <p className="text-sm text-cyber-muted mt-1">Sign in to your AI Studio dashboard</p>
+          <h1 className="text-2xl font-bold text-foreground">{t("auth.welcomeBack")}</h1>
+          <p className="text-sm text-cyber-muted mt-1">{t("auth.signInDesc")}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="bg-cyber-card border border-cyber-border rounded-2xl p-8 space-y-5">
@@ -50,7 +52,7 @@ export default function LoginPage() {
           )}
 
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">Email</label>
+            <label className="block text-sm font-medium text-foreground mb-1.5">{t("auth.email")}</label>
             <input
               type="email"
               value={email}
@@ -61,7 +63,7 @@ export default function LoginPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">Password</label>
+            <label className="block text-sm font-medium text-foreground mb-1.5">{t("auth.password")}</label>
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
@@ -84,13 +86,13 @@ export default function LoginPage() {
             type="submit"
             className="w-full py-3 rounded-xl bg-gradient-to-r from-neon-purple to-electric-blue text-white font-medium text-sm hover:opacity-90 transition-opacity"
           >
-            Sign In
+            {t("auth.signIn")}
           </button>
 
           <p className="text-center text-sm text-cyber-muted">
-            Don&apos;t have an account?{" "}
+            {t("auth.noAccount")}{" "}
             <Link href="/signup" className="text-neon-purple hover:underline">
-              Sign up
+              {t("auth.signUp")}
             </Link>
           </p>
         </form>

@@ -4,8 +4,10 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { ArrowRight, Clock, Tag } from "lucide-react";
 import { blogPosts } from "@/lib/data";
+import { useTranslation } from "@/lib/i18n";
 
 export default function BlogPreview() {
+  const { t } = useTranslation();
   const posts = blogPosts.slice(0, 3);
 
   return (
@@ -19,17 +21,17 @@ export default function BlogPreview() {
         >
           <div>
             <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-              Resource <span className="gradient-text">Hub</span>
+              {t("blog.title1")} <span className="gradient-text">{t("blog.title2")}</span>
             </h2>
             <p className="text-cyber-muted max-w-lg">
-              Guides, strategies, and insights for faceless content creators.
+              {t("blog.description")}
             </p>
           </div>
           <Link
             href="/blog"
             className="hidden sm:flex items-center gap-2 text-sm text-neon-purple hover:underline"
           >
-            View All <ArrowRight className="w-4 h-4" />
+            {t("blog.viewAll")} <ArrowRight className="w-4 h-4" />
           </Link>
         </motion.div>
 
@@ -72,7 +74,7 @@ export default function BlogPreview() {
           href="/blog"
           className="sm:hidden flex items-center justify-center gap-2 mt-8 text-sm text-neon-purple"
         >
-          View All Posts <ArrowRight className="w-4 h-4" />
+          {t("blog.viewAll")} <ArrowRight className="w-4 h-4" />
         </Link>
       </div>
     </section>

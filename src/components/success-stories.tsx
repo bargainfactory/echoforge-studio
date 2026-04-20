@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Star, TrendingUp, Users, DollarSign } from "lucide-react";
+import { useTranslation } from "@/lib/i18n";
 
 const stories = [
   {
@@ -46,14 +47,16 @@ const stories = [
   },
 ];
 
-const stats = [
-  { icon: Users, value: "2,400+", label: "Creators Served" },
-  { icon: TrendingUp, value: "50M+", label: "Views Generated" },
-  { icon: DollarSign, value: "$8M+", label: "Revenue for Clients" },
-  { icon: Star, value: "4.9/5", label: "Client Rating" },
-];
-
 export default function SuccessStories() {
+  const { t } = useTranslation();
+
+  const stats = [
+    { icon: Users, value: "2,400+", label: t("stories.creatorsServed") },
+    { icon: TrendingUp, value: "50M+", label: t("stories.viewsGenerated") },
+    { icon: DollarSign, value: "$8M+", label: t("stories.revenueForClients") },
+    { icon: Star, value: "4.9/5", label: t("stories.clientRating") },
+  ];
+
   return (
     <section id="success-stories" className="py-24 relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -64,10 +67,10 @@ export default function SuccessStories() {
           className="text-center mb-16"
         >
           <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-            Creator <span className="gradient-text">Success Stories</span>
+            {t("stories.title1")} <span className="gradient-text">{t("stories.title2")}</span>
           </h2>
           <p className="text-cyber-muted max-w-2xl mx-auto">
-            Real creators, real numbers, real growth — all powered by AI content repurposing.
+            {t("stories.description")}
           </p>
         </motion.div>
 

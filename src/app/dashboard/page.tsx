@@ -4,6 +4,7 @@ import { useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useApp } from "@/lib/context";
+import { useTranslation } from "@/lib/i18n";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard,
@@ -31,21 +32,21 @@ import type { Project } from "@/lib/data";
 
 type Tab = "Overview" | "Projects" | "Upload" | "Analytics" | "Notifications" | "Settings";
 
-const sidebarItems: { icon: typeof LayoutDashboard; label: Tab }[] = [
-  { icon: LayoutDashboard, label: "Overview" },
-  { icon: Film, label: "Projects" },
-  { icon: Upload, label: "Upload" },
-  { icon: BarChart3, label: "Analytics" },
-  { icon: Bell, label: "Notifications" },
-  { icon: Settings, label: "Settings" },
+const sidebarItems: { icon: typeof LayoutDashboard; label: Tab; tKey: string }[] = [
+  { icon: LayoutDashboard, label: "Overview", tKey: "dash.overview" },
+  { icon: Film, label: "Projects", tKey: "dash.projects" },
+  { icon: Upload, label: "Upload", tKey: "dash.upload" },
+  { icon: BarChart3, label: "Analytics", tKey: "dash.analytics" },
+  { icon: Bell, label: "Notifications", tKey: "dash.notifications" },
+  { icon: Settings, label: "Settings", tKey: "dash.settings" },
 ];
 
-const statusConfig: Record<string, { label: string; color: string }> = {
-  uploading: { label: "Uploading", color: "text-electric-blue bg-electric-blue/10" },
-  processing: { label: "Processing", color: "text-warning bg-warning/10" },
-  review: { label: "Ready for Review", color: "text-neon-purple bg-neon-purple/10" },
-  published: { label: "Published", color: "text-success bg-success/10" },
-  rejected: { label: "Rejected", color: "text-red-400 bg-red-400/10" },
+const statusColorMap: Record<string, string> = {
+  uploading: "text-electric-blue bg-electric-blue/10",
+  processing: "text-warning bg-warning/10",
+  review: "text-neon-purple bg-neon-purple/10",
+  published: "text-success bg-success/10",
+  rejected: "text-red-400 bg-red-400/10",
 };
 
 export default function Dashboard() {
@@ -64,6 +65,7 @@ export default function Dashboard() {
     markAllNotificationsRead,
     addToast,
   } = useApp();
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<Tab>("Overview");
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [settingsForm, setSettingsForm] = useState({
@@ -123,13 +125,13 @@ export default function Dashboard() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-xl font-bold text-foreground mb-2">Please sign in</h2>
-          <p className="text-cyber-muted mb-6">You need to be logged in to access the dashboard.</p>
+          <h2 className="text-xl font-bold text-foreground mb-2">{t("dash.pleaseSignIn")}</h2>
+          <p className="text-cyber-muted mb-6">{t("dash.signInRequired")}</p>
           <Link
             href="/login"
             className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-neon-purple to-electric-blue text-white font-medium text-sm"
           >
-            Go to Login
+            {t("dash.goToLogin")}
           </Link>
         </div>
       </div>
@@ -161,7 +163,7 @@ export default function Dashboard() {
               }`}
             >
               <item.icon className="w-4 h-4" />
-              {item.label}
+              {t(item.tKey)}
               {item.label === "Notifications" && unreadCount > 0 && (
                 <span className="ml-auto w-5 h-5 rounded-full bg-neon-purple text-white text-xs flex items-center justify-center">
                   {unreadCount}
@@ -180,7 +182,7 @@ export default function Dashboard() {
               <p className="text-sm font-medium text-foreground truncate">{user.name}</p>
               <p className="text-xs text-cyber-muted">{user.plan}</p>
             </div>
-            <button onClick={handleLogout} className="text-cyber-muted hover:text-red-400 transition-colors" title="Log out">
+            <button onClick={handleLogout} className="text-cyber-muted hover:text-red-400 transition-colors" title={t("dash.logOut")}>
               <LogOut className="w-4 h-4" />
             </button>
           </div>
@@ -192,15 +194,17 @@ export default function Dashboard() {
         <header className="border-b border-cyber-border bg-cyber-dark/50 backdrop-blur-sm px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-xl font-bold text-foreground">{activeTab}</h1>
-              <p className="text-sm text-cyber-muted">Welcome back, {user.name}</p>
+              <h1 className="text-xl font-bold text-foreground">
+                {t(sidebarItems.find((i) => i.label === activeTab)?.tKey ?? activeTab)}
+              </h1>
+              <p className="text-sm text-cyber-muted">{t("dash.welcomeBack", { name: user.name })}</p>
             </div>
             <button
               onClick={() => setShowUploadModal(true)}
               className="px-4 py-2 rounded-lg bg-gradient-to-r from-neon-purple to-electric-blue text-white text-sm font-medium hover:opacity-90 transition-opacity flex items-center gap-2"
             >
               <Upload className="w-4 h-4" />
-              New Upload
+              {t("dash.newUpload")}
             </button>
           </div>
 
@@ -216,7 +220,7 @@ export default function Dashboard() {
                     : "text-cyber-muted"
                 }`}
               >
-                {item.label}
+                {t(item.tKey)}
               </button>
             ))}
           </div>
@@ -258,7 +262,7 @@ export default function Dashboard() {
               saved={settingsSaved}
               onSave={() => {
                 setSettingsSaved(true);
-                addToast("Settings saved successfully");
+                addToast(t("dash.settingsSaved"));
                 setTimeout(() => setSettingsSaved(false), 2000);
               }}
             />
@@ -284,7 +288,7 @@ export default function Dashboard() {
               className="bg-cyber-card border border-cyber-border rounded-2xl p-8 w-full max-w-md"
             >
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold text-foreground">Upload Content</h3>
+                <h3 className="text-lg font-semibold text-foreground">{t("dash.uploadContent")}</h3>
                 <button onClick={() => setShowUploadModal(false)} className="text-cyber-muted hover:text-foreground">
                   <X className="w-5 h-5" />
                 </button>
@@ -299,8 +303,8 @@ export default function Dashboard() {
                 }}
               >
                 <FileVideo className="w-12 h-12 text-cyber-muted mx-auto mb-4" />
-                <p className="text-foreground font-medium mb-1">Drop your file here</p>
-                <p className="text-sm text-cyber-muted">MP4, MOV, MP3, WAV — up to 4GB</p>
+                <p className="text-foreground font-medium mb-1">{t("dash.dropFile")}</p>
+                <p className="text-sm text-cyber-muted">{t("dash.fileTypes")}</p>
               </div>
               <input
                 ref={fileInputRef}
@@ -331,17 +335,26 @@ function OverviewTab({
   onToggleLike: (id: string) => void;
   onViewAll: () => void;
 }) {
+  const { t } = useTranslation();
   const activeCount = projects.filter((p) => p.status === "processing" || p.status === "review").length;
   const publishedCount = projects.filter((p) => p.status === "published").length;
+
+  const statusConfig: Record<string, { label: string; color: string }> = {
+    uploading: { label: t("dash.uploading"), color: statusColorMap.uploading },
+    processing: { label: t("dash.processing"), color: statusColorMap.processing },
+    review: { label: t("dash.readyForReview"), color: statusColorMap.review },
+    published: { label: t("dash.published"), color: statusColorMap.published },
+    rejected: { label: t("dash.rejected"), color: statusColorMap.rejected },
+  };
 
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: "Active Projects", value: String(activeCount), icon: Clock, color: "text-warning" },
-          { label: "Total Assets", value: String(assets.length), icon: Film, color: "text-neon-purple" },
-          { label: "Published", value: String(publishedCount), icon: CheckCircle, color: "text-success" },
-          { label: "Total Projects", value: String(projects.length), icon: TrendingUp, color: "text-electric-blue" },
+          { label: t("dashTeaser.activeProjects"), value: String(activeCount), icon: Clock, color: "text-warning" },
+          { label: t("dash.totalAssets"), value: String(assets.length), icon: Film, color: "text-neon-purple" },
+          { label: t("dash.published"), value: String(publishedCount), icon: CheckCircle, color: "text-success" },
+          { label: t("dash.totalProjects"), value: String(projects.length), icon: TrendingUp, color: "text-electric-blue" },
         ].map((stat) => (
           <div key={stat.label} className="bg-cyber-card border border-cyber-border rounded-xl p-4">
             <stat.icon className={`w-5 h-5 ${stat.color} mb-2`} />
@@ -353,8 +366,8 @@ function OverviewTab({
 
       <div className="bg-cyber-card border border-cyber-border rounded-xl">
         <div className="flex items-center justify-between px-6 py-4 border-b border-cyber-border">
-          <h2 className="font-semibold text-foreground">Recent Projects</h2>
-          <button onClick={onViewAll} className="text-xs text-neon-purple hover:underline">View All</button>
+          <h2 className="font-semibold text-foreground">{t("dash.recentProjects")}</h2>
+          <button onClick={onViewAll} className="text-xs text-neon-purple hover:underline">{t("dash.viewAll")}</button>
         </div>
         <div className="divide-y divide-cyber-border">
           {projects.slice(0, 4).map((project) => {
@@ -381,7 +394,7 @@ function OverviewTab({
                     onClick={() => onApprove(project.id)}
                     className="px-4 py-1.5 text-xs font-medium rounded-lg bg-gradient-to-r from-neon-purple to-electric-blue text-white hover:opacity-90"
                   >
-                    Approve & Publish
+                    {t("dash.approvePublish")}
                   </button>
                 )}
               </div>
@@ -392,7 +405,7 @@ function OverviewTab({
 
       <div className="bg-cyber-card border border-cyber-border rounded-xl">
         <div className="px-6 py-4 border-b border-cyber-border">
-          <h2 className="font-semibold text-foreground">Recent Assets</h2>
+          <h2 className="font-semibold text-foreground">{t("dash.recentAssets")}</h2>
         </div>
         <div className="divide-y divide-cyber-border">
           {assets.slice(0, 4).map((asset) => (
@@ -432,8 +445,24 @@ function ProjectsTab({
   onApprove: (id: string) => void;
   onRemove: (id: string) => void;
 }) {
+  const { t } = useTranslation();
   const [filter, setFilter] = useState<string>("all");
   const filtered = filter === "all" ? projects : projects.filter((p) => p.status === filter);
+
+  const statusConfig: Record<string, { label: string; color: string }> = {
+    uploading: { label: t("dash.uploading"), color: statusColorMap.uploading },
+    processing: { label: t("dash.processing"), color: statusColorMap.processing },
+    review: { label: t("dash.readyForReview"), color: statusColorMap.review },
+    published: { label: t("dash.published"), color: statusColorMap.published },
+    rejected: { label: t("dash.rejected"), color: statusColorMap.rejected },
+  };
+
+  const filterLabels: Record<string, string> = {
+    all: t("blog.all"),
+    processing: t("dash.processing"),
+    review: t("dash.readyForReview"),
+    published: t("dash.published"),
+  };
 
   return (
     <div className="space-y-6">
@@ -446,13 +475,13 @@ function ProjectsTab({
               filter === f ? "bg-neon-purple/20 text-neon-purple border border-neon-purple/30" : "bg-cyber-card border border-cyber-border text-cyber-muted"
             }`}
           >
-            {f === "all" ? "All" : f}
+            {filterLabels[f] ?? f}
           </button>
         ))}
       </div>
 
       {filtered.length === 0 ? (
-        <div className="text-center py-16 text-cyber-muted">No projects found.</div>
+        <div className="text-center py-16 text-cyber-muted">{t("dash.noProjects")}</div>
       ) : (
         <div className="space-y-3">
           {filtered.map((project) => {
@@ -488,13 +517,13 @@ function ProjectsTab({
                       onClick={() => onApprove(project.id)}
                       className="px-3 py-1.5 text-xs font-medium rounded-lg bg-gradient-to-r from-neon-purple to-electric-blue text-white hover:opacity-90"
                     >
-                      Approve
+                      {t("dashTeaser.approve")}
                     </button>
                   )}
                   <button
                     onClick={() => onRemove(project.id)}
                     className="p-1.5 text-cyber-muted hover:text-red-400 transition-colors rounded-lg hover:bg-red-400/10"
-                    title="Remove project"
+                    title={t("dash.removeProject")}
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -516,6 +545,7 @@ function UploadTab({
   onUpload: (files: FileList | null) => void;
   fileInputRef: React.RefObject<HTMLInputElement | null>;
 }) {
+  const { t } = useTranslation();
   const [dragOver, setDragOver] = useState(false);
 
   return (
@@ -530,8 +560,8 @@ function UploadTab({
         onDrop={(e) => { e.preventDefault(); setDragOver(false); onUpload(e.dataTransfer.files); }}
       >
         <Upload className="w-16 h-16 text-cyber-muted mx-auto mb-6" />
-        <h3 className="text-xl font-semibold text-foreground mb-2">Upload Your Content</h3>
-        <p className="text-cyber-muted mb-6">Drag and drop your video or audio file, or click to browse</p>
+        <h3 className="text-xl font-semibold text-foreground mb-2">{t("dash.uploadYourContent")}</h3>
+        <p className="text-cyber-muted mb-6">{t("dash.dragDrop")}</p>
         <p className="text-xs text-cyber-muted">Supports: MP4, MOV, AVI, MKV, MP3, WAV, M4A — up to 4GB</p>
       </div>
       <input
@@ -543,7 +573,7 @@ function UploadTab({
       />
 
       <div className="mt-8 bg-cyber-card border border-cyber-border rounded-xl p-6">
-        <h4 className="font-medium text-foreground mb-4">What happens after upload?</h4>
+        <h4 className="font-medium text-foreground mb-4">{t("dash.whatHappens")}</h4>
         <div className="space-y-3">
           {[
             "AI transcribes and analyzes your content",
@@ -568,11 +598,12 @@ function UploadTab({
 
 // --- Analytics Tab ---
 function AnalyticsTab() {
+  const { t } = useTranslation();
   const metrics = [
-    { label: "Total Views", value: "2.4M", change: "+18.3%", positive: true },
-    { label: "Engagement Rate", value: "8.7%", change: "+1.2%", positive: true },
-    { label: "New Followers", value: "12.4K", change: "+24.1%", positive: true },
-    { label: "Revenue", value: "$4,280", change: "+9.7%", positive: true },
+    { label: t("dash.totalViews"), value: "2.4M", change: "+18.3%", positive: true },
+    { label: t("dash.engagementRate"), value: "8.7%", change: "+1.2%", positive: true },
+    { label: t("dash.newFollowers"), value: "12.4K", change: "+24.1%", positive: true },
+    { label: t("dash.revenue"), value: "$4,280", change: "+9.7%", positive: true },
   ];
 
   const platformData = [
@@ -597,13 +628,13 @@ function AnalyticsTab() {
           <div key={m.label} className="bg-cyber-card border border-cyber-border rounded-xl p-4">
             <p className="text-xs text-cyber-muted mb-1">{m.label}</p>
             <p className="text-2xl font-bold text-foreground">{m.value}</p>
-            <span className={`text-xs ${m.positive ? "text-success" : "text-red-400"}`}>{m.change} vs last month</span>
+            <span className={`text-xs ${m.positive ? "text-success" : "text-red-400"}`}>{m.change} {t("dash.vsLastMonth")}</span>
           </div>
         ))}
       </div>
 
       <div className="bg-cyber-card border border-cyber-border rounded-xl p-6">
-        <h3 className="font-semibold text-foreground mb-4">Platform Performance</h3>
+        <h3 className="font-semibold text-foreground mb-4">{t("dash.platformPerformance")}</h3>
         <div className="space-y-4">
           {platformData.map((p) => (
             <div key={p.platform} className="flex items-center gap-4">
@@ -623,7 +654,7 @@ function AnalyticsTab() {
       </div>
 
       <div className="bg-cyber-card border border-cyber-border rounded-xl p-6">
-        <h3 className="font-semibold text-foreground mb-4">Top Performing Content</h3>
+        <h3 className="font-semibold text-foreground mb-4">{t("dash.topContent")}</h3>
         <div className="space-y-3">
           {topContent.map((c, i) => (
             <div key={c.title} className="flex items-center gap-4 p-3 rounded-lg bg-cyber-dark">
@@ -654,6 +685,7 @@ function NotificationsTab({
   onMarkRead: (id: string) => void;
   onMarkAllRead: () => void;
 }) {
+  const { t } = useTranslation();
   const typeIcons: Record<string, typeof CheckCircle> = { success: CheckCircle, info: Bell, warning: Clock };
   const typeColors: Record<string, string> = { success: "text-success", info: "text-electric-blue", warning: "text-warning" };
 
@@ -661,15 +693,15 @@ function NotificationsTab({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-sm text-cyber-muted">
-          {notifications.filter((n) => !n.read).length} unread
+          {t("dash.unread", { count: notifications.filter((n) => !n.read).length })}
         </p>
         <button onClick={onMarkAllRead} className="text-xs text-neon-purple hover:underline">
-          Mark all as read
+          {t("dash.markAllRead")}
         </button>
       </div>
 
       {notifications.length === 0 ? (
-        <div className="text-center py-16 text-cyber-muted">No notifications yet.</div>
+        <div className="text-center py-16 text-cyber-muted">{t("dash.noNotifications")}</div>
       ) : (
         notifications.map((n) => {
           const Icon = typeIcons[n.type] || Bell;
@@ -695,7 +727,7 @@ function NotificationsTab({
               </div>
               {!n.read && (
                 <button className="text-xs text-neon-purple hover:underline shrink-0">
-                  Mark read
+                  {t("dash.markRead")}
                 </button>
               )}
             </div>
@@ -720,13 +752,14 @@ function SettingsTab({
   saved: boolean;
   onSave: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="max-w-2xl space-y-6">
       <div className="bg-cyber-card border border-cyber-border rounded-xl p-6">
-        <h3 className="font-semibold text-foreground mb-4">Profile</h3>
+        <h3 className="font-semibold text-foreground mb-4">{t("dash.profile")}</h3>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm text-cyber-muted mb-1.5">Display Name</label>
+            <label className="block text-sm text-cyber-muted mb-1.5">{t("dash.displayName")}</label>
             <input
               type="text"
               value={form.name || user.name}
@@ -735,7 +768,7 @@ function SettingsTab({
             />
           </div>
           <div>
-            <label className="block text-sm text-cyber-muted mb-1.5">Email</label>
+            <label className="block text-sm text-cyber-muted mb-1.5">{t("auth.email")}</label>
             <input
               type="email"
               value={form.email || user.email}
@@ -747,12 +780,12 @@ function SettingsTab({
       </div>
 
       <div className="bg-cyber-card border border-cyber-border rounded-xl p-6">
-        <h3 className="font-semibold text-foreground mb-4">Preferences</h3>
+        <h3 className="font-semibold text-foreground mb-4">{t("dash.preferences")}</h3>
         <div className="space-y-4">
           <label className="flex items-center justify-between cursor-pointer">
             <div>
-              <p className="text-sm text-foreground">Email Notifications</p>
-              <p className="text-xs text-cyber-muted">Get notified when assets are ready</p>
+              <p className="text-sm text-foreground">{t("dash.emailNotifications")}</p>
+              <p className="text-xs text-cyber-muted">{t("dash.emailNotificationsDesc")}</p>
             </div>
             <button
               onClick={() => setForm({ ...form, notifications: !form.notifications })}
@@ -763,8 +796,8 @@ function SettingsTab({
           </label>
           <label className="flex items-center justify-between cursor-pointer">
             <div>
-              <p className="text-sm text-foreground">Auto-Publish</p>
-              <p className="text-xs text-cyber-muted">Automatically publish approved assets via Zapier</p>
+              <p className="text-sm text-foreground">{t("dash.autoPublish")}</p>
+              <p className="text-xs text-cyber-muted">{t("dash.autoPublishDesc")}</p>
             </div>
             <button
               onClick={() => setForm({ ...form, autoPublish: !form.autoPublish })}
@@ -781,7 +814,7 @@ function SettingsTab({
         className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-neon-purple to-electric-blue text-white font-medium text-sm hover:opacity-90 transition-opacity flex items-center gap-2"
       >
         {saved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
-        {saved ? "Saved!" : "Save Settings"}
+        {saved ? t("dash.saved") : t("dash.saveSettings")}
       </button>
     </div>
   );

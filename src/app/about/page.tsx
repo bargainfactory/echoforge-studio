@@ -1,13 +1,17 @@
+"use client";
+
 import Link from "next/link";
 import { ArrowLeft, Zap, Users, Globe, Award } from "lucide-react";
+import { useTranslation } from "@/lib/i18n";
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
 
-const stats = [
-  { label: "Creators Served", value: "2,400+", icon: Users },
-  { label: "Countries", value: "47", icon: Globe },
-  { label: "Assets Created", value: "500K+", icon: Zap },
-  { label: "Client Satisfaction", value: "4.9/5", icon: Award },
+// stat labels are rendered via t() inside the component
+const statsData = [
+  { tKey: "stories.creatorsServed", value: "2,400+", icon: Users },
+  { tKey: "about.countries", value: "47", icon: Globe },
+  { tKey: "about.assetsCreated", value: "500K+", icon: Zap },
+  { tKey: "about.clientSatisfaction", value: "4.9/5", icon: Award },
 ];
 
 const team = [
@@ -18,6 +22,7 @@ const team = [
 ];
 
 export default function AboutPage() {
+  const { t } = useTranslation();
   return (
     <>
       <Navbar />
@@ -28,14 +33,14 @@ export default function AboutPage() {
             className="inline-flex items-center gap-2 text-sm text-cyber-muted hover:text-foreground transition-colors mb-8"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back to Home
+            {t("nav.backHome")}
           </Link>
 
           <h1 className="text-3xl sm:text-4xl font-bold mb-4">
-            About <span className="gradient-text">EchoForge Studio</span>
+            {t("about.title1")} <span className="gradient-text">{t("about.title2")}</span>
           </h1>
           <p className="text-lg text-cyber-muted mb-12 max-w-2xl">
-            We&apos;re on a mission to democratize content creation. No face required, no limits on growth.
+            {t("about.description")}
           </p>
 
           <div className="space-y-8 text-foreground/80 leading-relaxed mb-16">
@@ -51,16 +56,16 @@ export default function AboutPage() {
           </div>
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-16">
-            {stats.map((stat) => (
-              <div key={stat.label} className="bg-cyber-card border border-cyber-border rounded-xl p-6 text-center">
+            {statsData.map((stat) => (
+              <div key={stat.tKey} className="bg-cyber-card border border-cyber-border rounded-xl p-6 text-center">
                 <stat.icon className="w-6 h-6 text-neon-purple mx-auto mb-3" />
                 <p className="text-2xl font-bold text-foreground">{stat.value}</p>
-                <p className="text-xs text-cyber-muted mt-1">{stat.label}</p>
+                <p className="text-xs text-cyber-muted mt-1">{t(stat.tKey)}</p>
               </div>
             ))}
           </div>
 
-          <h2 className="text-2xl font-bold text-foreground mb-8">Our Team</h2>
+          <h2 className="text-2xl font-bold text-foreground mb-8">{t("about.ourTeam")}</h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {team.map((member) => (
               <div key={member.name} className="bg-cyber-card border border-cyber-border rounded-xl p-6 text-center">

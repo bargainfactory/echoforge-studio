@@ -1,16 +1,17 @@
+"use client";
+
+import { use } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Clock, Tag, Share2 } from "lucide-react";
 import { blogPosts } from "@/lib/data";
+import { useTranslation } from "@/lib/i18n";
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
 
-export function generateStaticParams() {
-  return blogPosts.map((post) => ({ slug: post.slug }));
-}
-
-export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params;
+export default function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = use(params);
+  const { t } = useTranslation();
   const post = blogPosts.find((p) => p.slug === slug);
   if (!post) notFound();
 
@@ -24,7 +25,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
             className="inline-flex items-center gap-2 text-sm text-cyber-muted hover:text-foreground transition-colors mb-8"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back to Blog
+            {t("blog.backToBlog")}
           </Link>
 
           <div className={`h-48 sm:h-64 rounded-2xl bg-gradient-to-br ${post.gradient} relative mb-8`}>

@@ -9,52 +9,50 @@ import {
   CheckCircle,
   Rocket,
 } from "lucide-react";
-
-const steps = [
-  {
-    icon: Upload,
-    title: "Upload",
-    description: "Drop your podcast, video, or course recording into the AI Studio.",
-    detail: "Supports MP4, MOV, MP3, WAV up to 4 hours",
-  },
-  {
-    icon: Brain,
-    title: "AI Analysis",
-    description:
-      "Our engine transcribes, identifies key moments, viral hooks, and quotable segments.",
-    detail: "GPT-4 + custom models for content scoring",
-  },
-  {
-    icon: Scissors,
-    title: "Smart Clipping",
-    description:
-      "AI automatically cuts optimal short-form clips with perfect start/end points.",
-    detail: "Retention-optimized cuts with hook detection",
-  },
-  {
-    icon: Palette,
-    title: "Visual Design",
-    description:
-      "Captions, B-roll, motion graphics, and branded templates applied automatically.",
-    detail: "ElevenLabs voiceover + stock footage overlay",
-  },
-  {
-    icon: CheckCircle,
-    title: "Review & Approve",
-    description:
-      "Preview all assets in your dashboard. Request revisions or approve with one click.",
-    detail: "Avg. 2 revision rounds included",
-  },
-  {
-    icon: Rocket,
-    title: "Auto-Publish",
-    description:
-      "Approved content is scheduled and published via Zapier hooks to all platforms.",
-    detail: "TikTok, YouTube, LinkedIn, Instagram, Twitter",
-  },
-];
+import { useTranslation } from "@/lib/i18n";
 
 export default function HowItWorks() {
+  const { t } = useTranslation();
+
+  const steps = [
+    {
+      icon: Upload,
+      title: t("hiw.step1Title"),
+      description: t("hiw.step1Desc"),
+      detail: "Supports MP4, MOV, MP3, WAV up to 4 hours",
+    },
+    {
+      icon: Brain,
+      title: t("hiw.step2Title"),
+      description: t("hiw.step2Desc"),
+      detail: "GPT-4 + custom models for content scoring",
+    },
+    {
+      icon: Scissors,
+      title: t("hiw.step3Title"),
+      description: t("hiw.step3Desc"),
+      detail: "Retention-optimized cuts with hook detection",
+    },
+    {
+      icon: Palette,
+      title: t("hiw.step4Title"),
+      description: t("hiw.step4Desc"),
+      detail: "ElevenLabs voiceover + stock footage overlay",
+    },
+    {
+      icon: CheckCircle,
+      title: t("hiw.step5Title"),
+      description: t("hiw.step5Desc"),
+      detail: "Avg. 2 revision rounds included",
+    },
+    {
+      icon: Rocket,
+      title: t("hiw.step6Title"),
+      description: t("hiw.step6Desc"),
+      detail: "TikTok, YouTube, LinkedIn, Instagram, Twitter",
+    },
+  ];
+
   return (
     <section id="how-it-works" className="py-24 bg-cyber-dark relative overflow-hidden">
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-px h-full bg-gradient-to-b from-transparent via-neon-purple/20 to-transparent" />
@@ -67,10 +65,10 @@ export default function HowItWorks() {
           className="text-center mb-20"
         >
           <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-            The <span className="gradient-text">6-Step AI Pipeline</span>
+            {t("hiw.title1")} <span className="gradient-text">{t("hiw.title2")}</span>
           </h2>
           <p className="text-cyber-muted max-w-xl mx-auto">
-            From raw recording to published content across all platforms — fully automated.
+            {t("hiw.description")}
           </p>
         </motion.div>
 

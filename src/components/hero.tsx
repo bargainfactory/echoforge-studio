@@ -13,6 +13,7 @@ import {
   MessageSquare,
   Check,
 } from "lucide-react";
+import { useTranslation } from "@/lib/i18n";
 
 const outputTypes = [
   { icon: Film, label: "YouTube Short", duration: "0:58", color: "from-red-500 to-red-600" },
@@ -27,6 +28,7 @@ export default function Hero() {
   const [dragOver, setDragOver] = useState(false);
   const [fileName, setFileName] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { t } = useTranslation();
 
   const simulateUpload = useCallback((name?: string) => {
     if (name) setFileName(name);
@@ -71,32 +73,30 @@ export default function Hero() {
             >
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-neon-purple/10 border border-neon-purple/20 text-neon-purple text-sm mb-6">
                 <Sparkles className="w-3.5 h-3.5" />
-                AI-Powered Content Engine
+                {t("hero.badge")}
               </div>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-6">
-                One Video.{" "}
-                <span className="gradient-text">30+ Assets.</span>
+                {t("hero.title1")}{" "}
+                <span className="gradient-text">{t("hero.title2")}</span>
                 <br />
-                Zero Face Required.
+                {t("hero.title3")}
               </h1>
               <p className="text-lg text-cyber-muted max-w-lg mb-8">
-                Upload your podcast or video and watch our AI instantly forge it into
-                shorts, carousels, newsletters, and TikToks — all faceless, all branded,
-                all monetizable.
+                {t("hero.description")}
               </p>
               <div className="flex flex-wrap gap-4">
                 <Link
                   href="/signup"
                   className="px-8 py-3.5 rounded-full bg-gradient-to-r from-neon-purple to-electric-blue text-white font-medium hover:opacity-90 transition-opacity"
                 >
-                  Start Forging Content
+                  {t("hero.cta1")}
                 </Link>
                 <Link
                   href="/#how-it-works"
                   className="px-8 py-3.5 rounded-full border border-cyber-border text-foreground hover:border-neon-purple/50 transition-colors flex items-center gap-2"
                 >
                   <Play className="w-4 h-4" />
-                  See How It Works
+                  {t("hero.cta2")}
                 </Link>
               </div>
             </motion.div>
@@ -149,10 +149,10 @@ export default function Hero() {
                     >
                       <Upload className="w-10 h-10 text-cyber-muted mx-auto mb-4" />
                       <p className="text-foreground font-medium mb-1">
-                        Drop your video here
+                        {t("hero.upload")}
                       </p>
                       <p className="text-sm text-cyber-muted">
-                        or click to upload — MP4, MOV, MP3
+                        {t("hero.uploadSub")}
                       </p>
                     </motion.div>
                   )}
@@ -166,7 +166,7 @@ export default function Hero() {
                       className="rounded-xl bg-cyber-dark p-12 text-center"
                     >
                       <div className="w-16 h-16 mx-auto mb-4 rounded-full border-2 border-neon-purple border-t-transparent animate-spin" />
-                      <p className="text-foreground font-medium">Uploading{fileName ? `: ${fileName}` : "..."}
+                      <p className="text-foreground font-medium">{t("hero.uploading")}{fileName ? `: ${fileName}` : "..."}
                       </p>
                       <div className="mt-4 h-1.5 bg-cyber-border rounded-full overflow-hidden max-w-xs mx-auto">
                         <motion.div
@@ -192,14 +192,14 @@ export default function Hero() {
                           <Sparkles className="w-5 h-5 text-neon-purple animate-pulse" />
                         </div>
                         <div>
-                          <p className="text-foreground font-medium">AI Processing</p>
+                          <p className="text-foreground font-medium">{t("hero.processing")}</p>
                           <p className="text-xs text-cyber-muted">
-                            Analyzing &amp; forging content...
+                            {t("hero.processingSub")}
                           </p>
                         </div>
                       </div>
                       <div className="space-y-3">
-                        {["Transcribing audio", "Extracting key moments", "Generating assets"].map(
+                        {[t("hero.step1"), t("hero.step2"), t("hero.step3")].map(
                           (step, i) => (
                             <motion.div
                               key={step}
@@ -233,12 +233,12 @@ export default function Hero() {
                       className="rounded-xl bg-cyber-dark p-6"
                     >
                       <div className="flex items-center justify-between mb-4">
-                        <p className="text-foreground font-medium">5 Assets Forged</p>
+                        <p className="text-foreground font-medium">{t("hero.assetsForged", { count: 5 })}</p>
                         <button
                           onClick={() => { setStage("idle"); setFileName(""); }}
                           className="text-xs text-neon-purple hover:underline"
                         >
-                          Try Again
+                          {t("hero.tryAgain")}
                         </button>
                       </div>
                       <div className="space-y-2.5">
@@ -269,7 +269,7 @@ export default function Hero() {
                         href="/signup"
                         className="mt-4 w-full py-2.5 rounded-lg bg-gradient-to-r from-neon-purple to-electric-blue text-white text-sm font-medium hover:opacity-90 transition-opacity flex items-center justify-center"
                       >
-                        Get Started — Full Access
+                        {t("hero.getAccess")}
                       </Link>
                     </motion.div>
                   )}

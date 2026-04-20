@@ -4,11 +4,13 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useApp } from "@/lib/context";
+import { useTranslation } from "@/lib/i18n";
 import { Zap, Eye, EyeOff, Check } from "lucide-react";
 
 export default function SignupPage() {
   const router = useRouter();
   const { signup } = useApp();
+  const { t } = useTranslation();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -16,20 +18,20 @@ export default function SignupPage() {
   const [error, setError] = useState("");
 
   const checks = [
-    { label: "At least 6 characters", met: password.length >= 6 },
-    { label: "Contains a number", met: /\d/.test(password) },
-    { label: "Contains uppercase", met: /[A-Z]/.test(password) },
+    { label: t("auth.minChars"), met: password.length >= 6 },
+    { label: t("auth.hasNumber"), met: /\d/.test(password) },
+    { label: t("auth.hasUppercase"), met: /[A-Z]/.test(password) },
   ];
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    if (!name) return setError("Name is required");
-    if (!email) return setError("Email is required");
-    if (password.length < 6) return setError("Password must be at least 6 characters");
+    if (!name) return setError(t("auth.nameRequired"));
+    if (!email) return setError(t("auth.emailRequired"));
+    if (password.length < 6) return setError(t("auth.passwordLength"));
     const ok = signup(name, email, password);
     if (ok) router.push("/dashboard");
-    else setError("Signup failed. Please try again.");
+    else setError(t("auth.signupFailed"));
   }
 
   return (
@@ -45,8 +47,8 @@ export default function SignupPage() {
             </div>
             <span className="text-xl font-bold gradient-text">EchoForge</span>
           </Link>
-          <h1 className="text-2xl font-bold text-foreground">Create your account</h1>
-          <p className="text-sm text-cyber-muted mt-1">Start forging content with AI</p>
+          <h1 className="text-2xl font-bold text-foreground">{t("auth.createAccount")}</h1>
+          <p className="text-sm text-cyber-muted mt-1">{t("auth.createAccountDesc")}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="bg-cyber-card border border-cyber-border rounded-2xl p-8 space-y-5">
@@ -57,7 +59,7 @@ export default function SignupPage() {
           )}
 
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">Full Name</label>
+            <label className="block text-sm font-medium text-foreground mb-1.5">{t("auth.fullName")}</label>
             <input
               type="text"
               value={name}
@@ -68,7 +70,7 @@ export default function SignupPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">Email</label>
+            <label className="block text-sm font-medium text-foreground mb-1.5">{t("auth.email")}</label>
             <input
               type="email"
               value={email}
@@ -79,7 +81,7 @@ export default function SignupPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">Password</label>
+            <label className="block text-sm font-medium text-foreground mb-1.5">{t("auth.password")}</label>
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
@@ -112,13 +114,13 @@ export default function SignupPage() {
             type="submit"
             className="w-full py-3 rounded-xl bg-gradient-to-r from-neon-purple to-electric-blue text-white font-medium text-sm hover:opacity-90 transition-opacity"
           >
-            Create Account
+            {t("auth.createBtn")}
           </button>
 
           <p className="text-center text-sm text-cyber-muted">
-            Already have an account?{" "}
+            {t("auth.hasAccount")}{" "}
             <Link href="/login" className="text-neon-purple hover:underline">
-              Sign in
+              {t("auth.signInLink")}
             </Link>
           </p>
         </form>

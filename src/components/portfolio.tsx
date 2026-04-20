@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Eye, Heart, MessageCircle, Play, X, ExternalLink } from "lucide-react";
+import { useTranslation } from "@/lib/i18n";
 
 const portfolioItems = [
   {
@@ -80,6 +81,7 @@ const portfolioItems = [
 ];
 
 export default function Portfolio() {
+  const { t } = useTranslation();
   const [selected, setSelected] = useState<typeof portfolioItems[0] | null>(null);
 
   return (
@@ -92,10 +94,10 @@ export default function Portfolio() {
           className="text-center mb-16"
         >
           <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-            Faceless Content That <span className="gradient-text">Goes Viral</span>
+            {t("portfolio.title1")} <span className="gradient-text">{t("portfolio.title2")}</span>
           </h2>
           <p className="text-cyber-muted max-w-2xl mx-auto">
-            Real results from real creators — all produced without showing a single face. Click any to preview.
+            {t("portfolio.description")}
           </p>
         </motion.div>
 
@@ -166,7 +168,7 @@ export default function Portfolio() {
                   <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center mx-auto mb-3">
                     <Play className="w-8 h-8 text-white ml-1" />
                   </div>
-                  <p className="text-white text-sm font-medium">Preview — {selected.duration}</p>
+                  <p className="text-white text-sm font-medium">{t("portfolio.preview")} — {selected.duration}</p>
                 </div>
                 <button
                   onClick={() => setSelected(null)}
@@ -193,13 +195,13 @@ export default function Portfolio() {
                     className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-neon-purple to-electric-blue text-white text-sm font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
                   >
                     <ExternalLink className="w-4 h-4" />
-                    View on {selected.platform}
+                    {t("portfolio.viewOn", { platform: selected.platform })}
                   </button>
                   <button
                     onClick={() => setSelected(null)}
                     className="px-4 py-2.5 rounded-xl border border-cyber-border text-sm text-foreground hover:border-neon-purple/50 transition-colors"
                   >
-                    Close
+                    {t("portfolio.close")}
                   </button>
                 </div>
               </div>

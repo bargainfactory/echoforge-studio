@@ -5,10 +5,12 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowLeft, Clock, Tag, Search, ArrowRight } from "lucide-react";
 import { blogPosts } from "@/lib/data";
+import { useTranslation } from "@/lib/i18n";
 
 const categories = ["All", ...Array.from(new Set(blogPosts.map((p) => p.category)))];
 
 export default function BlogPage() {
+  const { t } = useTranslation();
   const [activeCategory, setActiveCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -29,15 +31,15 @@ export default function BlogPage() {
           className="inline-flex items-center gap-2 text-sm text-cyber-muted hover:text-foreground transition-colors mb-8"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to Home
+          {t("nav.backHome")}
         </Link>
 
         <div className="mb-12">
           <h1 className="text-3xl sm:text-4xl font-bold mb-4">
-            Resource <span className="gradient-text">Hub</span>
+            {t("blog.title1")} <span className="gradient-text">{t("blog.title2")}</span>
           </h1>
           <p className="text-cyber-muted max-w-2xl">
-            Guides, strategies, and deep dives for faceless content creators who want to grow with AI.
+            {t("blog.blogDescription")}
           </p>
         </div>
 
@@ -46,7 +48,7 @@ export default function BlogPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cyber-muted" />
             <input
               type="text"
-              placeholder="Search articles..."
+              placeholder={t("blog.searchArticles")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 bg-cyber-card border border-cyber-border rounded-xl text-sm text-foreground placeholder:text-cyber-muted focus:outline-none focus:border-neon-purple/50"
@@ -63,7 +65,7 @@ export default function BlogPage() {
                     : "bg-cyber-card border border-cyber-border text-cyber-muted hover:text-foreground"
                 }`}
               >
-                {cat}
+                {cat === "All" ? t("blog.all") : cat}
               </button>
             ))}
           </div>
@@ -87,7 +89,7 @@ export default function BlogPage() {
                   <div className="absolute inset-0 bg-black/20" />
                   {post.featured && (
                     <div className="absolute top-3 left-3 px-2 py-1 rounded-md bg-neon-purple/80 text-xs text-white font-medium">
-                      Featured
+                      {t("blog.featured")}
                     </div>
                   )}
                 </div>
@@ -107,7 +109,7 @@ export default function BlogPage() {
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-cyber-muted">{post.date}</span>
                     <span className="text-xs text-neon-purple flex items-center gap-1 group-hover:underline">
-                      Read More <ArrowRight className="w-3 h-3" />
+                      {t("blog.readMore")} <ArrowRight className="w-3 h-3" />
                     </span>
                   </div>
                 </div>
@@ -118,7 +120,7 @@ export default function BlogPage() {
 
         {filtered.length === 0 && (
           <div className="text-center py-16">
-            <p className="text-cyber-muted">No articles found matching your criteria.</p>
+            <p className="text-cyber-muted">{t("blog.noArticles")}</p>
           </div>
         )}
       </div>

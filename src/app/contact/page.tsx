@@ -5,8 +5,10 @@ import Link from "next/link";
 import { ArrowLeft, Send, Mail, MapPin, Clock, CheckCircle } from "lucide-react";
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
+import { useTranslation } from "@/lib/i18n";
 
 export default function ContactPage() {
+  const { t } = useTranslation();
   const [form, setForm] = useState({ name: "", email: "", subject: "", message: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
@@ -14,12 +16,12 @@ export default function ContactPage() {
 
   function validate() {
     const e: Record<string, string> = {};
-    if (!form.name.trim()) e.name = "Name is required";
-    if (!form.email.trim()) e.email = "Email is required";
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = "Invalid email address";
-    if (!form.subject.trim()) e.subject = "Subject is required";
-    if (!form.message.trim()) e.message = "Message is required";
-    else if (form.message.trim().length < 10) e.message = "Message must be at least 10 characters";
+    if (!form.name.trim()) e.name = t("contact.errorNameRequired");
+    if (!form.email.trim()) e.email = t("contact.errorEmailRequired");
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = t("contact.errorEmailInvalid");
+    if (!form.subject.trim()) e.subject = t("contact.errorSubjectRequired");
+    if (!form.message.trim()) e.message = t("contact.errorMessageRequired");
+    else if (form.message.trim().length < 10) e.message = t("contact.errorMessageLength");
     return e;
   }
 
@@ -45,14 +47,14 @@ export default function ContactPage() {
             className="inline-flex items-center gap-2 text-sm text-cyber-muted hover:text-foreground transition-colors mb-8"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back to Home
+            {t("nav.backHome")}
           </Link>
 
           <h1 className="text-3xl sm:text-4xl font-bold mb-4">
-            Get in <span className="gradient-text">Touch</span>
+            {t("contact.title1")} <span className="gradient-text">{t("contact.title2")}</span>
           </h1>
           <p className="text-cyber-muted mb-12 max-w-lg">
-            Have a question about our services? Want to discuss a custom package? We&apos;d love to hear from you.
+            {t("contact.description")}
           </p>
 
           <div className="grid md:grid-cols-3 gap-8">
@@ -62,9 +64,9 @@ export default function ContactPage() {
                   <div className="w-16 h-16 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-4">
                     <CheckCircle className="w-8 h-8 text-success" />
                   </div>
-                  <h2 className="text-xl font-bold text-foreground mb-2">Message Sent!</h2>
+                  <h2 className="text-xl font-bold text-foreground mb-2">{t("contact.sent")}</h2>
                   <p className="text-cyber-muted mb-6">
-                    Thanks for reaching out. We&apos;ll get back to you within 24 hours.
+                    {t("contact.sentDesc")}
                   </p>
                   <button
                     onClick={() => {
@@ -73,25 +75,25 @@ export default function ContactPage() {
                     }}
                     className="px-6 py-2.5 rounded-xl bg-cyber-dark border border-cyber-border text-sm text-foreground hover:border-neon-purple/50 transition-colors"
                   >
-                    Send Another Message
+                    {t("contact.sendAnother")}
                   </button>
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="bg-cyber-card border border-cyber-border rounded-2xl p-8 space-y-5">
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-foreground mb-1.5">Name</label>
+                      <label className="block text-sm font-medium text-foreground mb-1.5">{t("contact.name")}</label>
                       <input
                         type="text"
                         value={form.name}
                         onChange={(e) => setForm({ ...form, name: e.target.value })}
-                        placeholder="Your name"
+                        placeholder={t("contact.yourName")}
                         className={`w-full px-4 py-2.5 bg-cyber-dark border rounded-xl text-sm text-foreground placeholder:text-cyber-muted focus:outline-none focus:border-neon-purple/50 ${errors.name ? "border-red-500/50" : "border-cyber-border"}`}
                       />
                       {errors.name && <p className="mt-1 text-xs text-red-400">{errors.name}</p>}
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-foreground mb-1.5">Email</label>
+                      <label className="block text-sm font-medium text-foreground mb-1.5">{t("auth.email")}</label>
                       <input
                         type="email"
                         value={form.email}
@@ -104,28 +106,28 @@ export default function ContactPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-1.5">Subject</label>
+                    <label className="block text-sm font-medium text-foreground mb-1.5">{t("contact.subject")}</label>
                     <select
                       value={form.subject}
                       onChange={(e) => setForm({ ...form, subject: e.target.value })}
                       className={`w-full px-4 py-2.5 bg-cyber-dark border rounded-xl text-sm text-foreground focus:outline-none focus:border-neon-purple/50 ${errors.subject ? "border-red-500/50" : "border-cyber-border"}`}
                     >
-                      <option value="">Select a topic</option>
-                      <option value="General Inquiry">General Inquiry</option>
-                      <option value="Pricing Question">Pricing Question</option>
-                      <option value="Custom Package">Custom Package</option>
-                      <option value="Technical Support">Technical Support</option>
-                      <option value="Partnership">Partnership Opportunity</option>
+                      <option value="">{t("contact.selectTopic")}</option>
+                      <option value="General Inquiry">{t("contact.generalInquiry")}</option>
+                      <option value="Pricing Question">{t("contact.pricingQuestion")}</option>
+                      <option value="Custom Package">{t("contact.customPackage")}</option>
+                      <option value="Technical Support">{t("contact.techSupport")}</option>
+                      <option value="Partnership">{t("contact.partnership")}</option>
                     </select>
                     {errors.subject && <p className="mt-1 text-xs text-red-400">{errors.subject}</p>}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-1.5">Message</label>
+                    <label className="block text-sm font-medium text-foreground mb-1.5">{t("contact.message")}</label>
                     <textarea
                       value={form.message}
                       onChange={(e) => setForm({ ...form, message: e.target.value })}
-                      placeholder="Tell us about your project..."
+                      placeholder={t("contact.messagePlaceholder")}
                       rows={5}
                       className={`w-full px-4 py-2.5 bg-cyber-dark border rounded-xl text-sm text-foreground placeholder:text-cyber-muted focus:outline-none focus:border-neon-purple/50 resize-none ${errors.message ? "border-red-500/50" : "border-cyber-border"}`}
                     />
@@ -142,7 +144,7 @@ export default function ContactPage() {
                     ) : (
                       <>
                         <Send className="w-4 h-4" />
-                        Send Message
+                        {t("contact.send")}
                       </>
                     )}
                   </button>
@@ -152,16 +154,18 @@ export default function ContactPage() {
 
             <div className="space-y-4">
               {[
-                { icon: Mail, label: "Email", value: "hello@echoforge.ai" },
-                { icon: MapPin, label: "Location", value: "San Francisco, CA" },
-                { icon: Clock, label: "Response Time", value: "Within 24 hours" },
+                { icon: Mail, labelKey: "contact.emailLabel", value: "hello@echoforge.ai" },
+                { icon: MapPin, labelKey: "contact.location", value: "San Francisco, CA" },
+                { icon: Clock, labelKey: "contact.responseTime", valueKey: "contact.within24h" },
               ].map((item) => (
-                <div key={item.label} className="bg-cyber-card border border-cyber-border rounded-xl p-4">
+                <div key={item.labelKey} className="bg-cyber-card border border-cyber-border rounded-xl p-4">
                   <div className="flex items-center gap-3">
                     <item.icon className="w-5 h-5 text-neon-purple" />
                     <div>
-                      <p className="text-xs text-cyber-muted">{item.label}</p>
-                      <p className="text-sm font-medium text-foreground">{item.value}</p>
+                      <p className="text-xs text-cyber-muted">{t(item.labelKey)}</p>
+                      <p className="text-sm font-medium text-foreground">
+                        {item.valueKey ? t(item.valueKey) : item.value}
+                      </p>
                     </div>
                   </div>
                 </div>

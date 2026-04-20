@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { useTranslation } from "@/lib/i18n";
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
 
@@ -43,6 +46,7 @@ const sections = [
 ];
 
 export default function TermsPage() {
+  const { t } = useTranslation();
   return (
     <>
       <Navbar />
@@ -53,10 +57,10 @@ export default function TermsPage() {
             className="inline-flex items-center gap-2 text-sm text-cyber-muted hover:text-foreground transition-colors mb-8"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back to Home
+            {t("nav.backHome")}
           </Link>
 
-          <h1 className="text-3xl font-bold text-foreground mb-2">Terms of Service</h1>
+          <h1 className="text-3xl font-bold text-foreground mb-2">{t("terms.title")}</h1>
           <p className="text-sm text-cyber-muted mb-10">Last updated: April 1, 2025</p>
 
           <div className="space-y-8">

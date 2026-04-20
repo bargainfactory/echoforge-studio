@@ -11,13 +11,14 @@ import {
   BarChart3,
   Bell,
 } from "lucide-react";
+import { useTranslation } from "@/lib/i18n";
 
 const initialProjects = [
   {
     id: "t-1",
     title: "Episode 47 — AI Side Hustles",
     status: "processing",
-    statusLabel: "In Progress",
+    statusKey: "dashTeaser.inProgress",
     statusColor: "text-warning bg-warning/10",
     progress: 65,
     assets: 8,
@@ -27,7 +28,7 @@ const initialProjects = [
     id: "t-2",
     title: "Episode 46 — Passive Income",
     status: "review",
-    statusLabel: "Ready to Approve",
+    statusKey: "dashTeaser.readyToApprove",
     statusColor: "text-neon-purple bg-neon-purple/10",
     progress: 100,
     assets: 12,
@@ -37,7 +38,7 @@ const initialProjects = [
     id: "t-3",
     title: "Episode 45 — Morning Routines",
     status: "published",
-    statusLabel: "Published",
+    statusKey: "dashTeaser.published",
     statusColor: "text-success bg-success/10",
     progress: 100,
     assets: 10,
@@ -46,13 +47,14 @@ const initialProjects = [
 ];
 
 export default function DashboardTeaser() {
+  const { t } = useTranslation();
   const [projects, setProjects] = useState(initialProjects);
 
   function handleApprove(id: string) {
     setProjects((prev) =>
       prev.map((p) =>
         p.id === id
-          ? { ...p, status: "published", statusLabel: "Published", statusColor: "text-success bg-success/10", due: "Just now" }
+          ? { ...p, status: "published", statusKey: "dashTeaser.published", statusColor: "text-success bg-success/10", due: "Just now" }
           : p
       )
     );
@@ -72,10 +74,10 @@ export default function DashboardTeaser() {
           className="text-center mb-16"
         >
           <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-            Your <span className="gradient-text">AI Studio Dashboard</span>
+            {t("dashTeaser.title1")} <span className="gradient-text">{t("dashTeaser.title2")}</span>
           </h2>
           <p className="text-cyber-muted max-w-2xl mx-auto">
-            Track progress, approve assets, and publish — all from one command center.
+            {t("dashTeaser.description")}
           </p>
         </motion.div>
 
@@ -121,17 +123,17 @@ export default function DashboardTeaser() {
               <div className="flex-1 p-6">
                 <div className="grid grid-cols-3 gap-4 mb-6">
                   {[
-                    { label: "Active Projects", value: String(activeCount), icon: Clock, color: "text-warning" },
-                    { label: "Assets This Month", value: String(assetsCount), icon: Film, color: "text-neon-purple" },
-                    { label: "Published", value: String(publishedCount), icon: CheckCircle, color: "text-success" },
+                    { labelKey: "dashTeaser.activeProjects", value: String(activeCount), icon: Clock, color: "text-warning" },
+                    { labelKey: "dashTeaser.assetsThisMonth", value: String(assetsCount), icon: Film, color: "text-neon-purple" },
+                    { labelKey: "dashTeaser.published", value: String(publishedCount), icon: CheckCircle, color: "text-success" },
                   ].map((stat) => (
                     <div
-                      key={stat.label}
+                      key={stat.labelKey}
                       className="bg-cyber-dark rounded-xl p-4 border border-cyber-border"
                     >
                       <stat.icon className={`w-5 h-5 ${stat.color} mb-2`} />
                       <p className="text-2xl font-bold text-foreground">{stat.value}</p>
-                      <p className="text-xs text-cyber-muted">{stat.label}</p>
+                      <p className="text-xs text-cyber-muted">{t(stat.labelKey)}</p>
                     </div>
                   ))}
                 </div>
@@ -150,7 +152,7 @@ export default function DashboardTeaser() {
                           <span
                             className={`text-xs px-2 py-0.5 rounded-full ${project.statusColor}`}
                           >
-                            {project.statusLabel}
+                            {t(project.statusKey)}
                           </span>
                           <span className="text-xs text-cyber-muted">
                             {project.assets} assets
@@ -173,7 +175,7 @@ export default function DashboardTeaser() {
                           onClick={() => handleApprove(project.id)}
                           className="px-3 py-1.5 text-xs font-medium rounded-lg bg-gradient-to-r from-neon-purple to-electric-blue text-white hover:opacity-90 transition-opacity"
                         >
-                          Approve
+                          {t("dashTeaser.approve")}
                         </button>
                       )}
                     </div>
@@ -184,7 +186,7 @@ export default function DashboardTeaser() {
                   href="/login"
                   className="mt-4 w-full py-2.5 rounded-lg border border-cyber-border text-sm text-foreground hover:border-neon-purple/50 transition-colors flex items-center justify-center"
                 >
-                  Sign in to access your full dashboard
+                  {t("dashTeaser.signIn")}
                 </Link>
               </div>
             </div>
