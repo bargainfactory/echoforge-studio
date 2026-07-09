@@ -10,14 +10,5 @@ import { ar } from "./ar";
 import { hi } from "./hi";
 
 export const translations: Record<string, Record<string, string>> = {
-  en,
-  es,
-  fr,
-  de,
-  pt,
-  ja,
-  zh,
-  ko,
-  ar,
-  hi,
+  en, es, fr, de, pt, ja, zh, ko, ar, hi,
 };

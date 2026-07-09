@@ -302,7 +302,7 @@ export default function Pricing() {
               {t("pricing.whyUpgrade")}
             </h3>
             <p className="text-sm text-cyber-muted text-center mb-8">
-              The free plan proves the value. Paid plans remove the ceiling.
+              {t("pricing.whyUpgradeDesc")}
             </p>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {comparisonHighlights.map((item) => (

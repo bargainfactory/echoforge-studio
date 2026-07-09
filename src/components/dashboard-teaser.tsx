@@ -101,10 +101,10 @@ export default function DashboardTeaser() {
             <div className="flex">
               <div className="hidden md:block w-56 border-r border-cyber-border p-4 space-y-1">
                 {[
-                  { icon: LayoutDashboard, label: "Dashboard", active: true },
-                  { icon: Film, label: "Projects" },
-                  { icon: BarChart3, label: "Analytics" },
-                  { icon: Bell, label: "Notifications" },
+                  { icon: LayoutDashboard, label: t("dash.overview"), active: true },
+                  { icon: Film, label: t("dash.projects") },
+                  { icon: BarChart3, label: t("dash.analytics") },
+                  { icon: Bell, label: t("dash.notifications") },
                 ].map((item) => (
                   <div
                     key={item.label}
