@@ -75,10 +75,14 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const saved = localStorage.getItem("ef_locale") as Locale | null;
-    if (saved && locales.some((l) => l.code === saved)) {
-      setLocaleState(saved);
-    }
-    loadTranslations().then(setTranslations);
+    // Apply the saved locale inside the async callback (not synchronously in
+    // the effect body) so React doesn't flag a cascading-render setState.
+    loadTranslations().then((tr) => {
+      setTranslations(tr);
+      if (saved && locales.some((l) => l.code === saved)) {
+        setLocaleState(saved);
+      }
+    });
   }, []);
 
   useEffect(() => {

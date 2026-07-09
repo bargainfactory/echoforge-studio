@@ -20,7 +20,6 @@ import {
   TrendingUp,
   Zap,
   LogOut,
-  ChevronRight,
   Play,
   X,
   Trash2,
@@ -53,11 +52,13 @@ export default function Dashboard() {
   const router = useRouter();
   const {
     user,
+    ready,
     projects,
     assets,
     notifications,
     logout,
-    addProject,
+    uploadProject,
+    updateProject,
     approveProject,
     removeProject,
     toggleAssetLike,
@@ -83,43 +84,50 @@ export default function Dashboard() {
   }, [logout, router]);
 
   const handleFileUpload = useCallback(
-    (files: FileList | null) => {
+    async (files: FileList | null) => {
       if (!files || files.length === 0) return;
       const file = files[0];
-      const project: Project = {
-        id: `proj-${Date.now()}`,
-        title: file.name.replace(/\.[^.]+$/, "").replace(/[-_]/g, " "),
-        status: "processing",
-        progress: 0,
-        assetsReady: 0,
-        assetsTotal: Math.floor(Math.random() * 8) + 8,
-        eta: "Processing...",
-        createdAt: new Date().toISOString(),
-        fileName: file.name,
-        fileSize: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
-      };
-      addProject(project);
       setShowUploadModal(false);
       setActiveTab("Projects");
 
+      const project = await uploadProject(
+        file.name,
+        `${(file.size / (1024 * 1024)).toFixed(1)} MB`
+      );
+      if (!project) return;
+
+      // Simulate the processing pipeline, persisting each step to the backend
+      // so the progress bar actually advances (and survives a refresh).
+      const total = project.assetsTotal;
       let progress = 0;
       const interval = setInterval(() => {
-        progress += Math.floor(Math.random() * 15) + 5;
+        progress = Math.min(100, progress + Math.floor(Math.random() * 15) + 5);
+        const assetsReady = Math.round((progress / 100) * total);
         if (progress >= 100) {
-          progress = 100;
           clearInterval(interval);
-          // We don't have direct access to update in interval, use a workaround
+          updateProject(project.id, {
+            progress: 100,
+            assetsReady: total,
+            status: "review",
+            eta: "Awaiting approval",
+          });
+        } else {
+          updateProject(project.id, { progress, assetsReady });
         }
-      }, 2000);
-
-      setTimeout(() => {
-        clearInterval(interval);
-      }, 20000);
+      }, 1800);
     },
-    [addProject]
+    [uploadProject, updateProject]
   );
 
   const unreadCount = notifications.filter((n) => !n.read).length;
+
+  if (!ready) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full border-2 border-cyber-border border-t-neon-purple animate-spin" />
+      </div>
+    );
+  }
 
   if (!user) {
     return (

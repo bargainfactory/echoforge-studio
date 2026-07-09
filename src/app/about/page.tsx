@@ -65,6 +65,10 @@ export default function AboutPage() {
             ))}
           </div>
 
+          <p className="text-xs text-cyber-muted/70 -mt-12 mb-16 text-center">
+            {t("about.dataDisclaimer")}
+          </p>
+
           <h2 className="text-2xl font-bold text-foreground mb-8">{t("about.ourTeam")}</h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {team.map((member) => (

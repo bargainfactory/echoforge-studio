@@ -17,21 +17,30 @@ export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
 
+  const [submitting, setSubmitting] = useState(false);
+
   const checks = [
-    { label: t("auth.minChars"), met: password.length >= 6 },
+    { label: t("auth.minChars"), met: password.length >= 8 },
     { label: t("auth.hasNumber"), met: /\d/.test(password) },
     { label: t("auth.hasUppercase"), met: /[A-Z]/.test(password) },
   ];
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     if (!name) return setError(t("auth.nameRequired"));
     if (!email) return setError(t("auth.emailRequired"));
-    if (password.length < 6) return setError(t("auth.passwordLength"));
-    const ok = signup(name, email, password);
-    if (ok) router.push("/dashboard");
-    else setError(t("auth.signupFailed"));
+    if (password.length < 8) return setError(t("auth.passwordLength"));
+    setSubmitting(true);
+    try {
+      const ok = await signup(name, email, password);
+      if (ok) router.push("/dashboard");
+      else setError(t("auth.signupFailed"));
+    } catch {
+      setError(t("auth.signupFailed"));
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -112,7 +121,8 @@ export default function SignupPage() {
 
           <button
             type="submit"
-            className="w-full py-3 rounded-xl bg-gradient-to-r from-neon-purple to-electric-blue text-white font-medium text-sm hover:opacity-90 transition-opacity"
+            disabled={submitting}
+            className="w-full py-3 rounded-xl bg-gradient-to-r from-neon-purple to-electric-blue text-white font-medium text-sm hover:opacity-90 transition-opacity disabled:opacity-60"
           >
             {t("auth.createBtn")}
           </button>

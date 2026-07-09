@@ -16,15 +16,23 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
 
-  function handleSubmit(e: React.FormEvent) {
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     if (!email) return setError(t("auth.emailRequired"));
     if (!password) return setError(t("auth.passwordRequired"));
-    if (password.length < 6) return setError(t("auth.passwordLength"));
-    const ok = login(email, password);
-    if (ok) router.push("/dashboard");
-    else setError(t("auth.loginFailed"));
+    setSubmitting(true);
+    try {
+      const ok = await login(email, password);
+      if (ok) router.push("/dashboard");
+      else setError(t("auth.loginFailed"));
+    } catch {
+      setError(t("auth.loginFailed"));
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -84,7 +92,8 @@ export default function LoginPage() {
 
           <button
             type="submit"
-            className="w-full py-3 rounded-xl bg-gradient-to-r from-neon-purple to-electric-blue text-white font-medium text-sm hover:opacity-90 transition-opacity"
+            disabled={submitting}
+            className="w-full py-3 rounded-xl bg-gradient-to-r from-neon-purple to-electric-blue text-white font-medium text-sm hover:opacity-90 transition-opacity disabled:opacity-60"
           >
             {t("auth.signIn")}
           </button>

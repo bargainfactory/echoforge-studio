@@ -8,14 +8,7 @@ import {
   useEffect,
   type ReactNode,
 } from "react";
-import {
-  type Project,
-  type Asset,
-  type Notification,
-  defaultProjects,
-  defaultAssets,
-  defaultNotifications,
-} from "./data";
+import { type Project, type Asset, type Notification } from "./data";
 
 export interface User {
   name: string;
@@ -32,21 +25,21 @@ export interface Toast {
 
 interface AppState {
   user: User | null;
+  ready: boolean;
   projects: Project[];
   assets: Asset[];
   notifications: Notification[];
   toasts: Toast[];
-  login: (email: string, password: string) => boolean;
-  signup: (name: string, email: string, password: string) => boolean;
-  logout: () => void;
-  addProject: (project: Project) => void;
+  login: (email: string, password: string) => Promise<boolean>;
+  signup: (name: string, email: string, password: string) => Promise<boolean>;
+  logout: () => Promise<void>;
+  uploadProject: (fileName: string, fileSize: string) => Promise<Project | null>;
   updateProject: (id: string, updates: Partial<Project>) => void;
-  removeProject: (id: string) => void;
-  approveProject: (id: string) => void;
+  removeProject: (id: string) => Promise<void>;
+  approveProject: (id: string) => Promise<void>;
   toggleAssetLike: (id: string) => void;
   markNotificationRead: (id: string) => void;
   markAllNotificationsRead: () => void;
-  addNotification: (n: Omit<Notification, "id">) => void;
   addToast: (message: string, type?: Toast["type"]) => void;
   removeToast: (id: string) => void;
 }
@@ -59,59 +52,24 @@ export function useApp() {
   return ctx;
 }
 
-function loadFromStorage<T>(key: string, fallback: T): T {
-  if (typeof window === "undefined") return fallback;
-  try {
-    const stored = localStorage.getItem(key);
-    return stored ? JSON.parse(stored) : fallback;
-  } catch {
-    return fallback;
-  }
-}
-
-function saveToStorage(key: string, value: unknown) {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(key, JSON.stringify(value));
+async function api(path: string, init?: RequestInit) {
+  return fetch(path, {
+    ...init,
+    headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
+    cache: "no-store",
+  });
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [projects, setProjects] = useState<Project[]>(defaultProjects);
-  const [assets, setAssets] = useState<Asset[]>(defaultAssets);
-  const [notifications, setNotifications] = useState<Notification[]>(defaultNotifications);
+  const [ready, setReady] = useState(false);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [assets, setAssets] = useState<Asset[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [toasts, setToasts] = useState<Toast[]>([]);
-  const [hydrated, setHydrated] = useState(false);
-
-  useEffect(() => {
-    setUser(loadFromStorage("ef_user", null));
-    setProjects(loadFromStorage("ef_projects", defaultProjects));
-    setAssets(loadFromStorage("ef_assets", defaultAssets));
-    setNotifications(loadFromStorage("ef_notifications", defaultNotifications));
-    setHydrated(true);
-  }, []);
-
-  useEffect(() => {
-    if (!hydrated) return;
-    saveToStorage("ef_user", user);
-  }, [user, hydrated]);
-
-  useEffect(() => {
-    if (!hydrated) return;
-    saveToStorage("ef_projects", projects);
-  }, [projects, hydrated]);
-
-  useEffect(() => {
-    if (!hydrated) return;
-    saveToStorage("ef_assets", assets);
-  }, [assets, hydrated]);
-
-  useEffect(() => {
-    if (!hydrated) return;
-    saveToStorage("ef_notifications", notifications);
-  }, [notifications, hydrated]);
 
   const addToast = useCallback((message: string, type: Toast["type"] = "success") => {
-    const id = `toast-${Date.now()}`;
+    const id = `toast-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     setToasts((prev) => [...prev, { id, message, type }]);
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
@@ -122,92 +80,142 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
+  const applyBootstrap = useCallback(
+    (data: {
+      user: User | null;
+      projects?: Project[];
+      assets?: Asset[];
+      notifications?: Notification[];
+    }) => {
+      setUser(data.user);
+      setProjects(data.projects ?? []);
+      setAssets(data.assets ?? []);
+      setNotifications(data.notifications ?? []);
+    },
+    []
+  );
+
+  const refresh = useCallback(async () => {
+    const res = await api("/api/bootstrap");
+    if (res.ok) {
+      applyBootstrap(await res.json());
+    } else {
+      applyBootstrap({ user: null });
+    }
+  }, [applyBootstrap]);
+
+  // Hydrate from the server session on first load.
+  useEffect(() => {
+    let active = true;
+    api("/api/bootstrap")
+      .then(async (res) => {
+        if (!active) return;
+        if (res.ok) applyBootstrap(await res.json());
+        else applyBootstrap({ user: null });
+      })
+      .catch(() => active && applyBootstrap({ user: null }))
+      .finally(() => active && setReady(true));
+    return () => {
+      active = false;
+    };
+  }, [applyBootstrap]);
+
   const login = useCallback(
-    (email: string, password: string) => {
-      if (!email || !password) return false;
-      const name = email.split("@")[0].replace(/[^a-zA-Z]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-      const initials = name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
-      const u: User = { name, email, initials, plan: "Creator Pro" };
-      setUser(u);
-      addToast(`Welcome back, ${name}!`);
+    async (email: string, password: string) => {
+      const res = await api("/api/auth/login", {
+        method: "POST",
+        body: JSON.stringify({ email, password }),
+      });
+      if (!res.ok) return false;
+      const { user: u } = await res.json();
+      await refresh();
+      addToast(`Welcome back, ${u.name}!`);
       return true;
     },
-    [addToast]
+    [refresh, addToast]
   );
 
   const signup = useCallback(
-    (name: string, email: string, password: string) => {
-      if (!name || !email || !password) return false;
-      const initials = name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
-      const u: User = { name, email, initials, plan: "Starter" };
-      setUser(u);
-      addToast(`Welcome to EchoForge, ${name}!`);
+    async (name: string, email: string, password: string) => {
+      const res = await api("/api/auth/signup", {
+        method: "POST",
+        body: JSON.stringify({ name, email, password }),
+      });
+      if (!res.ok) return false;
+      const { user: u } = await res.json();
+      await refresh();
+      addToast(`Welcome to EchoForge, ${u.name}!`);
       return true;
     },
-    [addToast]
+    [refresh, addToast]
   );
 
-  const logout = useCallback(() => {
-    setUser(null);
-    localStorage.removeItem("ef_user");
+  const logout = useCallback(async () => {
+    await api("/api/auth/logout", { method: "POST" });
+    applyBootstrap({ user: null });
     addToast("Logged out successfully", "info");
-  }, [addToast]);
+  }, [applyBootstrap, addToast]);
 
-  const addProject = useCallback(
-    (project: Project) => {
+  const uploadProject = useCallback(
+    async (fileName: string, fileSize: string) => {
+      const title = fileName.replace(/\.[^.]+$/, "").replace(/[-_]/g, " ");
+      const res = await api("/api/projects", {
+        method: "POST",
+        body: JSON.stringify({ title, fileName, fileSize }),
+      });
+      if (!res.ok) {
+        addToast("Upload failed — please sign in again", "error");
+        return null;
+      }
+      const { project } = await res.json();
       setProjects((prev) => [project, ...prev]);
       addToast(`Project "${project.title}" created`);
-      const notif: Omit<Notification, "id"> = {
-        title: "New Project",
-        message: `"${project.title}" has been uploaded and is now processing.`,
-        time: "Just now",
-        read: false,
-        type: "info",
-      };
-      setNotifications((prev) => [{ ...notif, id: `n-${Date.now()}` }, ...prev]);
+      // The server also created a "new project" notification.
+      api("/api/notifications")
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => d && setNotifications(d.notifications))
+        .catch(() => {});
+      return project as Project;
     },
     [addToast]
   );
 
+  // Optimistic local update + persisted PATCH (used by the processing sim).
   const updateProject = useCallback((id: string, updates: Partial<Project>) => {
     setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, ...updates } : p)));
+    api(`/api/projects/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(updates),
+    }).catch(() => {});
   }, []);
 
   const removeProject = useCallback(
-    (id: string) => {
+    async (id: string) => {
       setProjects((prev) => prev.filter((p) => p.id !== id));
       setAssets((prev) => prev.filter((a) => a.projectId !== id));
       addToast("Project removed", "info");
+      await api(`/api/projects/${id}`, { method: "DELETE" }).catch(() => {});
     },
     [addToast]
   );
 
   const approveProject = useCallback(
-    (id: string) => {
-      setProjects((prev) =>
-        prev.map((p) =>
-          p.id === id
-            ? { ...p, status: "published" as const, eta: `Published ${new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" })}` }
-            : p
-        )
-      );
+    async (id: string) => {
+      const res = await api(`/api/projects/${id}/approve`, { method: "POST" });
+      if (!res.ok) {
+        addToast("Could not publish project", "error");
+        return;
+      }
+      const { project } = await res.json();
+      setProjects((prev) => prev.map((p) => (p.id === id ? project : p)));
       setAssets((prev) =>
-        prev.map((a) =>
-          a.projectId === id ? { ...a, status: "live" as const } : a
-        )
+        prev.map((a) => (a.projectId === id ? { ...a, status: "live" as const } : a))
       );
       addToast("Project approved & published!");
-      setNotifications((prev) => [
-        {
-          id: `n-${Date.now()}`,
-          title: "Project Published",
-          message: "Assets are now live and being distributed to all platforms.",
-          time: "Just now",
-          read: false,
-          type: "success",
-        },
-        ...prev,
-      ]);
+      api("/api/notifications")
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => d && setNotifications(d.notifications))
+        .catch(() => {});
     },
     [addToast]
   );
@@ -216,26 +224,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setAssets((prev) =>
       prev.map((a) => (a.id === id ? { ...a, liked: !a.liked } : a))
     );
+    api(`/api/assets/${id}/like`, { method: "POST" }).catch(() => {});
   }, []);
 
   const markNotificationRead = useCallback((id: string) => {
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, read: true } : n))
     );
+    api(`/api/notifications/${id}`, { method: "PATCH" }).catch(() => {});
   }, []);
 
   const markAllNotificationsRead = useCallback(() => {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-  }, []);
-
-  const addNotification = useCallback((n: Omit<Notification, "id">) => {
-    setNotifications((prev) => [{ ...n, id: `n-${Date.now()}` }, ...prev]);
+    api("/api/notifications/read-all", { method: "POST" }).catch(() => {});
   }, []);
 
   return (
     <AppContext.Provider
       value={{
         user,
+        ready,
         projects,
         assets,
         notifications,
@@ -243,14 +251,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
         login,
         signup,
         logout,
-        addProject,
+        uploadProject,
         updateProject,
         removeProject,
         approveProject,
         toggleAssetLike,
         markNotificationRead,
         markAllNotificationsRead,
-        addNotification,
         addToast,
         removeToast,
       }}

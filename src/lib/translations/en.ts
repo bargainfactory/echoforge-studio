@@ -201,9 +201,9 @@ export const en: Record<string, string> = {
   "auth.signInLink": "Sign in",
   "auth.emailRequired": "Email is required",
   "auth.passwordRequired": "Password is required",
-  "auth.passwordLength": "Password must be at least 6 characters",
+  "auth.passwordLength": "Password must be at least 8 characters",
   "auth.nameRequired": "Name is required",
-  "auth.minChars": "At least 6 characters",
+  "auth.minChars": "At least 8 characters",
   "auth.hasNumber": "Contains a number",
   "auth.hasUppercase": "Contains uppercase",
 
@@ -301,12 +301,14 @@ export const en: Record<string, string> = {
   "footer.termsOfService": "Terms of Service",
   "footer.rights": "© {year} EchoForge Studio. All rights reserved.",
   "footer.poweredBy": "Powered by AI. Built for creators.",
+  "footer.demoDisclaimer": "This is a demonstration site. Metrics, testimonials, case studies, and team members shown throughout are illustrative sample data, not records of actual customers or results.",
 
   // About
   "about.title1": "About",
   "about.title2": "EchoForge Studio",
   "about.description": "We're on a mission to democratize content creation. No face required, no limits on growth.",
   "about.ourTeam": "Our Team",
+  "about.dataDisclaimer": "Illustrative sample figures shown for demonstration — not audited or actual customer results.",
 
   // Legal
   "privacy.title": "Privacy Policy",

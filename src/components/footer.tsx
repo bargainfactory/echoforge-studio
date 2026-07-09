@@ -16,26 +16,26 @@ export default function Footer() {
 
   const footerLinks = {
     [t("footer.services")]: [
-      { label: "YouTube Shorts", href: "/#services" },
-      { label: "TikTok Content", href: "/#services" },
-      { label: "LinkedIn Posts", href: "/#services" },
-      { label: "Email Newsletters", href: "/#services" },
-      { label: "Carousel Design", href: "/#services" },
+      { label: t("services.youtube"), href: "/#services" },
+      { label: t("services.tiktok"), href: "/#services" },
+      { label: t("services.linkedin"), href: "/#services" },
+      { label: t("services.email"), href: "/#services" },
+      { label: t("services.carousel"), href: "/#services" },
     ],
     [t("footer.company")]: [
       { label: t("footer.about"), href: "/about" },
-      { label: t("footer.blog"), href: "/blog" },
+      { label: t("nav.blog"), href: "/blog" },
       { label: t("footer.contact"), href: "/contact" },
     ],
     [t("footer.resources")]: [
       { label: t("footer.howItWorks"), href: "/#how-it-works" },
       { label: t("footer.pricing"), href: "/pricing" },
       { label: t("footer.successStories"), href: "/#success-stories" },
-      { label: t("footer.dashboard"), href: "/dashboard" },
+      { label: t("footer.clientDashboard"), href: "/dashboard" },
     ],
     [t("footer.legal")]: [
-      { label: t("footer.privacy"), href: "/privacy" },
-      { label: t("footer.terms"), href: "/terms" },
+      { label: t("footer.privacyPolicy"), href: "/privacy" },
+      { label: t("footer.termsOfService"), href: "/terms" },
     ],
   };
 
@@ -95,6 +95,9 @@ export default function Footer() {
             {t("footer.poweredBy")}
           </p>
         </div>
+        <p className="mt-6 text-xs text-cyber-muted/70 text-center max-w-3xl mx-auto">
+          {t("footer.demoDisclaimer")}
+        </p>
       </div>
     </footer>
   );
