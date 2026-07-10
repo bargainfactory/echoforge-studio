@@ -17,9 +17,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }
 
-  const input = String((body as Record<string, unknown>)?.input ?? "")
-    .trim()
-    .slice(0, 6000);
+  const b = body as Record<string, unknown>;
+  const input = String(b?.input ?? "").trim().slice(0, 6000);
+  const locale = String(b?.locale ?? "en").slice(0, 8);
   if (!input) {
     return NextResponse.json({ error: "Enter a topic or transcript" }, { status: 400 });
   }
@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
   const title = isTranscript ? input.split(/\s+/).slice(0, 8).join(" ") : input;
   const transcript = isTranscript ? input : "";
 
-  const assets = generateAssetsDeterministic(title, transcript);
+  const assets = generateAssetsDeterministic(title, transcript, locale);
   insertEvent("try_generate", "/", JSON.stringify({ words: wordCount, assets: assets.length }));
 
   return NextResponse.json({ assets });

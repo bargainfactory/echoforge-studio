@@ -41,13 +41,24 @@ const CARD_COLORS = [
 ];
 
 export default function Hero() {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const [showDemo, setShowDemo] = useState(false);
 
-  const [input, setInput] = useState("How to grow a faceless YouTube channel in 2025");
+  const [input, setInput] = useState("");
+  const [seeded, setSeeded] = useState(false);
   const [stage, setStage] = useState<"idle" | "loading" | "done">("idle");
   const [assets, setAssets] = useState<TryAsset[]>([]);
   const [expanded, setExpanded] = useState(0);
+
+  // Seed the sample prompt in the chosen language once translations load
+  // (render-time adjustment — no effect, no cascading render once seeded).
+  if (!seeded && input === "") {
+    const prefill = t("hero.tryPrefill");
+    if (prefill && prefill !== "hero.tryPrefill") {
+      setSeeded(true);
+      setInput(prefill);
+    }
+  }
 
   const generate = useCallback(async () => {
     if (!input.trim()) return;
@@ -57,7 +68,7 @@ export default function Hero() {
       const res = await fetch("/api/try", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ input }),
+        body: JSON.stringify({ input, locale }),
       });
       const data = await res.json();
       setAssets(data.assets ?? []);

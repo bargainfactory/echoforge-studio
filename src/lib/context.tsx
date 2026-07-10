@@ -202,6 +202,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
       const form = new FormData();
       form.append("title", title);
+      form.append("locale", localStorage.getItem("ef_locale") || "en");
       if (transcript.trim()) form.append("transcript", transcript.trim());
       if (file) form.append("file", file);
 

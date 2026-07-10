@@ -25,6 +25,7 @@ export const en: Record<string, string> = {
   "hero.tryLive": "Live",
   "hero.tryTitle": "Try it now — no signup",
   "hero.trySub": "Paste a transcript, or just type a topic.",
+  "hero.tryPrefill": "How to grow your YouTube channel now",
   "hero.tryPlaceholder": "Paste a transcript, or type a topic like \"how to price a SaaS product\"…",
   "hero.tryBtn": "Generate assets",
   "hero.tryLoading": "Generating…",

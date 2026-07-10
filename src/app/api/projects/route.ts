@@ -28,6 +28,7 @@ export async function POST(req: NextRequest) {
   const contentType = req.headers.get("content-type") ?? "";
   let title = "";
   let transcript = "";
+  let locale = "en";
   let fileName: string | undefined;
   let fileSize: string | undefined;
   let storagePath: string | undefined;
@@ -36,6 +37,7 @@ export async function POST(req: NextRequest) {
     const form = await req.formData();
     title = String(form.get("title") ?? "").trim();
     transcript = String(form.get("transcript") ?? "").trim();
+    locale = String(form.get("locale") ?? "en").slice(0, 8);
     const file = form.get("file");
     if (file && typeof file === "object" && "arrayBuffer" in file) {
       const f = file as File;
@@ -75,6 +77,7 @@ export async function POST(req: NextRequest) {
     const b = body as Record<string, unknown>;
     title = String(b?.title ?? "").trim();
     transcript = String(b?.transcript ?? "").trim();
+    locale = String(b?.locale ?? "en").slice(0, 8);
     fileName = b?.fileName ? String(b.fileName) : undefined;
     fileSize = b?.fileSize ? String(b.fileSize) : undefined;
   }
@@ -83,8 +86,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Title is required" }, { status: 400 });
   }
 
-  // Real generation from the actual input content.
-  const generated = await generateAssets(title, transcript);
+  // Real generation from the actual input content, in the user's language.
+  const generated = await generateAssets(title, transcript, locale);
 
   const { project, assets } = createProjectWithAssets(
     user.email,

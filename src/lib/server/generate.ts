@@ -9,6 +9,8 @@
  * fall back to the deterministic engine on any error.
  */
 
+import { labelsFor } from "./generate-labels";
+
 export interface GeneratedAsset {
   name: string;
   type: string; // e.g. "YouTube Short", "LinkedIn Carousel", "Newsletter", "X Thread"
@@ -66,13 +68,13 @@ function scoreHook(s: string): number {
  */
 export function generateAssetsDeterministic(
   title: string,
-  transcript: string
+  transcript: string,
+  locale?: string
 ): GeneratedAsset[] {
+  const L = labelsFor(locale);
   const topic = shortTitle(title, 8);
   const sents = transcript ? splitSentences(transcript) : [];
-  const source = sents.length
-    ? sents
-    : [`${topic}: the core ideas, condensed for short-form.`];
+  const source = sents.length ? sents : [`${topic}: ${L.fallback}`];
   const ranked = source
     .map((s, i) => ({ s, i, score: scoreHook(s) }))
     .sort((a, b) => b.score - a.score);
@@ -81,7 +83,7 @@ export function generateAssetsDeterministic(
 
   // --- Short-form clips (3–6) ---
   const clipCount = Math.min(6, Math.max(3, Math.round(source.length / 4) || 3));
-  const platforms = ["YouTube Short", "TikTok Clip", "Instagram Reel"];
+  const platforms = [L.typeYoutubeShort, L.typeTiktokClip, L.typeInstagramReel];
   ranked.slice(0, clipCount).forEach((h, idx) => {
     const hook = h.s;
     const name =
@@ -93,63 +95,63 @@ export function generateAssetsDeterministic(
       type: platform,
       content: `🎬 ${platform} — ~0:${String(secs).padStart(2, "0")}
 
-HOOK (0:00–0:03):
+${L.hook}
 "${hook}"
 
-BODY:
+${L.body}
 ${source.slice(h.i, h.i + 2).join(" ")}
 
-ON-SCREEN CAPTION: ${name}
-CTA: Follow for more on ${topic}.
-${hashtag(topic)} #shorts #creator`,
+${L.caption} ${name}
+${L.ctaWord}: ${L.ctaFollow} ${topic}.
+${hashtag(topic)} ${L.hashtags}`,
     });
   });
 
   // --- LinkedIn carousel ---
   const slides = ranked
     .slice(0, 7)
-    .map((h, i) => `Slide ${i + 2}: ${condense(h.s, 110)}`);
+    .map((h, i) => `${L.slide} ${i + 2}: ${condense(h.s, 110)}`);
   assets.push({
-    name: `${shortTitle(topic)} — Carousel`,
-    type: "LinkedIn Carousel",
-    content: `📑 LinkedIn Carousel (9 slides)
+    name: `${shortTitle(topic)} — ${L.nameCarousel}`,
+    type: L.typeCarousel,
+    content: `📑 ${L.typeCarousel} (9 ${L.slidesWord})
 
-Slide 1 (Hook): ${topic}
+${L.slide} 1 (${L.hookWord}): ${topic}
 ${slides.join("\n")}
-Slide 9 (CTA): Save this for later — follow for more.`,
+${L.slide} 9 (${L.ctaWord}): ${L.carouselCta}`,
   });
 
   // --- Newsletter ---
   assets.push({
-    name: `${shortTitle(topic)} — Newsletter`,
-    type: "Newsletter",
-    content: `✉️ Newsletter Edition
+    name: `${shortTitle(topic)} — ${L.nameNewsletter}`,
+    type: L.typeNewsletter,
+    content: `✉️ ${L.newsletterEdition}
 
-Subject: ${topic}
+${L.subject} ${topic}
 
-Here's the one idea worth your time this week.
+${L.newsletterIntro}
 
 ${source.slice(0, 3).join(" ")}
 
-Three takeaways:
+${L.takeaways}
 ${ranked
   .slice(0, 3)
   .map((h, i) => `${i + 1}. ${condense(h.s, 120)}`)
   .join("\n")}
 
-That's it for this week — reply and tell me what landed.`,
+${L.newsletterOutro}`,
   });
 
   // --- X / Twitter thread ---
   const tweets = ranked.slice(0, 8).map((h, i) => `${i + 2}/ ${condense(h.s, 240)}`);
   assets.push({
-    name: `${shortTitle(topic)} — Thread`,
-    type: "X Thread",
-    content: `🧵 X / Twitter Thread
+    name: `${shortTitle(topic)} — ${L.nameThread}`,
+    type: L.typeThread,
+    content: `🧵 ${L.threadHeader}
 
-1/ ${topic} — a thread 👇
+1/ ${topic} — ${L.threadOpen}
 ${tweets.join("\n")}
-${tweets.length + 2}/ If this helped, repost the first tweet.`,
+${tweets.length + 2}/ ${L.threadClose}`,
   });
 
   return assets;
@@ -186,7 +188,8 @@ const LLM_SCHEMA = {
  */
 async function generateWithLLM(
   title: string,
-  transcript: string
+  transcript: string,
+  locale?: string
 ): Promise<GeneratedAsset[] | null> {
   // Resolve keys from env or the integrations store, without a static import
   // cycle at module load.
@@ -194,7 +197,11 @@ async function generateWithLLM(
   const anthropicKey = resolveField("llm", "anthropicApiKey");
   const openaiKey = resolveField("llm", "openaiApiKey");
 
-  const userPrompt = `Title: ${title}\n\nTranscript / script:\n${transcript || "(no transcript provided — infer from the title)"}`;
+  const langLine =
+    locale && locale !== "en"
+      ? `\n\nWrite ALL asset names and content in this language (BCP-47 code): ${locale}.`
+      : "";
+  const userPrompt = `Title: ${title}\n\nTranscript / script:\n${transcript || "(no transcript provided — infer from the title)"}${langLine}`;
 
   if (anthropicKey) {
     const { default: Anthropic } = await import("@anthropic-ai/sdk");
@@ -261,13 +268,14 @@ function parseAssets(text: string): GeneratedAsset[] | null {
 
 export async function generateAssets(
   title: string,
-  transcript: string
+  transcript: string,
+  locale?: string
 ): Promise<GeneratedAsset[]> {
   try {
-    const llm = await generateWithLLM(title, transcript);
+    const llm = await generateWithLLM(title, transcript, locale);
     if (llm && llm.length) return llm;
   } catch {
     /* fall back to deterministic */
   }
-  return generateAssetsDeterministic(title, transcript);
+  return generateAssetsDeterministic(title, transcript, locale);
 }
