@@ -89,6 +89,17 @@ function getDb(): DatabaseSync {
       user_email TEXT NOT NULL,
       expires_at INTEGER NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS scheduled_posts (
+      id           TEXT PRIMARY KEY,
+      user_email   TEXT NOT NULL REFERENCES users(email) ON DELETE CASCADE,
+      asset_id     TEXT NOT NULL,
+      asset_name   TEXT NOT NULL,
+      platform     TEXT NOT NULL,
+      scheduled_at TEXT NOT NULL,
+      status       TEXT NOT NULL,
+      created_at   TEXT NOT NULL,
+      sort         INTEGER NOT NULL
+    );
     CREATE INDEX IF NOT EXISTS idx_projects_user ON projects(user_email);
     CREATE INDEX IF NOT EXISTS idx_assets_user ON assets(user_email);
     CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_email);
@@ -516,6 +527,77 @@ export function updateUserPassword(email: string, passwordHash: string): void {
   getDb()
     .prepare("UPDATE users SET password_hash = ? WHERE email = ?")
     .run(passwordHash, email.toLowerCase());
+}
+
+// --- Scheduled posts (publish / schedule) ---
+
+export interface ScheduledPost {
+  id: string;
+  assetId: string;
+  assetName: string;
+  platform: string;
+  scheduledAt: string;
+  status: "scheduled" | "published" | "canceled";
+  createdAt: string;
+}
+
+function mapScheduled(row: Record<string, unknown>): ScheduledPost {
+  return {
+    id: row.id as string,
+    assetId: row.asset_id as string,
+    assetName: row.asset_name as string,
+    platform: row.platform as string,
+    scheduledAt: row.scheduled_at as string,
+    status: row.status as ScheduledPost["status"],
+    createdAt: row.created_at as string,
+  };
+}
+
+export function listScheduledPosts(email: string): ScheduledPost[] {
+  return (
+    getDb()
+      .prepare("SELECT * FROM scheduled_posts WHERE user_email = ? ORDER BY sort DESC")
+      .all(email.toLowerCase()) as Record<string, unknown>[]
+  ).map(mapScheduled);
+}
+
+export function createScheduledPost(
+  email: string,
+  post: Omit<ScheduledPost, "createdAt">
+): ScheduledPost {
+  const now = new Date().toISOString();
+  getDb()
+    .prepare(
+      `INSERT INTO scheduled_posts (id, user_email, asset_id, asset_name, platform, scheduled_at, status, created_at, sort)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    )
+    .run(
+      post.id,
+      email.toLowerCase(),
+      post.assetId,
+      post.assetName,
+      post.platform,
+      post.scheduledAt,
+      post.status,
+      now,
+      Date.now()
+    );
+  return { ...post, createdAt: now };
+}
+
+export function setScheduledStatus(
+  email: string,
+  id: string,
+  status: ScheduledPost["status"]
+): ScheduledPost | null {
+  const conn = getDb();
+  conn
+    .prepare("UPDATE scheduled_posts SET status = ? WHERE id = ? AND user_email = ?")
+    .run(status, id, email.toLowerCase());
+  const row = conn
+    .prepare("SELECT * FROM scheduled_posts WHERE id = ? AND user_email = ?")
+    .get(id, email.toLowerCase()) as Record<string, unknown> | undefined;
+  return row ? mapScheduled(row) : null;
 }
 
 // --- Seeding ---

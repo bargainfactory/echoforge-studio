@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useApp } from "@/lib/context";
@@ -28,16 +28,19 @@ import {
   Sparkles,
   Copy,
   FileText,
+  Calendar,
+  Send,
 } from "lucide-react";
 import type { Project, Asset } from "@/lib/data";
 import IntegrationsPanel from "@/components/integrations-panel";
 
-type Tab = "Overview" | "Projects" | "Upload" | "Analytics" | "Notifications" | "Settings";
+type Tab = "Overview" | "Projects" | "Upload" | "Schedule" | "Analytics" | "Notifications" | "Settings";
 
 const sidebarItems: { icon: typeof LayoutDashboard; label: Tab; tKey: string }[] = [
   { icon: LayoutDashboard, label: "Overview", tKey: "dash.overview" },
   { icon: Film, label: "Projects", tKey: "dash.projects" },
   { icon: Upload, label: "Upload", tKey: "dash.upload" },
+  { icon: Calendar, label: "Schedule", tKey: "dash.schedule" },
   { icon: BarChart3, label: "Analytics", tKey: "dash.analytics" },
   { icon: Bell, label: "Notifications", tKey: "dash.notifications" },
   { icon: Settings, label: "Settings", tKey: "dash.settings" },
@@ -76,6 +79,8 @@ export default function Dashboard() {
   const [uploading, setUploading] = useState(false);
   const [uploadPct, setUploadPct] = useState(0);
   const [viewingAsset, setViewingAsset] = useState<Asset | null>(null);
+  const [schedulePlatform, setSchedulePlatform] = useState("TikTok");
+  const [scheduleAt, setScheduleAt] = useState("");
   const [settingsForm, setSettingsForm] = useState({
     name: "",
     email: "",
@@ -96,6 +101,27 @@ export default function Dashboard() {
     setUploading(false);
     setUploadPct(0);
   }, []);
+
+  const handleSchedule = useCallback(async () => {
+    if (!viewingAsset || !scheduleAt) return;
+    const res = await fetch("/api/schedule", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        assetId: viewingAsset.id,
+        assetName: viewingAsset.name,
+        platform: schedulePlatform,
+        scheduledAt: scheduleAt,
+      }),
+    });
+    if (res.ok) {
+      addToast(`Scheduled to ${schedulePlatform}`);
+      setViewingAsset(null);
+      setScheduleAt("");
+    } else {
+      addToast("Could not schedule", "error");
+    }
+  }, [viewingAsset, scheduleAt, schedulePlatform, addToast]);
 
   const handleGenerate = useCallback(async () => {
     if (!uploadFile && !uploadTranscript.trim()) return;
@@ -252,6 +278,7 @@ export default function Dashboard() {
               onStart={() => setShowUploadModal(true)}
             />
           )}
+          {activeTab === "Schedule" && <ScheduleTab addToast={addToast} />}
           {activeTab === "Analytics" && <AnalyticsTab />}
           {activeTab === "Notifications" && (
             <NotificationsTab
@@ -409,15 +436,45 @@ export default function Dashboard() {
                   {viewingAsset.content || "No content generated for this asset."}
                 </pre>
               </div>
-              <div className="px-6 py-4 border-t border-cyber-border flex justify-end gap-2">
+              <div className="px-6 py-4 border-t border-cyber-border space-y-3">
+                <div className="flex flex-wrap items-end gap-2">
+                  <div className="flex-1 min-w-[120px]">
+                    <label className="block text-[11px] text-cyber-muted mb-1">Platform</label>
+                    <select
+                      value={schedulePlatform}
+                      onChange={(e) => setSchedulePlatform(e.target.value)}
+                      className="w-full px-3 py-2 bg-cyber-dark border border-cyber-border rounded-lg text-sm text-foreground focus:outline-none focus:border-neon-purple/50"
+                    >
+                      {["TikTok", "YouTube", "Instagram", "LinkedIn", "X"].map((p) => (
+                        <option key={p} value={p}>{p}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="flex-1 min-w-[160px]">
+                    <label className="block text-[11px] text-cyber-muted mb-1">Publish at</label>
+                    <input
+                      type="datetime-local"
+                      value={scheduleAt}
+                      onChange={(e) => setScheduleAt(e.target.value)}
+                      className="w-full px-3 py-2 bg-cyber-dark border border-cyber-border rounded-lg text-sm text-foreground focus:outline-none focus:border-neon-purple/50"
+                    />
+                  </div>
+                  <button
+                    onClick={handleSchedule}
+                    disabled={!scheduleAt}
+                    className="px-4 py-2 rounded-lg bg-gradient-to-r from-neon-purple to-electric-blue text-white text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2"
+                  >
+                    <Calendar className="w-4 h-4" /> Schedule
+                  </button>
+                </div>
                 <button
                   onClick={() => {
                     navigator.clipboard?.writeText(viewingAsset.content || "");
                     addToast("Copied to clipboard");
                   }}
-                  className="px-4 py-2 rounded-lg bg-cyber-dark border border-cyber-border text-sm text-foreground hover:border-neon-purple/50 transition-colors flex items-center gap-2"
+                  className="text-xs text-cyber-muted hover:text-foreground transition-colors flex items-center gap-1.5"
                 >
-                  <Copy className="w-4 h-4" /> Copy
+                  <Copy className="w-3.5 h-3.5" /> Copy content
                 </button>
               </div>
             </motion.div>
@@ -713,6 +770,112 @@ function UploadTab({
           ))}
         </div>
       </div>
+    </div>
+  );
+}
+
+// --- Schedule Tab ---
+interface SchedPost {
+  id: string;
+  assetName: string;
+  platform: string;
+  scheduledAt: string;
+  status: "scheduled" | "published" | "canceled";
+}
+
+function ScheduleTab({ addToast }: { addToast: (m: string, t?: "success" | "error" | "info") => void }) {
+  const [posts, setPosts] = useState<SchedPost[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/schedule", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => active && d && setPosts(d.posts))
+      .catch(() => {})
+      .finally(() => active && setLoading(false));
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const act = useCallback(
+    async (id: string, action: "publish" | "cancel") => {
+      const res = await fetch(
+        `/api/schedule/${id}${action === "cancel" ? "?action=cancel" : ""}`,
+        { method: "POST" }
+      );
+      if (res.ok) {
+        const d = await res.json();
+        setPosts(d.posts);
+        addToast(
+          action === "cancel"
+            ? "Post canceled"
+            : d.connected
+            ? "Published via your connected account"
+            : "Published (demo — connect a platform app to deliver for real)"
+        );
+      }
+    },
+    [addToast]
+  );
+
+  const statusColor: Record<string, string> = {
+    scheduled: "text-warning bg-warning/10",
+    published: "text-success bg-success/10",
+    canceled: "text-cyber-muted bg-cyber-dark",
+  };
+
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-cyber-muted">
+        Schedule approved assets to your platforms. Connect a publishing app in Settings → Integrations to deliver for real.
+      </p>
+      {loading ? (
+        <div className="text-center py-16 text-cyber-muted">Loading…</div>
+      ) : posts.length === 0 ? (
+        <div className="text-center py-16 text-cyber-muted">
+          Nothing scheduled yet. Open an asset and pick a platform + time to schedule it.
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {posts.map((p) => (
+            <div key={p.id} className="bg-cyber-card border border-cyber-border rounded-xl p-4 flex items-center gap-4">
+              <div className="w-10 h-10 rounded-lg bg-cyber-dark border border-cyber-border flex items-center justify-center shrink-0">
+                <Send className="w-4 h-4 text-neon-purple" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-foreground truncate">{p.assetName}</p>
+                <div className="flex flex-wrap items-center gap-2 mt-1">
+                  <span className="text-xs text-cyber-muted">{p.platform}</span>
+                  <span className="text-xs text-cyber-muted">
+                    {new Date(p.scheduledAt).toLocaleString()}
+                  </span>
+                  <span className={`text-xs px-2 py-0.5 rounded-full capitalize ${statusColor[p.status]}`}>
+                    {p.status}
+                  </span>
+                </div>
+              </div>
+              {p.status === "scheduled" && (
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={() => act(p.id, "publish")}
+                    className="px-3 py-1.5 text-xs font-medium rounded-lg bg-gradient-to-r from-neon-purple to-electric-blue text-white hover:opacity-90"
+                  >
+                    Publish now
+                  </button>
+                  <button
+                    onClick={() => act(p.id, "cancel")}
+                    className="px-3 py-1.5 text-xs rounded-lg bg-cyber-dark border border-cyber-border text-cyber-muted hover:text-red-400"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

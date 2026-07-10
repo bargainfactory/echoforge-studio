@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useApp } from "@/lib/context";
 import { useTranslation } from "@/lib/i18n";
 import { Zap, Eye, EyeOff } from "lucide-react";
+import GoogleButton from "@/components/google-button";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -14,7 +15,14 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(() => {
+    if (typeof window === "undefined") return "";
+    const e = new URLSearchParams(window.location.search).get("error");
+    if (e === "google_unavailable")
+      return "Google sign-in isn't connected yet — add a Google OAuth key in Settings → Integrations.";
+    if (e === "google_failed") return "Google sign-in failed. Please try again.";
+    return "";
+  });
 
   const [submitting, setSubmitting] = useState(false);
 
@@ -58,6 +66,13 @@ export default function LoginPage() {
               {error}
             </div>
           )}
+
+          <GoogleButton label="Continue with Google" />
+          <div className="flex items-center gap-3">
+            <div className="h-px flex-1 bg-cyber-border" />
+            <span className="text-xs text-cyber-muted">or</span>
+            <div className="h-px flex-1 bg-cyber-border" />
+          </div>
 
           <div>
             <label className="block text-sm font-medium text-foreground mb-1.5">{t("auth.email")}</label>

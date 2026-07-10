@@ -239,6 +239,7 @@ export const en: Record<string, string> = {
   "dash.recentAssets": "Recent Assets",
   "dash.viewAll": "View All",
   "dash.approvePublish": "Approve & Publish",
+  "dash.schedule": "Schedule",
   "dash.uploadContent": "New Project",
   "dash.transcriptLabel": "Paste your transcript or script",
   "dash.transcriptPlaceholder": "Paste the transcript of your video/podcast, or a script. This is what your assets are generated from…",

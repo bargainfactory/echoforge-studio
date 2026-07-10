@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useApp } from "@/lib/context";
 import { useTranslation } from "@/lib/i18n";
 import { Zap, Eye, EyeOff, Check } from "lucide-react";
+import GoogleButton from "@/components/google-button";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -66,6 +67,13 @@ export default function SignupPage() {
               {error}
             </div>
           )}
+
+          <GoogleButton label="Sign up with Google" />
+          <div className="flex items-center gap-3">
+            <div className="h-px flex-1 bg-cyber-border" />
+            <span className="text-xs text-cyber-muted">or</span>
+            <div className="h-px flex-1 bg-cyber-border" />
+          </div>
 
           <div>
             <label className="block text-sm font-medium text-foreground mb-1.5">{t("auth.fullName")}</label>
