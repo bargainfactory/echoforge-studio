@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { type Project, type Asset, type Notification } from "./data";
+import { track } from "./track";
 
 export interface User {
   name: string;
@@ -175,6 +176,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       });
       if (!res.ok) return false;
       const { user: u } = await res.json();
+      track("signup_complete");
       await refresh();
       addToast(`Welcome to EchoForge, ${u.name}!`);
       return true;

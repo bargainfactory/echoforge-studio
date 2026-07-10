@@ -89,6 +89,13 @@ function getDb(): DatabaseSync {
       user_email TEXT NOT NULL,
       expires_at INTEGER NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS analytics_events (
+      id    INTEGER PRIMARY KEY AUTOINCREMENT,
+      event TEXT NOT NULL,
+      path  TEXT,
+      ts    INTEGER NOT NULL,
+      meta  TEXT
+    );
     CREATE TABLE IF NOT EXISTS scheduled_posts (
       id           TEXT PRIMARY KEY,
       user_email   TEXT NOT NULL REFERENCES users(email) ON DELETE CASCADE,
@@ -527,6 +534,20 @@ export function updateUserPassword(email: string, passwordHash: string): void {
   getDb()
     .prepare("UPDATE users SET password_hash = ? WHERE email = ?")
     .run(passwordHash, email.toLowerCase());
+}
+
+// --- Analytics (self-hosted funnel events) ---
+
+export function insertEvent(event: string, path: string, meta: string | null): void {
+  getDb()
+    .prepare("INSERT INTO analytics_events (event, path, ts, meta) VALUES (?, ?, ?, ?)")
+    .run(event.slice(0, 64), path.slice(0, 256), Date.now(), meta ? meta.slice(0, 512) : null);
+}
+
+export function eventCounts(): { event: string; count: number }[] {
+  return getDb()
+    .prepare("SELECT event, COUNT(*) as count FROM analytics_events GROUP BY event ORDER BY count DESC")
+    .all() as { event: string; count: number }[];
 }
 
 // --- Scheduled posts (publish / schedule) ---
