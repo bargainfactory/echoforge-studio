@@ -14,6 +14,7 @@ import {
   Check,
 } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
+import DemoModal from "@/components/demo-modal";
 
 const outputTypes = [
   { icon: Film, label: "YouTube Short", duration: "0:58", color: "from-red-500 to-red-600" },
@@ -27,6 +28,7 @@ export default function Hero() {
   const [stage, setStage] = useState<"idle" | "uploading" | "processing" | "done">("idle");
   const [dragOver, setDragOver] = useState(false);
   const [fileName, setFileName] = useState("");
+  const [showDemo, setShowDemo] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { t } = useTranslation();
 
@@ -91,13 +93,14 @@ export default function Hero() {
                 >
                   {t("hero.cta1")}
                 </Link>
-                <Link
-                  href="/#how-it-works"
-                  className="px-8 py-3.5 rounded-full border border-cyber-border text-foreground hover:border-neon-purple/50 transition-colors flex items-center gap-2"
+                <button
+                  type="button"
+                  onClick={() => setShowDemo(true)}
+                  className="px-8 py-3.5 rounded-full border border-cyber-border text-foreground hover:border-neon-purple/50 transition-colors flex items-center gap-2 cursor-pointer"
                 >
                   <Play className="w-4 h-4" />
                   {t("hero.cta2")}
-                </Link>
+                </button>
               </div>
             </motion.div>
           </div>
@@ -279,6 +282,8 @@ export default function Hero() {
           </motion.div>
         </div>
       </div>
+
+      <DemoModal open={showDemo} onClose={() => setShowDemo(false)} />
     </section>
   );
 }

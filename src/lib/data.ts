@@ -31,6 +31,7 @@ export interface Asset {
   views: string;
   status: "live" | "sent" | "draft" | "scheduled";
   liked: boolean;
+  content?: string;
 }
 
 export interface Notification {

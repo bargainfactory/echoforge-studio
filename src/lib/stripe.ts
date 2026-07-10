@@ -12,6 +12,7 @@ export function getStripe() {
 }
 
 export const PRICE_IDS = {
+  lite: process.env.NEXT_PUBLIC_STRIPE_LITE_PRICE_ID || "price_lite",
   starter: process.env.NEXT_PUBLIC_STRIPE_STARTER_PRICE_ID || "price_starter",
   creatorPro: process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID || "price_pro",
   agency: process.env.NEXT_PUBLIC_STRIPE_AGENCY_PRICE_ID || "price_agency",

@@ -33,7 +33,11 @@ interface AppState {
   login: (email: string, password: string) => Promise<boolean>;
   signup: (name: string, email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
-  uploadProject: (fileName: string, fileSize: string) => Promise<Project | null>;
+  uploadProject: (
+    file: File | null,
+    transcript: string,
+    onProgress?: (pct: number) => void
+  ) => Promise<Project | null>;
   updateProject: (id: string, updates: Partial<Project>) => void;
   removeProject: (id: string) => Promise<void>;
   approveProject: (id: string) => Promise<void>;
@@ -57,6 +61,34 @@ async function api(path: string, init?: RequestInit) {
     ...init,
     headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
     cache: "no-store",
+  });
+}
+
+// Multipart POST with real upload-progress (fetch can't report upload progress).
+function xhrPost(
+  url: string,
+  form: FormData,
+  onProgress?: (pct: number) => void
+): Promise<{ ok: boolean; status: number; data: unknown }> {
+  return new Promise((resolve) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", url);
+    if (xhr.upload && onProgress) {
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
+      };
+    }
+    xhr.onload = () => {
+      let data: unknown = null;
+      try {
+        data = JSON.parse(xhr.responseText);
+      } catch {
+        /* non-JSON response */
+      }
+      resolve({ ok: xhr.status >= 200 && xhr.status < 300, status: xhr.status, data });
+    };
+    xhr.onerror = () => resolve({ ok: false, status: 0, data: null });
+    xhr.send(form);
   });
 }
 
@@ -157,25 +189,39 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [applyBootstrap, addToast]);
 
   const uploadProject = useCallback(
-    async (fileName: string, fileSize: string) => {
-      const title = fileName.replace(/\.[^.]+$/, "").replace(/[-_]/g, " ");
-      const res = await api("/api/projects", {
-        method: "POST",
-        body: JSON.stringify({ title, fileName, fileSize }),
-      });
+    async (
+      file: File | null,
+      transcript: string,
+      onProgress?: (pct: number) => void
+    ) => {
+      const derivedFromFile = file?.name?.replace(/\.[^.]+$/, "").replace(/[-_]/g, " ");
+      const derivedFromText = transcript.trim().split(/\s+/).slice(0, 7).join(" ");
+      const title = (derivedFromFile || derivedFromText || "Untitled project").trim();
+
+      const form = new FormData();
+      form.append("title", title);
+      if (transcript.trim()) form.append("transcript", transcript.trim());
+      if (file) form.append("file", file);
+
+      const res = await xhrPost("/api/projects", form, onProgress);
       if (!res.ok) {
         addToast("Upload failed — please sign in again", "error");
         return null;
       }
-      const { project } = await res.json();
+      const { project, assets: newAssets } = res.data as {
+        project: Project;
+        assets: Asset[];
+      };
       setProjects((prev) => [project, ...prev]);
-      addToast(`Project "${project.title}" created`);
-      // The server also created a "new project" notification.
+      if (newAssets?.length) setAssets((prev) => [...newAssets, ...prev]);
+      addToast(
+        `Generated ${newAssets?.length ?? 0} assets for "${project.title}"`
+      );
       api("/api/notifications")
         .then((r) => (r.ok ? r.json() : null))
         .then((d) => d && setNotifications(d.notifications))
         .catch(() => {});
-      return project as Project;
+      return project;
     },
     [addToast]
   );

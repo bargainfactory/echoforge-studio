@@ -7,6 +7,7 @@ import {
   defaultAssets,
   defaultNotifications,
 } from "@/lib/data";
+import { DEFAULT_PRICING, type PricingConfig } from "./pricing";
 
 /**
  * Durable backend store, backed by SQLite via Node's built-in `node:sqlite`
@@ -49,6 +50,8 @@ function getDb(): DatabaseSync {
       created_at   TEXT NOT NULL,
       file_name    TEXT,
       file_size    TEXT,
+      transcript   TEXT,
+      storage_path TEXT,
       sort         INTEGER NOT NULL
     );
     CREATE TABLE IF NOT EXISTS assets (
@@ -60,6 +63,7 @@ function getDb(): DatabaseSync {
       views      TEXT NOT NULL,
       status     TEXT NOT NULL,
       liked      INTEGER NOT NULL,
+      content    TEXT,
       sort       INTEGER NOT NULL
     );
     CREATE TABLE IF NOT EXISTS notifications (
@@ -72,10 +76,36 @@ function getDb(): DatabaseSync {
       type       TEXT NOT NULL,
       sort       INTEGER NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS pricing_config (
+      key   TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS integrations (
+      name   TEXT PRIMARY KEY,
+      config TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS reset_tokens (
+      token      TEXT PRIMARY KEY,
+      user_email TEXT NOT NULL,
+      expires_at INTEGER NOT NULL
+    );
     CREATE INDEX IF NOT EXISTS idx_projects_user ON projects(user_email);
     CREATE INDEX IF NOT EXISTS idx_assets_user ON assets(user_email);
     CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_email);
   `);
+
+  // Additive migrations for databases created before these columns existed.
+  for (const stmt of [
+    "ALTER TABLE projects ADD COLUMN transcript TEXT",
+    "ALTER TABLE projects ADD COLUMN storage_path TEXT",
+    "ALTER TABLE assets ADD COLUMN content TEXT",
+  ]) {
+    try {
+      conn.exec(stmt);
+    } catch {
+      /* column already exists */
+    }
+  }
 
   db = conn;
   return conn;
@@ -168,6 +198,83 @@ export function insertProject(email: string, p: Project): void {
     );
 }
 
+/**
+ * Creates a project already populated with its generated assets, landing
+ * directly in "review". Generation is synchronous, so there is no fake
+ * processing phase — the assets are real and ready to inspect immediately.
+ */
+export function createProjectWithAssets(
+  email: string,
+  meta: {
+    id: string;
+    title: string;
+    fileName?: string;
+    fileSize?: string;
+    transcript?: string;
+    storagePath?: string;
+  },
+  generated: { name: string; type: string; content: string }[]
+): { project: Project; assets: Asset[] } {
+  const lower = email.toLowerCase();
+  const now = new Date().toISOString();
+  const conn = getDb();
+  const total = generated.length;
+
+  conn
+    .prepare(
+      `INSERT INTO projects
+       (id, user_email, title, status, progress, assets_ready, assets_total, eta, created_at, file_name, file_size, transcript, storage_path, sort)
+       VALUES (?, ?, ?, 'review', 100, ?, ?, 'Awaiting approval', ?, ?, ?, ?, ?, ?)`
+    )
+    .run(
+      meta.id,
+      lower,
+      meta.title,
+      total,
+      total,
+      now,
+      meta.fileName ?? null,
+      meta.fileSize ?? null,
+      meta.transcript ?? null,
+      meta.storagePath ?? null,
+      Date.now()
+    );
+
+  const assets: Asset[] = generated.map((a, i) => {
+    const id = `a-${crypto.randomUUID()}`;
+    conn
+      .prepare(
+        `INSERT INTO assets (id, user_email, project_id, name, type, views, status, liked, content, sort)
+         VALUES (?, ?, ?, ?, ?, '—', 'draft', 0, ?, ?)`
+      )
+      .run(id, lower, meta.id, a.name, a.type, a.content, i);
+    return {
+      id,
+      projectId: meta.id,
+      name: a.name,
+      type: a.type,
+      views: "—",
+      status: "draft",
+      liked: false,
+      content: a.content,
+    };
+  });
+
+  const project: Project = {
+    id: meta.id,
+    title: meta.title,
+    status: "review",
+    progress: 100,
+    assetsReady: total,
+    assetsTotal: total,
+    eta: "Awaiting approval",
+    createdAt: now,
+    fileName: meta.fileName,
+    fileSize: meta.fileSize,
+  };
+  return { project, assets };
+}
+
 const PROJECT_COLUMNS: Record<string, string> = {
   title: "title",
   status: "status",
@@ -225,6 +332,7 @@ function mapAsset(row: Record<string, unknown>): Asset {
     views: row.views as string,
     status: row.status as Asset["status"],
     liked: Boolean(row.liked),
+    content: (row.content as string) ?? undefined,
   };
 }
 
@@ -317,6 +425,97 @@ export function markAllNotificationsRead(email: string): void {
   getDb()
     .prepare("UPDATE notifications SET read = 1 WHERE user_email = ?")
     .run(email.toLowerCase());
+}
+
+// --- Pricing ---
+
+/**
+ * Returns the pricing config from the DB, seeding it from DEFAULT_PRICING on
+ * first access. Prices/allotments can then be edited in the DB (or via
+ * setPricingConfig) and take effect without a redeploy.
+ */
+export function getPricingConfig(): PricingConfig {
+  const conn = getDb();
+  const row = conn
+    .prepare("SELECT value FROM pricing_config WHERE key = 'config'")
+    .get() as { value: string } | undefined;
+  if (row) {
+    try {
+      return JSON.parse(row.value) as PricingConfig;
+    } catch {
+      /* fall through to reseed on corrupt JSON */
+    }
+  }
+  conn
+    .prepare(
+      "INSERT OR REPLACE INTO pricing_config (key, value) VALUES ('config', ?)"
+    )
+    .run(JSON.stringify(DEFAULT_PRICING));
+  return DEFAULT_PRICING;
+}
+
+export function setPricingConfig(config: PricingConfig): void {
+  getDb()
+    .prepare(
+      "INSERT OR REPLACE INTO pricing_config (key, value) VALUES ('config', ?)"
+    )
+    .run(JSON.stringify(config));
+}
+
+// --- Integrations (API keys / connections stored server-side) ---
+
+export function getIntegrationRaw(name: string): Record<string, string> {
+  const row = getDb()
+    .prepare("SELECT config FROM integrations WHERE name = ?")
+    .get(name) as { config: string } | undefined;
+  if (!row) return {};
+  try {
+    return JSON.parse(row.config) as Record<string, string>;
+  } catch {
+    return {};
+  }
+}
+
+export function setIntegrationRaw(
+  name: string,
+  config: Record<string, string>
+): void {
+  getDb()
+    .prepare(
+      "INSERT OR REPLACE INTO integrations (name, config) VALUES (?, ?)"
+    )
+    .run(name, JSON.stringify(config));
+}
+
+// --- Password reset tokens ---
+
+export function createResetToken(
+  token: string,
+  email: string,
+  expiresAt: number
+): void {
+  getDb()
+    .prepare(
+      "INSERT OR REPLACE INTO reset_tokens (token, user_email, expires_at) VALUES (?, ?, ?)"
+    )
+    .run(token, email.toLowerCase(), expiresAt);
+}
+
+export function consumeResetToken(token: string): string | null {
+  const conn = getDb();
+  const row = conn
+    .prepare("SELECT user_email, expires_at FROM reset_tokens WHERE token = ?")
+    .get(token) as { user_email: string; expires_at: number } | undefined;
+  if (!row) return null;
+  conn.prepare("DELETE FROM reset_tokens WHERE token = ?").run(token);
+  if (row.expires_at < Date.now()) return null;
+  return row.user_email;
+}
+
+export function updateUserPassword(email: string, passwordHash: string): void {
+  getDb()
+    .prepare("UPDATE users SET password_hash = ? WHERE email = ?")
+    .run(passwordHash, email.toLowerCase());
 }
 
 // --- Seeding ---
