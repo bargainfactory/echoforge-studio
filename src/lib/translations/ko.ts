@@ -314,4 +314,16 @@ export const ko: Record<string, string> = {
 
   // Language
   "lang.switchLanguage": "언어",
+  "pricing.managedNote": "직접 운영해야 하는 또 하나의 앱이 아니라, 전 과정을 대신해 드립니다. 모든 결과물은 납품 전 사람이 직접 검수하며, 납기를 보장합니다.",
+  "pricing.liteName": "Lite",
+  "pricing.liteDesc": "1인 크리에이터를 위한 부담 없는 시작 플랜",
+  "pricing.clips160": "160개 이상의 클립",
+  "feat.2videos": "월 2편의 롱폼 영상",
+  "feat.12clips": "숏폼 클립 12개",
+  "feat.72hTurnaround": "72시간 내 납품",
+  "feat.24clips": "숏폼 클립 24개",
+  "feat.52clips": "숏폼 클립 52개 이상",
+  "feat.160clips": "숏폼 클립 160개 이상",
+  "footer.demoDisclaimer": "본 사이트는 데모 사이트입니다. 전반에 표시된 지표, 후기, 사례 연구, 팀원은 설명을 위한 예시 데이터이며 실제 고객이나 성과 기록이 아닙니다.",
+  "about.dataDisclaimer": "데모를 위해 표시된 예시 수치입니다. 감사를 거친 값이거나 실제 고객 성과가 아닙니다.",
 };

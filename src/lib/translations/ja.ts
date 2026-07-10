@@ -314,4 +314,16 @@ export const ja: Record<string, string> = {
 
   // Language
   "lang.switchLanguage": "言語",
+  "pricing.managedNote": "自分で動かすアプリではなく、丸ごとお任せ。すべてのアセットは納品前に人の目でチェックし、確実な納期でお届けします。",
+  "pricing.liteName": "Lite",
+  "pricing.liteDesc": "個人クリエイターが気軽に始められる入り口",
+  "pricing.clips160": "160本以上のクリップ",
+  "feat.2videos": "長尺動画 月2本",
+  "feat.12clips": "ショート動画 12本",
+  "feat.72hTurnaround": "72時間で納品",
+  "feat.24clips": "ショート動画 24本",
+  "feat.52clips": "ショート動画 52本以上",
+  "feat.160clips": "ショート動画 160本以上",
+  "footer.demoDisclaimer": "これはデモ用サイトです。掲載している指標、お客様の声、事例、チームメンバーはすべて説明のためのサンプルデータであり、実際の顧客や成果を示すものではありません。",
+  "about.dataDisclaimer": "デモ用に掲載した説明用のサンプル数値です。監査済みの数値でも、実際の顧客の成果でもありません。",
 };

@@ -314,4 +314,16 @@ export const de: Record<string, string> = {
 
   // Language
   "lang.switchLanguage": "Sprache",
+  "pricing.managedNote": "Rundum betreut statt noch einer App, die du selbst bedienen musst – jedes Asset wird vor der Auslieferung von Menschen geprüft, mit garantierter Bearbeitungszeit.",
+  "pricing.liteName": "Lite",
+  "pricing.liteDesc": "Ein unverbindlicher Einstieg für Solo-Creator",
+  "pricing.clips160": "160+ Clips",
+  "feat.2videos": "2 Langform-Videos pro Monat",
+  "feat.12clips": "12 Kurzform-Clips",
+  "feat.72hTurnaround": "Lieferung in 72 Stunden",
+  "feat.24clips": "24 Kurzform-Clips",
+  "feat.52clips": "52+ Kurzform-Clips",
+  "feat.160clips": "160+ Kurzform-Clips",
+  "footer.demoDisclaimer": "Dies ist eine Demo-Website. Alle gezeigten Kennzahlen, Testimonials, Fallstudien und Teammitglieder sind illustrative Beispieldaten und keine echten Kunden oder Ergebnisse.",
+  "about.dataDisclaimer": "Illustrative Beispielzahlen zu Demonstrationszwecken – weder geprüft noch echte Kundenergebnisse.",
 };

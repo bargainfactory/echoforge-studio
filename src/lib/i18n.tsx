@@ -19,7 +19,16 @@ export type Locale =
   | "zh"
   | "ko"
   | "ar"
-  | "hi";
+  | "hi"
+  | "ru"
+  | "it"
+  | "id"
+  | "tr"
+  | "vi"
+  | "nl"
+  | "pl"
+  | "th"
+  | "zh-TW";
 
 export interface LocaleInfo {
   code: Locale;
@@ -40,6 +49,15 @@ export const locales: LocaleInfo[] = [
   { code: "ko", name: "Korean", nativeName: "한국어", dir: "ltr", flag: "🇰🇷" },
   { code: "ar", name: "Arabic", nativeName: "العربية", dir: "rtl", flag: "🇸🇦" },
   { code: "hi", name: "Hindi", nativeName: "हिन्दी", dir: "ltr", flag: "🇮🇳" },
+  { code: "ru", name: "Russian", nativeName: "Русский", dir: "ltr", flag: "🇷🇺" },
+  { code: "it", name: "Italian", nativeName: "Italiano", dir: "ltr", flag: "🇮🇹" },
+  { code: "id", name: "Indonesian", nativeName: "Bahasa Indonesia", dir: "ltr", flag: "🇮🇩" },
+  { code: "tr", name: "Turkish", nativeName: "Türkçe", dir: "ltr", flag: "🇹🇷" },
+  { code: "vi", name: "Vietnamese", nativeName: "Tiếng Việt", dir: "ltr", flag: "🇻🇳" },
+  { code: "nl", name: "Dutch", nativeName: "Nederlands", dir: "ltr", flag: "🇳🇱" },
+  { code: "pl", name: "Polish", nativeName: "Polski", dir: "ltr", flag: "🇵🇱" },
+  { code: "th", name: "Thai", nativeName: "ไทย", dir: "ltr", flag: "🇹🇭" },
+  { code: "zh-TW", name: "Traditional Chinese", nativeName: "繁體中文", dir: "ltr", flag: "🇹🇼" },
 ];
 
 type TranslationDict = Record<string, string>;

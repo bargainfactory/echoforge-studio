@@ -314,4 +314,16 @@ export const es: Record<string, string> = {
 
   // Language
   "lang.switchLanguage": "Idioma",
+  "pricing.managedNote": "Lo hacemos por ti, no es otra app que gestionar: cada recurso pasa por revisión humana antes de entregarse, con un plazo garantizado.",
+  "pricing.liteName": "Lite",
+  "pricing.liteDesc": "Un punto de partida sin compromiso para creadores independientes",
+  "pricing.clips160": "Más de 160 clips",
+  "feat.2videos": "2 vídeos de formato largo al mes",
+  "feat.12clips": "12 clips de formato corto",
+  "feat.72hTurnaround": "Entrega en 72 horas",
+  "feat.24clips": "24 clips de formato corto",
+  "feat.52clips": "Más de 52 clips de formato corto",
+  "feat.160clips": "Más de 160 clips de formato corto",
+  "footer.demoDisclaimer": "Este es un sitio de demostración. Las métricas, los testimonios, los casos de éxito y los miembros del equipo que se muestran son datos de ejemplo ilustrativos, no registros de clientes ni resultados reales.",
+  "about.dataDisclaimer": "Cifras de ejemplo ilustrativas mostradas con fines de demostración; no son resultados auditados ni de clientes reales.",
 };
