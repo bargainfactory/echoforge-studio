@@ -16,33 +16,33 @@ import { useTranslation } from "@/lib/i18n";
 const initialProjects = [
   {
     id: "t-1",
-    title: "Episode 47 — AI Side Hustles",
+    titleKey: "dashTeaser.proj1Title",
     status: "processing",
     statusKey: "dashTeaser.inProgress",
     statusColor: "text-warning bg-warning/10",
     progress: 65,
     assets: 8,
-    due: "2h remaining",
+    dueKey: "dashTeaser.due1",
   },
   {
     id: "t-2",
-    title: "Episode 46 — Passive Income",
+    titleKey: "dashTeaser.proj2Title",
     status: "review",
     statusKey: "dashTeaser.readyToApprove",
     statusColor: "text-neon-purple bg-neon-purple/10",
     progress: 100,
     assets: 12,
-    due: "Awaiting review",
+    dueKey: "dashTeaser.due2",
   },
   {
     id: "t-3",
-    title: "Episode 45 — Morning Routines",
+    titleKey: "dashTeaser.proj3Title",
     status: "published",
     statusKey: "dashTeaser.published",
     statusColor: "text-success bg-success/10",
     progress: 100,
     assets: 10,
-    due: "3 days ago",
+    dueKey: "dashTeaser.due3",
   },
 ];
 
@@ -54,7 +54,7 @@ export default function DashboardTeaser() {
     setProjects((prev) =>
       prev.map((p) =>
         p.id === id
-          ? { ...p, status: "published", statusKey: "dashTeaser.published", statusColor: "text-success bg-success/10", due: "Just now" }
+          ? { ...p, status: "published", statusKey: "dashTeaser.published", statusColor: "text-success bg-success/10", dueKey: "dashTeaser.dueNow" }
           : p
       )
     );
@@ -146,7 +146,7 @@ export default function DashboardTeaser() {
                     >
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-foreground truncate">
-                          {project.title}
+                          {t(project.titleKey)}
                         </p>
                         <div className="flex items-center gap-3 mt-1">
                           <span
@@ -155,7 +155,7 @@ export default function DashboardTeaser() {
                             {t(project.statusKey)}
                           </span>
                           <span className="text-xs text-cyber-muted">
-                            {project.assets} assets
+                            {project.assets} {t("dashTeaser.assetsWord")}
                           </span>
                         </div>
                       </div>
@@ -168,7 +168,7 @@ export default function DashboardTeaser() {
                         </div>
                       </div>
                       <span className="text-xs text-cyber-muted whitespace-nowrap">
-                        {project.due}
+                        {t(project.dueKey)}
                       </span>
                       {project.status === "review" && (
                         <button

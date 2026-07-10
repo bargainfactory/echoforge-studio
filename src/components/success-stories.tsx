@@ -8,41 +8,37 @@ const stories = [
   {
     name: "Alex Rivera",
     avatar: "AR",
-    role: "Finance YouTuber",
-    quote:
-      "I went from 2K to 180K subscribers in 6 months — all faceless shorts generated from my podcast. EchoForge literally changed my life.",
+    roleKey: "stories.s1Role",
+    quoteKey: "stories.s1Quote",
     metric: "180K subs",
-    metricLabel: "in 6 months",
+    metricLabelKey: "stories.s1MetricLabel",
     color: "from-emerald-500 to-emerald-600",
   },
   {
     name: "Sarah Chen",
     avatar: "SC",
-    role: "Online Course Creator",
-    quote:
-      "They repurposed my 40-hour course into 300+ pieces of content. My course sales tripled from the organic traffic alone.",
+    roleKey: "stories.s2Role",
+    quoteKey: "stories.s2Quote",
     metric: "3x sales",
-    metricLabel: "from repurposed content",
+    metricLabelKey: "stories.s2MetricLabel",
     color: "from-neon-purple to-neon-purple-light",
   },
   {
     name: "Marcus Johnson",
     avatar: "MJ",
-    role: "Tech Podcaster",
-    quote:
-      "The AI pipeline is insane. I record once, and EchoForge handles everything — shorts, newsletters, carousels. I just approve and publish.",
+    roleKey: "stories.s3Role",
+    quoteKey: "stories.s3Quote",
     metric: "$12K/mo",
-    metricLabel: "passive income",
+    metricLabelKey: "stories.s3MetricLabel",
     color: "from-electric-blue to-electric-blue-light",
   },
   {
     name: "Priya Patel",
     avatar: "PP",
-    role: "Wellness Coach",
-    quote:
-      "As an introvert, faceless content was a game-changer. My TikTok hit 500K followers without me ever showing my face on camera.",
+    roleKey: "stories.s4Role",
+    quoteKey: "stories.s4Quote",
     metric: "500K",
-    metricLabel: "TikTok followers",
+    metricLabelKey: "stories.s4MetricLabel",
     color: "from-pink-500 to-pink-600",
   },
 ];
@@ -92,7 +88,7 @@ export default function SuccessStories() {
                 </div>
                 <div>
                   <p className="font-semibold text-foreground">{story.name}</p>
-                  <p className="text-sm text-cyber-muted">{story.role}</p>
+                  <p className="text-sm text-cyber-muted">{t(story.roleKey)}</p>
                 </div>
                 <div className="ml-auto flex gap-0.5">
                   {[...Array(5)].map((_, j) => (
@@ -104,11 +100,11 @@ export default function SuccessStories() {
                 </div>
               </div>
               <p className="text-sm text-cyber-muted mb-4 italic">
-                &ldquo;{story.quote}&rdquo;
+                &ldquo;{t(story.quoteKey)}&rdquo;
               </p>
               <div className="flex items-center gap-2 pt-4 border-t border-cyber-border">
                 <span className="text-xl font-bold gradient-text">{story.metric}</span>
-                <span className="text-xs text-cyber-muted">{story.metricLabel}</span>
+                <span className="text-xs text-cyber-muted">{t(story.metricLabelKey)}</span>
               </div>
             </motion.div>
           ))}

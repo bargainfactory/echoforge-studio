@@ -7,19 +7,21 @@ import { ArrowLeft, Clock, Tag, Search, ArrowRight } from "lucide-react";
 import { blogPosts } from "@/lib/data";
 import { useTranslation } from "@/lib/i18n";
 
-const categories = ["All", ...Array.from(new Set(blogPosts.map((p) => p.category)))];
-
 export default function BlogPage() {
   const { t } = useTranslation();
   const [activeCategory, setActiveCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
 
+  const cat = (slug: string) => t(`blog.${slug}.category`);
+  const categories = ["All", ...Array.from(new Set(blogPosts.map((p) => cat(p.slug))))];
+
   const filtered = blogPosts.filter((post) => {
-    const matchesCategory = activeCategory === "All" || post.category === activeCategory;
+    const matchesCategory = activeCategory === "All" || cat(post.slug) === activeCategory;
+    const q = searchQuery.toLowerCase();
     const matchesSearch =
-      !searchQuery ||
-      post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      post.excerpt.toLowerCase().includes(searchQuery.toLowerCase());
+      !q ||
+      t(`blog.${post.slug}.title`).toLowerCase().includes(q) ||
+      t(`blog.${post.slug}.excerpt`).toLowerCase().includes(q);
     return matchesCategory && matchesSearch;
   });
 
@@ -96,16 +98,16 @@ export default function BlogPage() {
                 <div className="p-6">
                   <div className="flex items-center gap-3 mb-3">
                     <span className="flex items-center gap-1 text-xs text-neon-purple">
-                      <Tag className="w-3 h-3" /> {post.category}
+                      <Tag className="w-3 h-3" /> {cat(post.slug)}
                     </span>
                     <span className="flex items-center gap-1 text-xs text-cyber-muted">
-                      <Clock className="w-3 h-3" /> {post.readTime}
+                      <Clock className="w-3 h-3" /> {t(`blog.${post.slug}.readTime`)}
                     </span>
                   </div>
                   <h3 className="font-semibold text-foreground mb-2 group-hover:text-neon-purple transition-colors">
-                    {post.title}
+                    {t(`blog.${post.slug}.title`)}
                   </h3>
-                  <p className="text-sm text-cyber-muted mb-4">{post.excerpt}</p>
+                  <p className="text-sm text-cyber-muted mb-4">{t(`blog.${post.slug}.excerpt`)}</p>
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-cyber-muted">{post.date}</span>
                     <span className="text-xs text-neon-purple flex items-center gap-1 group-hover:underline">

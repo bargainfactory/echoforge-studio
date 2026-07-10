@@ -19,37 +19,37 @@ export default function HowItWorks() {
       icon: Upload,
       title: t("hiw.step1Title"),
       description: t("hiw.step1Desc"),
-      detail: "Supports MP4, MOV, MP3, WAV up to 4 hours",
+      detail: t("hiw.detail1"),
     },
     {
       icon: Brain,
       title: t("hiw.step2Title"),
       description: t("hiw.step2Desc"),
-      detail: "GPT-4 + custom models for content scoring",
+      detail: t("hiw.detail2"),
     },
     {
       icon: Scissors,
       title: t("hiw.step3Title"),
       description: t("hiw.step3Desc"),
-      detail: "Retention-optimized cuts with hook detection",
+      detail: t("hiw.detail3"),
     },
     {
       icon: Palette,
       title: t("hiw.step4Title"),
       description: t("hiw.step4Desc"),
-      detail: "ElevenLabs voiceover + stock footage overlay",
+      detail: t("hiw.detail4"),
     },
     {
       icon: CheckCircle,
       title: t("hiw.step5Title"),
       description: t("hiw.step5Desc"),
-      detail: "Avg. 2 revision rounds included",
+      detail: t("hiw.detail5"),
     },
     {
       icon: Rocket,
       title: t("hiw.step6Title"),
       description: t("hiw.step6Desc"),
-      detail: "TikTok, YouTube, LinkedIn, Instagram, Twitter",
+      detail: t("hiw.detail6"),
     },
   ];
 

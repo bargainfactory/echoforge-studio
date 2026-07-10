@@ -54,16 +54,16 @@ export default function BlogPreview() {
                 <div className="p-6">
                   <div className="flex items-center gap-3 mb-3">
                     <span className="flex items-center gap-1 text-xs text-neon-purple">
-                      <Tag className="w-3 h-3" /> {post.category}
+                      <Tag className="w-3 h-3" /> {t(`blog.${post.slug}.category`)}
                     </span>
                     <span className="flex items-center gap-1 text-xs text-cyber-muted">
-                      <Clock className="w-3 h-3" /> {post.readTime}
+                      <Clock className="w-3 h-3" /> {t(`blog.${post.slug}.readTime`)}
                     </span>
                   </div>
                   <h3 className="font-semibold text-foreground mb-2 group-hover:text-neon-purple transition-colors">
-                    {post.title}
+                    {t(`blog.${post.slug}.title`)}
                   </h3>
-                  <p className="text-sm text-cyber-muted">{post.excerpt}</p>
+                  <p className="text-sm text-cyber-muted">{t(`blog.${post.slug}.excerpt`)}</p>
                 </div>
               </Link>
             </motion.article>

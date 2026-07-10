@@ -80,13 +80,16 @@ export default function Pricing() {
     }, 1500);
   }
 
+  const oneoffKey = (id: string, part: "Name" | "Items") =>
+    `pricing.oneoff${id.charAt(0).toUpperCase()}${id.slice(1)}${part}`;
+
   function handleOneOffClick(pkg: OneOffData) {
     if (!user) {
       addToast(t("pricing.signUpFirst"), "info");
       router.push("/signup");
       return;
     }
-    addToast(`${pkg.name} selected — $${pkg.price}`);
+    addToast(`${t(oneoffKey(pkg.id, "Name"))} — $${pkg.price}`);
     setTimeout(() => {
       addToast("Demo mode: One-time Stripe payment would process here.", "info");
     }, 1500);
@@ -310,9 +313,9 @@ export default function Pricing() {
                   onClick={() => handleOneOffClick(pkg)}
                   className="bg-cyber-card border border-cyber-border rounded-xl p-6 text-center card-hover cursor-pointer"
                 >
-                  <p className="font-medium text-foreground mb-1">{pkg.name}</p>
+                  <p className="font-medium text-foreground mb-1">{t(oneoffKey(pkg.id, "Name"))}</p>
                   <p className="text-2xl font-bold gradient-text mb-1">${pkg.price}</p>
-                  <p className="text-sm text-cyber-muted">{pkg.items}</p>
+                  <p className="text-sm text-cyber-muted">{t(oneoffKey(pkg.id, "Items"))}</p>
                 </button>
               ))}
             </div>

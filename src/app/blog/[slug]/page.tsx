@@ -34,16 +34,16 @@ export default function BlogPostPage({ params }: { params: Promise<{ slug: strin
 
           <div className="flex items-center gap-4 mb-4">
             <span className="flex items-center gap-1.5 text-sm text-neon-purple">
-              <Tag className="w-3.5 h-3.5" /> {post.category}
+              <Tag className="w-3.5 h-3.5" /> {t(`blog.${post.slug}.category`)}
             </span>
             <span className="flex items-center gap-1.5 text-sm text-cyber-muted">
-              <Clock className="w-3.5 h-3.5" /> {post.readTime}
+              <Clock className="w-3.5 h-3.5" /> {t(`blog.${post.slug}.readTime`)}
             </span>
             <span className="text-sm text-cyber-muted">{post.date}</span>
           </div>
 
           <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-8 leading-tight">
-            {post.title}
+            {t(`blog.${post.slug}.title`)}
           </h1>
 
           <div className="flex items-center gap-4 pb-8 mb-8 border-b border-cyber-border">
@@ -69,7 +69,7 @@ export default function BlogPostPage({ params }: { params: Promise<{ slug: strin
           </div>
 
           <div className="mt-12 pt-8 border-t border-cyber-border">
-            <h3 className="text-lg font-semibold text-foreground mb-4">Related Articles</h3>
+            <h3 className="text-lg font-semibold text-foreground mb-4">{t("blog.related")}</h3>
             <div className="grid sm:grid-cols-2 gap-4">
               {blogPosts
                 .filter((p) => p.slug !== post.slug && p.category === post.category)
@@ -80,8 +80,8 @@ export default function BlogPostPage({ params }: { params: Promise<{ slug: strin
                     href={`/blog/${related.slug}`}
                     className="bg-cyber-card border border-cyber-border rounded-xl p-4 hover:border-neon-purple/30 transition-colors"
                   >
-                    <span className="text-xs text-neon-purple">{related.category}</span>
-                    <p className="text-sm font-medium text-foreground mt-1">{related.title}</p>
+                    <span className="text-xs text-neon-purple">{t(`blog.${related.slug}.category`)}</span>
+                    <p className="text-sm font-medium text-foreground mt-1">{t(`blog.${related.slug}.title`)}</p>
                   </Link>
                 ))}
             </div>

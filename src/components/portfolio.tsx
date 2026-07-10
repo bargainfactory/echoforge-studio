@@ -8,74 +8,74 @@ import { useTranslation } from "@/lib/i18n";
 const portfolioItems = [
   {
     id: 1,
-    title: "AI Productivity Hacks",
+    titleKey: "portfolio.item1Title",
     platform: "YouTube Shorts",
     views: "2.4M",
     likes: "89K",
     comments: "3.2K",
     thumbnail: "from-violet-600 via-purple-600 to-indigo-600",
-    category: "Tech",
-    description: "A faceless short breaking down 5 AI tools that save 10+ hours per week. Uses screen recordings, animated text overlays, and AI-generated voiceover.",
+    categoryKey: "portfolio.item1Cat",
+    descKey: "portfolio.item1Desc",
     duration: "0:58",
   },
   {
     id: 2,
-    title: "5 Money Rules Nobody Teaches",
+    titleKey: "portfolio.item2Title",
     platform: "TikTok",
     views: "1.8M",
     likes: "124K",
     comments: "5.6K",
     thumbnail: "from-emerald-600 via-green-600 to-teal-600",
-    category: "Finance",
-    description: "High-retention finance clip with kinetic typography, stock footage overlays, and a compelling hook that drove 124K likes.",
+    categoryKey: "portfolio.item2Cat",
+    descKey: "portfolio.item2Desc",
     duration: "0:45",
   },
   {
     id: 3,
-    title: "The Stoic Morning Routine",
+    titleKey: "portfolio.item3Title",
     platform: "Instagram Reels",
     views: "890K",
     likes: "67K",
     comments: "2.1K",
     thumbnail: "from-amber-600 via-orange-600 to-red-600",
-    category: "Lifestyle",
-    description: "Cinematic B-roll sequences with motivational AI voiceover. Calm, aesthetic editing style optimized for saves and shares.",
+    categoryKey: "portfolio.item3Cat",
+    descKey: "portfolio.item3Desc",
     duration: "1:12",
   },
   {
     id: 4,
-    title: "How Markets Really Work",
+    titleKey: "portfolio.item4Title",
     platform: "YouTube Shorts",
     views: "3.1M",
     likes: "156K",
     comments: "8.4K",
     thumbnail: "from-blue-600 via-cyan-600 to-teal-600",
-    category: "Finance",
-    description: "Animated explainer using motion graphics to visualize market mechanics. Our highest-performing faceless short to date.",
+    categoryKey: "portfolio.item4Cat",
+    descKey: "portfolio.item4Desc",
     duration: "0:52",
   },
   {
     id: 5,
-    title: "Python in 60 Seconds",
+    titleKey: "portfolio.item5Title",
     platform: "TikTok",
     views: "1.2M",
     likes: "93K",
     comments: "4.7K",
     thumbnail: "from-yellow-500 via-amber-500 to-orange-500",
-    category: "Tech",
-    description: "Code walkthrough with syntax-highlighted screen capture, zoom animations, and step-by-step AI narration.",
+    categoryKey: "portfolio.item5Cat",
+    descKey: "portfolio.item5Desc",
     duration: "1:00",
   },
   {
     id: 6,
-    title: "Sleep Science Explained",
+    titleKey: "portfolio.item6Title",
     platform: "Instagram Reels",
     views: "670K",
     likes: "45K",
     comments: "1.8K",
     thumbnail: "from-indigo-600 via-blue-600 to-cyan-600",
-    category: "Health",
-    description: "Data visualization meets storytelling — animated charts and calming visuals explain the science of sleep cycles.",
+    categoryKey: "portfolio.item6Cat",
+    descKey: "portfolio.item6Desc",
     duration: "0:48",
   },
 ];
@@ -120,14 +120,14 @@ export default function Portfolio() {
                   <Play className="w-6 h-6 text-white ml-1" />
                 </div>
                 <div className="absolute top-3 left-3 px-2 py-1 rounded-md bg-black/50 backdrop-blur-sm text-xs text-white font-medium">
-                  {item.category}
+                  {t(item.categoryKey)}
                 </div>
                 <div className="absolute top-3 right-3 px-2 py-1 rounded-md bg-black/50 backdrop-blur-sm text-xs text-white">
                   {item.platform}
                 </div>
               </div>
               <div className="p-4">
-                <h3 className="font-medium text-foreground mb-3">{item.title}</h3>
+                <h3 className="font-medium text-foreground mb-3">{t(item.titleKey)}</h3>
                 <div className="flex items-center gap-4 text-xs text-cyber-muted">
                   <span className="flex items-center gap-1">
                     <Eye className="w-3.5 h-3.5" /> {item.views}
@@ -179,11 +179,11 @@ export default function Portfolio() {
               </div>
               <div className="p-6">
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-neon-purple/10 text-neon-purple">{selected.category}</span>
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-neon-purple/10 text-neon-purple">{t(selected.categoryKey)}</span>
                   <span className="text-xs text-cyber-muted">{selected.platform}</span>
                 </div>
-                <h3 className="text-lg font-semibold text-foreground mb-2">{selected.title}</h3>
-                <p className="text-sm text-cyber-muted mb-4">{selected.description}</p>
+                <h3 className="text-lg font-semibold text-foreground mb-2">{t(selected.titleKey)}</h3>
+                <p className="text-sm text-cyber-muted mb-4">{t(selected.descKey)}</p>
                 <div className="flex items-center gap-6 text-sm text-cyber-muted pb-4 border-b border-cyber-border">
                   <span className="flex items-center gap-1.5"><Eye className="w-4 h-4" /> {selected.views}</span>
                   <span className="flex items-center gap-1.5"><Heart className="w-4 h-4" /> {selected.likes}</span>
