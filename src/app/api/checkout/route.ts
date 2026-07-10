@@ -1,14 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getPricingConfig } from "@/lib/server/db";
+import { resolveField, isConfigured } from "@/lib/server/integrations";
 
 // Server-side allow-list of the plans/packages that may be checked out. A
 // client-supplied priceId must match one of these before it is ever handed to
-// Stripe — this blocks price tampering (e.g. checking out "agency" at the
-// "free" price) and reflected-parameter abuse.
-const ALLOWED_PRICE_IDS = new Set([
-  "starter",
-  "creatorPro",
-  "agency",
-]);
+// Stripe — this blocks price tampering and reflected-parameter abuse.
+const ALLOWED_PRICE_IDS = new Set(["lite", "starter", "creatorPro", "agency"]);
+
+function form(params: Record<string, string>): string {
+  return Object.entries(params)
+    .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+    .join("&");
+}
 
 export async function POST(req: NextRequest) {
   let body: unknown;
@@ -23,23 +26,44 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unknown priceId" }, { status: 400 });
   }
 
-  // Stripe integration skeleton — replace with real Stripe SDK server-side.
-  // The validated `priceId` above should be mapped to the real Stripe price via
-  // an env-configured lookup before creating the session:
-  //
-  // import Stripe from 'stripe';
-  // const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-  // const session = await stripe.checkout.sessions.create({
-  //   mode: 'subscription',
-  //   payment_method_types: ['card'],
-  //   line_items: [{ price: STRIPE_PRICE_MAP[priceId], quantity: 1 }],
-  //   success_url: `${req.nextUrl.origin}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
-  //   cancel_url: `${req.nextUrl.origin}/pricing`,
-  // });
-  // return NextResponse.json({ url: session.url });
+  // Real Stripe when a secret key is connected; otherwise demo mode.
+  if (isConfigured("stripe")) {
+    const secret = resolveField("stripe", "secretKey")!;
+    const plan = getPricingConfig().plans.find((p) => p.priceId === priceId);
+    const amount = typeof plan?.price === "number" ? plan.price : 0;
+    if (amount <= 0) {
+      return NextResponse.json({ error: "Plan is not purchasable" }, { status: 400 });
+    }
+    try {
+      const resp = await fetch("https://api.stripe.com/v1/checkout/sessions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${secret}`,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: form({
+          mode: "subscription",
+          "line_items[0][quantity]": "1",
+          "line_items[0][price_data][currency]": "usd",
+          "line_items[0][price_data][unit_amount]": String(Math.round(amount * 100)),
+          "line_items[0][price_data][recurring][interval]": "month",
+          "line_items[0][price_data][product_data][name]": `EchoForge ${priceId}`,
+          success_url: `${req.nextUrl.origin}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
+          cancel_url: `${req.nextUrl.origin}/pricing`,
+        }),
+      });
+      const data = await resp.json();
+      if (resp.ok && data.url) {
+        return NextResponse.json({ url: data.url });
+      }
+      // fall through to demo on Stripe error
+    } catch {
+      /* fall through to demo */
+    }
+  }
 
   return NextResponse.json({
     url: `${req.nextUrl.origin}/dashboard?demo_checkout=${encodeURIComponent(priceId)}`,
-    message: "Demo mode — connect your Stripe secret key to activate real payments.",
+    message: "Demo mode — connect Stripe in Settings → Integrations to accept real payments.",
   });
 }
