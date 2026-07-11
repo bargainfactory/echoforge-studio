@@ -7,10 +7,21 @@ import {
   initialsFor,
 } from "@/lib/auth/session";
 import { createUser, findUser, seedUser } from "@/lib/server/db";
+import { rateLimit, clientIp } from "@/lib/server/rate-limit";
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 export async function POST(req: NextRequest) {
+  // Throttle per-IP so the "email already exists" response can't be used to
+  // enumerate accounts at scale, and to blunt automated signup abuse.
+  const gate = rateLimit(`signup:${clientIp(req)}`, 10, 15 * 60 * 1000);
+  if (!gate.ok) {
+    return NextResponse.json(
+      { error: "Too many attempts. Please try again later." },
+      { status: 429, headers: { "Retry-After": String(gate.retryAfterSeconds) } }
+    );
+  }
+
   let body: unknown;
   try {
     body = await req.json();

@@ -25,11 +25,16 @@ interface IntegrationStatus {
 export default function IntegrationsPanel() {
   const { addToast } = useApp();
   const [items, setItems] = useState<IntegrationStatus[] | null>(null);
+  const [forbidden, setForbidden] = useState(false);
   const [drafts, setDrafts] = useState<Record<string, Record<string, string>>>({});
   const [saving, setSaving] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     const res = await fetch("/api/integrations", { cache: "no-store" });
+    if (res.status === 403) {
+      setForbidden(true);
+      return;
+    }
     if (res.ok) {
       const data = await res.json();
       setItems(data.integrations);
@@ -37,8 +42,22 @@ export default function IntegrationsPanel() {
   }, []);
 
   useEffect(() => {
-    load();
-  }, [load]);
+    let active = true;
+    (async () => {
+      const res = await fetch("/api/integrations", { cache: "no-store" });
+      if (!active) return;
+      if (res.status === 403) {
+        setForbidden(true);
+        return;
+      }
+      if (!res.ok) return;
+      const data = await res.json();
+      if (active) setItems(data.integrations);
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const setField = (name: string, key: string, value: string) =>
     setDrafts((d) => ({ ...d, [name]: { ...(d[name] ?? {}), [key]: value } }));
@@ -85,7 +104,11 @@ export default function IntegrationsPanel() {
         Connect keys to activate real features. Everything works without them — this is where you turn on the real thing when ready.
       </p>
 
-      {!items ? (
+      {forbidden ? (
+        <p className="text-xs text-cyber-muted py-4">
+          Integration management is restricted to platform administrators.
+        </p>
+      ) : !items ? (
         <div className="flex justify-center py-8">
           <Loader2 className="w-5 h-5 text-cyber-muted animate-spin" />
         </div>

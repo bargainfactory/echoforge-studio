@@ -8,12 +8,19 @@ import {
   listProjects,
 } from "@/lib/server/db";
 import { generateAssets } from "@/lib/server/generate";
+import { rateLimit } from "@/lib/server/rate-limit";
 
 export const dynamic = "force-dynamic";
 
 // Cap the raw upload we persist to disk (the transcript, not the media, drives
 // generation — so a large media file is stored for reference only).
 const MAX_UPLOAD_BYTES = 200 * 1024 * 1024; // 200 MB
+// Reject the whole request body before it is buffered into memory. Allows some
+// multipart overhead above the single-file cap.
+const MAX_REQUEST_BYTES = 220 * 1024 * 1024; // 220 MB
+// Each generation may invoke a paid LLM call; bound per-account spend/abuse.
+const GEN_LIMIT = 20;
+const GEN_WINDOW_MS = 60 * 60 * 1000; // per hour
 
 export async function GET() {
   const user = await getSessionUser();
@@ -24,6 +31,24 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const gate = rateLimit(`gen:${user.email}`, GEN_LIMIT, GEN_WINDOW_MS);
+  if (!gate.ok) {
+    return NextResponse.json(
+      { error: "Generation limit reached. Please try again later." },
+      { status: 429, headers: { "Retry-After": String(gate.retryAfterSeconds) } }
+    );
+  }
+
+  // Reject an oversized body before Next buffers it (multipart is parsed fully
+  // into memory), rather than after.
+  const declaredLength = Number(req.headers.get("content-length") ?? 0);
+  if (declaredLength > MAX_REQUEST_BYTES) {
+    return NextResponse.json(
+      { error: "Request exceeds the 200 MB upload limit for this demo" },
+      { status: 413 }
+    );
+  }
 
   const contentType = req.headers.get("content-type") ?? "";
   let title = "";

@@ -77,7 +77,7 @@ export default function Hero() {
     } catch {
       setStage("idle");
     }
-  }, [input]);
+  }, [input, locale]);
 
   return (
     <section className="relative flex items-center justify-center pt-28 pb-20 lg:pt-32 overflow-hidden">

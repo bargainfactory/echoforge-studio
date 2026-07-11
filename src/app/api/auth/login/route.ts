@@ -7,8 +7,17 @@ import {
   verifyPassword,
 } from "@/lib/auth/session";
 import { findUser } from "@/lib/server/db";
+import { rateLimit, clientIp } from "@/lib/server/rate-limit";
 
 export async function POST(req: NextRequest) {
+  const gate = rateLimit(`login:${clientIp(req)}`, 10, 15 * 60 * 1000);
+  if (!gate.ok) {
+    return NextResponse.json(
+      { error: "Too many attempts. Please try again later." },
+      { status: 429, headers: { "Retry-After": String(gate.retryAfterSeconds) } }
+    );
+  }
+
   let body: unknown;
   try {
     body = await req.json();

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSessionUser } from "@/lib/server/auth";
+import { getAdminUser } from "@/lib/server/auth";
 import {
   getIntegrationDef,
   saveIntegration,
@@ -8,14 +8,15 @@ import {
 
 export const dynamic = "force-dynamic";
 
-/** Save keys/credentials for one integration (auth-gated). Secrets are stored
+/** Save keys/credentials for one integration (ADMIN-only — these are shared,
+ *  cross-tenant platform secrets, not per-user settings). Secrets are stored
  *  server-side and never returned. */
 export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ name: string }> }
 ) {
-  const user = await getSessionUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const user = await getAdminUser();
+  if (!user) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const { name } = await params;
   if (!getIntegrationDef(name)) {

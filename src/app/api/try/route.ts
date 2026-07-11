@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateAssetsDeterministic } from "@/lib/server/generate";
 import { insertEvent } from "@/lib/server/db";
+import { rateLimit, clientIp } from "@/lib/server/rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +11,15 @@ export const dynamic = "force-dynamic";
  * cost, no DB writes) — the signup-gated flow upgrades to Claude/GPT quality.
  */
 export async function POST(req: NextRequest) {
+  // Public endpoint — throttle per-IP to bound anonymous DB writes / compute.
+  const gate = rateLimit(`try:${clientIp(req)}`, 20, 5 * 60 * 1000);
+  if (!gate.ok) {
+    return NextResponse.json(
+      { error: "Too many requests" },
+      { status: 429, headers: { "Retry-After": String(gate.retryAfterSeconds) } }
+    );
+  }
+
   let body: unknown;
   try {
     body = await req.json();

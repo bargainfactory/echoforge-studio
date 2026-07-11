@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getPricingConfig } from "@/lib/server/db";
 import { resolveField, isConfigured } from "@/lib/server/integrations";
+import { rateLimit, clientIp } from "@/lib/server/rate-limit";
 
 // Server-side allow-list of the plans/packages that may be checked out. A
 // client-supplied priceId must match one of these before it is ever handed to
@@ -14,6 +15,16 @@ function form(params: Record<string, string>): string {
 }
 
 export async function POST(req: NextRequest) {
+  // This endpoint is unauthenticated (checkout can precede signup) and creates
+  // Stripe sessions, so throttle per-IP to prevent session-creation spam.
+  const gate = rateLimit(`checkout:${clientIp(req)}`, 10, 10 * 60 * 1000);
+  if (!gate.ok) {
+    return NextResponse.json(
+      { error: "Too many requests" },
+      { status: 429, headers: { "Retry-After": String(gate.retryAfterSeconds) } }
+    );
+  }
+
   let body: unknown;
   try {
     body = await req.json();

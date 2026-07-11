@@ -206,14 +206,18 @@ async function generateWithLLM(
   if (anthropicKey) {
     const { default: Anthropic } = await import("@anthropic-ai/sdk");
     const client = new Anthropic({ apiKey: anthropicKey });
-    const res = await client.messages.create({
+    // Stream so adaptive thinking + the structured JSON output share a generous
+    // token budget without risking an HTTP timeout or a mid-object truncation
+    // that would silently drop us to the deterministic engine.
+    const stream = client.messages.stream({
       model: "claude-opus-4-8",
-      max_tokens: 16000,
+      max_tokens: 32000,
       thinking: { type: "adaptive" },
       system: LLM_SYSTEM,
       output_config: { format: { type: "json_schema", schema: LLM_SCHEMA } },
       messages: [{ role: "user", content: userPrompt }],
     });
+    const res = await stream.finalMessage();
     const text = res.content
       .filter((b) => b.type === "text")
       .map((b) => (b as { text: string }).text)
