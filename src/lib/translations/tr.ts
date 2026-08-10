@@ -444,4 +444,14 @@ export const tr: Record<string, string> = {
   "asset.regenerating": "Yeniden üretiliyor…",
   "asset.regenDone": "Varlık yeniden üretildi",
   "asset.regenFailed": "Varlık yeniden üretilemedi",
+
+  // Real analytics
+  "dash.analyticsLive": "Kendi çalışma alanınızdan canlı rakamlar — gösteriş metriği yok.",
+  "dash.publishedPosts": "Yayınlanan gönderiler",
+  "dash.scheduledPosts": "Planlanan gönderiler",
+  "dash.likedAssets": "Beğenilen varlıklar",
+  "dash.scheduledLower": "planlandı",
+  "dash.assetMix": "Varlık dağılımı",
+  "dash.recentPublishes": "Son yayınlananlar",
+  "dash.noAnalytics": "Henüz etkinlik yok — varlık üretin, platformlarınıza planlayın; gerçek performansınız burada görünecek.",
 };

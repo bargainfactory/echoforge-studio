@@ -444,4 +444,14 @@ export const id: Record<string, string> = {
   "asset.regenerating": "Membuat ulang…",
   "asset.regenDone": "Aset dibuat ulang",
   "asset.regenFailed": "Tidak dapat membuat ulang aset",
+
+  // Real analytics
+  "dash.analyticsLive": "Angka nyata dari workspace Anda sendiri — tanpa metrik semu.",
+  "dash.publishedPosts": "Post terpublikasi",
+  "dash.scheduledPosts": "Post terjadwal",
+  "dash.likedAssets": "Aset disukai",
+  "dash.scheduledLower": "terjadwal",
+  "dash.assetMix": "Komposisi aset",
+  "dash.recentPublishes": "Baru dipublikasikan",
+  "dash.noAnalytics": "Belum ada aktivitas — buat aset, jadwalkan ke platform Anda, dan performa nyata Anda akan muncul di sini.",
 };

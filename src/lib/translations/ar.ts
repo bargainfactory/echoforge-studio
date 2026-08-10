@@ -477,4 +477,14 @@ export const ar: Record<string, string> = {
   "asset.regenerating": "جارٍ إعادة الإنشاء…",
   "asset.regenDone": "تمت إعادة إنشاء الأصل",
   "asset.regenFailed": "تعذرت إعادة إنشاء الأصل",
+
+  // Real analytics
+  "dash.analyticsLive": "أرقام حية من مساحة عملك — بلا مقاييس زائفة.",
+  "dash.publishedPosts": "منشورات منشورة",
+  "dash.scheduledPosts": "منشورات مجدولة",
+  "dash.likedAssets": "أصول أعجبتك",
+  "dash.scheduledLower": "مجدولة",
+  "dash.assetMix": "توزيع الأصول",
+  "dash.recentPublishes": "نُشر مؤخرًا",
+  "dash.noAnalytics": "لا نشاط بعد — أنشئ أصولًا وجدولها على منصاتك وسيظهر أداؤك الفعلي هنا.",
 };

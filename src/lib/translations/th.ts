@@ -444,4 +444,14 @@ export const th: Record<string, string> = {
   "asset.regenerating": "กำลังสร้างใหม่…",
   "asset.regenDone": "สร้างชิ้นงานใหม่แล้ว",
   "asset.regenFailed": "ไม่สามารถสร้างชิ้นงานใหม่ได้",
+
+  // Real analytics
+  "dash.analyticsLive": "ตัวเลขจริงจากพื้นที่ทำงานของคุณ — ไม่มีตัวชี้วัดจอมปลอม",
+  "dash.publishedPosts": "โพสต์ที่เผยแพร่แล้ว",
+  "dash.scheduledPosts": "โพสต์ที่ตั้งเวลาไว้",
+  "dash.likedAssets": "ชิ้นงานที่ถูกใจ",
+  "dash.scheduledLower": "ตั้งเวลาไว้",
+  "dash.assetMix": "สัดส่วนชิ้นงาน",
+  "dash.recentPublishes": "เผยแพร่ล่าสุด",
+  "dash.noAnalytics": "ยังไม่มีกิจกรรม — สร้างชิ้นงาน ตั้งเวลาลงแพลตฟอร์มของคุณ แล้วผลงานจริงจะแสดงที่นี่",
 };

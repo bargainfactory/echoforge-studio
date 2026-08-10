@@ -444,4 +444,14 @@ export const vi: Record<string, string> = {
   "asset.regenerating": "Đang tạo lại…",
   "asset.regenDone": "Đã tạo lại nội dung",
   "asset.regenFailed": "Không thể tạo lại nội dung",
+
+  // Real analytics
+  "dash.analyticsLive": "Số liệu thực từ không gian làm việc của bạn — không có chỉ số phù phiếm.",
+  "dash.publishedPosts": "Bài đã đăng",
+  "dash.scheduledPosts": "Bài đã lên lịch",
+  "dash.likedAssets": "Nội dung đã thích",
+  "dash.scheduledLower": "đã lên lịch",
+  "dash.assetMix": "Cơ cấu nội dung",
+  "dash.recentPublishes": "Mới đăng gần đây",
+  "dash.noAnalytics": "Chưa có hoạt động — hãy tạo nội dung, lên lịch đăng lên các nền tảng và hiệu suất thực của bạn sẽ hiển thị tại đây.",
 };

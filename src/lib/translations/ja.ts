@@ -477,4 +477,14 @@ export const ja: Record<string, string> = {
   "asset.regenerating": "再生成中…",
   "asset.regenDone": "アセットを再生成しました",
   "asset.regenFailed": "アセットを再生成できませんでした",
+
+  // Real analytics
+  "dash.analyticsLive": "あなたのワークスペースのリアルな数字です。見せかけの指標はありません。",
+  "dash.publishedPosts": "公開済み投稿",
+  "dash.scheduledPosts": "予約済み投稿",
+  "dash.likedAssets": "いいねしたアセット",
+  "dash.scheduledLower": "予約済み",
+  "dash.assetMix": "アセット構成",
+  "dash.recentPublishes": "最近の公開",
+  "dash.noAnalytics": "まだアクティビティがありません。アセットを生成してプラットフォームに予約すると、実際のパフォーマンスがここに表示されます。",
 };

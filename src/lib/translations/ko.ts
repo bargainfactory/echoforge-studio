@@ -477,4 +477,14 @@ export const ko: Record<string, string> = {
   "asset.regenerating": "다시 생성 중…",
   "asset.regenDone": "에셋이 다시 생성되었습니다",
   "asset.regenFailed": "에셋을 다시 생성할 수 없습니다",
+
+  // Real analytics
+  "dash.analyticsLive": "내 워크스페이스의 실제 수치입니다. 허영 지표는 없습니다.",
+  "dash.publishedPosts": "게시된 포스트",
+  "dash.scheduledPosts": "예약된 포스트",
+  "dash.likedAssets": "좋아요한 에셋",
+  "dash.scheduledLower": "예약됨",
+  "dash.assetMix": "에셋 구성",
+  "dash.recentPublishes": "최근 게시",
+  "dash.noAnalytics": "아직 활동이 없습니다. 에셋을 생성하고 플랫폼에 예약하면 실제 성과가 여기에 표시됩니다.",
 };

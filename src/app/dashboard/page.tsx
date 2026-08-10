@@ -984,81 +984,141 @@ function ScheduleTab({ addToast }: { addToast: (m: string, t?: "success" | "erro
   );
 }
 
-// --- Analytics Tab ---
+// --- Analytics Tab (real aggregates from this workspace's own data) ---
+interface AnalyticsData {
+  totals: {
+    assets: number;
+    liveAssets: number;
+    projects: number;
+    publishedProjects: number;
+    scheduled: number;
+    published: number;
+    likes: number;
+  };
+  platforms: { platform: string; scheduled: number; published: number }[];
+  types: { type: string; count: number }[];
+  recentPublished: { assetName: string; platform: string; scheduledAt: string }[];
+}
+
 function AnalyticsTab() {
   const { t } = useTranslation();
+  const [data, setData] = useState<AnalyticsData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/analytics", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => active && d && setData(d))
+      .catch(() => {})
+      .finally(() => active && setLoading(false));
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <div className="w-8 h-8 rounded-full border-2 border-cyber-border border-t-neon-purple animate-spin" />
+      </div>
+    );
+  }
+
+  if (!data || data.totals.assets === 0) {
+    return (
+      <div className="text-center py-24 text-cyber-muted max-w-md mx-auto">
+        <BarChart3 className="w-10 h-10 mx-auto mb-4 opacity-50" />
+        {t("dash.noAnalytics")}
+      </div>
+    );
+  }
+
   const metrics = [
-    { label: t("dash.totalViews"), value: "2.4M", change: "+18.3%", positive: true },
-    { label: t("dash.engagementRate"), value: "8.7%", change: "+1.2%", positive: true },
-    { label: t("dash.newFollowers"), value: "12.4K", change: "+24.1%", positive: true },
-    { label: t("dash.revenue"), value: "$4,280", change: "+9.7%", positive: true },
+    { label: t("dash.totalAssets"), value: data.totals.assets, icon: Film, color: "text-neon-purple" },
+    { label: t("dash.publishedPosts"), value: data.totals.published, icon: CheckCircle, color: "text-success" },
+    { label: t("dash.scheduledPosts"), value: data.totals.scheduled, icon: Clock, color: "text-warning" },
+    { label: t("dash.likedAssets"), value: data.totals.likes, icon: ThumbsUp, color: "text-electric-blue" },
   ];
-
-  const platformData = [
-    { platform: "YouTube", views: "890K", engagement: "6.2%", growth: "+12%", bar: 89 },
-    { platform: "TikTok", views: "1.1M", engagement: "11.4%", growth: "+31%", bar: 100 },
-    { platform: "LinkedIn", views: "245K", engagement: "4.8%", growth: "+8%", bar: 24 },
-    { platform: "Instagram", views: "180K", engagement: "7.1%", growth: "+15%", bar: 18 },
-    { platform: "Twitter", views: "85K", engagement: "3.2%", growth: "+5%", bar: 8 },
-  ];
-
-  const topContent = [
-    { title: "5 AI Side Hustles in 2025", views: "342K", likes: "28K", platform: "TikTok" },
-    { title: "Morning Routine for Success", views: "218K", likes: "19K", platform: "YouTube" },
-    { title: "Passive Income Blueprint", views: "156K", likes: "12K", platform: "YouTube" },
-    { title: "Productivity Stack Carousel", views: "89K", saves: "6.2K", platform: "LinkedIn" },
-  ];
+  const maxPlatform = Math.max(1, ...data.platforms.map((p) => p.scheduled + p.published));
+  const maxType = Math.max(1, ...data.types.map((ty) => ty.count));
 
   return (
     <div className="space-y-6">
+      <p className="text-sm text-cyber-muted">{t("dash.analyticsLive")}</p>
+
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {metrics.map((m) => (
           <div key={m.label} className="bg-cyber-card border border-cyber-border rounded-xl p-4">
-            <p className="text-xs text-cyber-muted mb-1">{m.label}</p>
+            <m.icon className={`w-5 h-5 ${m.color} mb-2`} />
             <p className="text-2xl font-bold text-foreground">{m.value}</p>
-            <span className={`text-xs ${m.positive ? "text-success" : "text-red-400"}`}>{m.change} {t("dash.vsLastMonth")}</span>
+            <p className="text-xs text-cyber-muted mt-1">{m.label}</p>
           </div>
         ))}
       </div>
 
+      {data.platforms.length > 0 && (
+        <div className="bg-cyber-card border border-cyber-border rounded-xl p-6">
+          <h3 className="font-semibold text-foreground mb-4">{t("dash.platformPerformance")}</h3>
+          <div className="space-y-4">
+            {data.platforms.map((p) => (
+              <div key={p.platform} className="flex items-center gap-4">
+                <span className="text-sm text-foreground w-24 shrink-0">{p.platform}</span>
+                <div className="flex-1 h-2 bg-cyber-border rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-neon-purple to-electric-blue rounded-full"
+                    style={{ width: `${((p.scheduled + p.published) / maxPlatform) * 100}%` }}
+                  />
+                </div>
+                <span className="text-xs text-success w-24 text-right">
+                  {p.published} {t("dash.published").toLowerCase()}
+                </span>
+                <span className="text-xs text-warning w-24 text-right">
+                  {p.scheduled} {t("dash.scheduledLower")}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="bg-cyber-card border border-cyber-border rounded-xl p-6">
-        <h3 className="font-semibold text-foreground mb-4">{t("dash.platformPerformance")}</h3>
-        <div className="space-y-4">
-          {platformData.map((p) => (
-            <div key={p.platform} className="flex items-center gap-4">
-              <span className="text-sm text-foreground w-20">{p.platform}</span>
+        <h3 className="font-semibold text-foreground mb-4">{t("dash.assetMix")}</h3>
+        <div className="space-y-3">
+          {data.types.map((ty) => (
+            <div key={ty.type} className="flex items-center gap-4">
+              <span className="text-sm text-foreground w-40 shrink-0 truncate">{ty.type}</span>
               <div className="flex-1 h-2 bg-cyber-border rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-gradient-to-r from-neon-purple to-electric-blue rounded-full"
-                  style={{ width: `${p.bar}%` }}
+                  className="h-full bg-gradient-to-r from-electric-blue to-cyan-500 rounded-full"
+                  style={{ width: `${(ty.count / maxType) * 100}%` }}
                 />
               </div>
-              <span className="text-xs text-cyber-muted w-16 text-right">{p.views}</span>
-              <span className="text-xs text-cyber-muted w-12 text-right">{p.engagement}</span>
-              <span className="text-xs text-success w-12 text-right">{p.growth}</span>
+              <span className="text-xs text-cyber-muted w-8 text-right">{ty.count}</span>
             </div>
           ))}
         </div>
       </div>
 
-      <div className="bg-cyber-card border border-cyber-border rounded-xl p-6">
-        <h3 className="font-semibold text-foreground mb-4">{t("dash.topContent")}</h3>
-        <div className="space-y-3">
-          {topContent.map((c, i) => (
-            <div key={c.title} className="flex items-center gap-4 p-3 rounded-lg bg-cyber-dark">
-              <span className="text-lg font-bold text-neon-purple w-8">#{i + 1}</span>
-              <div className="flex-1">
-                <p className="text-sm font-medium text-foreground">{c.title}</p>
-                <p className="text-xs text-cyber-muted">{c.platform}</p>
+      {data.recentPublished.length > 0 && (
+        <div className="bg-cyber-card border border-cyber-border rounded-xl p-6">
+          <h3 className="font-semibold text-foreground mb-4">{t("dash.recentPublishes")}</h3>
+          <div className="space-y-3">
+            {data.recentPublished.map((r, i) => (
+              <div key={`${r.assetName}-${i}`} className="flex items-center gap-4 p-3 rounded-lg bg-cyber-dark">
+                <Send className="w-4 h-4 text-neon-purple shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground truncate">{r.assetName}</p>
+                  <p className="text-xs text-cyber-muted">{r.platform}</p>
+                </div>
+                <span className="text-xs text-cyber-muted shrink-0">
+                  {new Date(r.scheduledAt).toLocaleDateString()}
+                </span>
               </div>
-              <div className="text-right">
-                <p className="text-sm font-medium text-foreground">{c.views} views</p>
-                <p className="text-xs text-cyber-muted">{c.likes || c.saves} {c.likes ? "likes" : "saves"}</p>
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

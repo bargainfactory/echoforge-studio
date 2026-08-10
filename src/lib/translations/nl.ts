@@ -444,4 +444,14 @@ export const nl: Record<string, string> = {
   "asset.regenerating": "Opnieuw genereren…",
   "asset.regenDone": "Asset opnieuw gegenereerd",
   "asset.regenFailed": "Kon asset niet opnieuw genereren",
+
+  // Real analytics
+  "dash.analyticsLive": "Echte cijfers uit je eigen workspace — geen vanity metrics.",
+  "dash.publishedPosts": "Gepubliceerde posts",
+  "dash.scheduledPosts": "Ingeplande posts",
+  "dash.likedAssets": "Gelikete assets",
+  "dash.scheduledLower": "ingepland",
+  "dash.assetMix": "Asset-mix",
+  "dash.recentPublishes": "Onlangs gepubliceerd",
+  "dash.noAnalytics": "Nog geen activiteit — genereer assets, plan ze in op je platforms en je echte prestaties verschijnen hier.",
 };

@@ -444,4 +444,14 @@ export const zhTW: Record<string, string> = {
   "asset.regenerating": "正在重新生成…",
   "asset.regenDone": "內容已重新生成",
   "asset.regenFailed": "無法重新生成內容",
+
+  // Real analytics
+  "dash.analyticsLive": "來自你工作區的真實數據——沒有虛榮指標。",
+  "dash.publishedPosts": "已發佈貼文",
+  "dash.scheduledPosts": "已排程貼文",
+  "dash.likedAssets": "已按讚內容",
+  "dash.scheduledLower": "已排程",
+  "dash.assetMix": "內容組成",
+  "dash.recentPublishes": "最近發佈",
+  "dash.noAnalytics": "尚無活動——生成內容並排程到你的平台後,真實表現將顯示在這裡。",
 };

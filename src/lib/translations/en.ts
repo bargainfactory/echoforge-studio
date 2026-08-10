@@ -477,4 +477,14 @@ export const en: Record<string, string> = {
   "asset.regenerating": "Regenerating…",
   "asset.regenDone": "Asset regenerated",
   "asset.regenFailed": "Could not regenerate asset",
+
+  // Real analytics
+  "dash.analyticsLive": "Live numbers from your own workspace — no vanity metrics.",
+  "dash.publishedPosts": "Published posts",
+  "dash.scheduledPosts": "Scheduled posts",
+  "dash.likedAssets": "Liked assets",
+  "dash.scheduledLower": "scheduled",
+  "dash.assetMix": "Asset mix",
+  "dash.recentPublishes": "Recently published",
+  "dash.noAnalytics": "No activity yet — generate assets, schedule them to your platforms, and your real performance will appear here.",
 };

@@ -444,4 +444,14 @@ export const ru: Record<string, string> = {
   "asset.regenerating": "Пересоздание…",
   "asset.regenDone": "Ассет пересоздан",
   "asset.regenFailed": "Не удалось пересоздать ассет",
+
+  // Real analytics
+  "dash.analyticsLive": "Живые цифры из вашего рабочего пространства — без показных метрик.",
+  "dash.publishedPosts": "Опубликованные посты",
+  "dash.scheduledPosts": "Запланированные посты",
+  "dash.likedAssets": "Понравившиеся ассеты",
+  "dash.scheduledLower": "запланировано",
+  "dash.assetMix": "Состав ассетов",
+  "dash.recentPublishes": "Недавно опубликовано",
+  "dash.noAnalytics": "Пока нет активности — создайте ассеты, запланируйте их на свои платформы, и здесь появится ваша реальная статистика.",
 };

@@ -477,4 +477,14 @@ export const de: Record<string, string> = {
   "asset.regenerating": "Wird neu generiert…",
   "asset.regenDone": "Asset neu generiert",
   "asset.regenFailed": "Asset konnte nicht neu generiert werden",
+
+  // Real analytics
+  "dash.analyticsLive": "Echte Zahlen aus deinem Workspace — keine Schönfärberei.",
+  "dash.publishedPosts": "Veröffentlichte Posts",
+  "dash.scheduledPosts": "Geplante Posts",
+  "dash.likedAssets": "Gelikte Assets",
+  "dash.scheduledLower": "geplant",
+  "dash.assetMix": "Asset-Mix",
+  "dash.recentPublishes": "Zuletzt veröffentlicht",
+  "dash.noAnalytics": "Noch keine Aktivität — generiere Assets, plane sie auf deinen Plattformen und deine echte Performance erscheint hier.",
 };

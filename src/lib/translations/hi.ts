@@ -444,4 +444,14 @@ export const hi: Record<string, string> = {
   "asset.regenerating": "फिर से जनरेट हो रहा है…",
   "asset.regenDone": "एसेट फिर से जनरेट हो गया",
   "asset.regenFailed": "एसेट फिर से जनरेट नहीं हो सका",
+
+  // Real analytics
+  "dash.analyticsLive": "आपके अपने वर्कस्पेस के असली आँकड़े — कोई दिखावटी मेट्रिक्स नहीं।",
+  "dash.publishedPosts": "प्रकाशित पोस्ट",
+  "dash.scheduledPosts": "शेड्यूल की गई पोस्ट",
+  "dash.likedAssets": "पसंद किए गए एसेट",
+  "dash.scheduledLower": "शेड्यूल की गईं",
+  "dash.assetMix": "एसेट मिक्स",
+  "dash.recentPublishes": "हाल ही में प्रकाशित",
+  "dash.noAnalytics": "अभी कोई गतिविधि नहीं — एसेट जनरेट करें, अपने प्लेटफ़ॉर्म पर शेड्यूल करें और आपका असली प्रदर्शन यहाँ दिखेगा।",
 };

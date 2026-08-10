@@ -664,6 +664,79 @@ export function adminTotals(): {
   };
 }
 
+// --- Per-user analytics (real workspace aggregates, no vanity metrics) ---
+
+export interface UserAnalytics {
+  totals: {
+    assets: number;
+    liveAssets: number;
+    projects: number;
+    publishedProjects: number;
+    scheduled: number;
+    published: number;
+    likes: number;
+  };
+  platforms: { platform: string; scheduled: number; published: number }[];
+  types: { type: string; count: number }[];
+  recentPublished: { assetName: string; platform: string; scheduledAt: string }[];
+}
+
+export function userAnalytics(email: string): UserAnalytics {
+  const conn = getDb();
+  const lower = email.toLowerCase();
+  const one = (sql: string, ...args: string[]) =>
+    (conn.prepare(sql).get(...args) as { c: number }).c;
+
+  return {
+    totals: {
+      assets: one("SELECT COUNT(*) AS c FROM assets WHERE user_email = ?", lower),
+      liveAssets: one(
+        "SELECT COUNT(*) AS c FROM assets WHERE user_email = ? AND status IN ('live','sent')",
+        lower
+      ),
+      projects: one("SELECT COUNT(*) AS c FROM projects WHERE user_email = ?", lower),
+      publishedProjects: one(
+        "SELECT COUNT(*) AS c FROM projects WHERE user_email = ? AND status = 'published'",
+        lower
+      ),
+      scheduled: one(
+        "SELECT COUNT(*) AS c FROM scheduled_posts WHERE user_email = ? AND status = 'scheduled'",
+        lower
+      ),
+      published: one(
+        "SELECT COUNT(*) AS c FROM scheduled_posts WHERE user_email = ? AND status = 'published'",
+        lower
+      ),
+      likes: one(
+        "SELECT COUNT(*) AS c FROM assets WHERE user_email = ? AND liked = 1",
+        lower
+      ),
+    },
+    platforms: conn
+      .prepare(
+        `SELECT platform,
+           SUM(CASE WHEN status = 'scheduled' THEN 1 ELSE 0 END) AS scheduled,
+           SUM(CASE WHEN status = 'published' THEN 1 ELSE 0 END) AS published
+         FROM scheduled_posts WHERE user_email = ?
+         GROUP BY platform ORDER BY published DESC, scheduled DESC`
+      )
+      .all(lower) as unknown as UserAnalytics["platforms"],
+    types: conn
+      .prepare(
+        `SELECT type, COUNT(*) AS count FROM assets WHERE user_email = ?
+         GROUP BY type ORDER BY count DESC`
+      )
+      .all(lower) as unknown as UserAnalytics["types"],
+    recentPublished: conn
+      .prepare(
+        `SELECT asset_name AS assetName, platform, scheduled_at AS scheduledAt
+         FROM scheduled_posts WHERE user_email = ? AND status = 'published'
+         ORDER BY sort DESC LIMIT 8`
+      )
+      .all(lower) as unknown as UserAnalytics["recentPublished"],
+  };
+}
+
 // --- Brand voice ---
 
 export function getBrandVoice(email: string): BrandVoice {

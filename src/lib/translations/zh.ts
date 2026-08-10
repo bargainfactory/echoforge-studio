@@ -444,4 +444,14 @@ export const zh: Record<string, string> = {
   "asset.regenerating": "正在重新生成…",
   "asset.regenDone": "内容已重新生成",
   "asset.regenFailed": "无法重新生成内容",
+
+  // Real analytics
+  "dash.analyticsLive": "来自你工作区的真实数据——没有虚荣指标。",
+  "dash.publishedPosts": "已发布帖子",
+  "dash.scheduledPosts": "已排期帖子",
+  "dash.likedAssets": "已点赞内容",
+  "dash.scheduledLower": "已排期",
+  "dash.assetMix": "内容构成",
+  "dash.recentPublishes": "最近发布",
+  "dash.noAnalytics": "暂无活动——生成内容并排期到你的平台后,真实表现将显示在这里。",
 };

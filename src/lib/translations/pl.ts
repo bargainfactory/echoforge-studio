@@ -444,4 +444,14 @@ export const pl: Record<string, string> = {
   "asset.regenerating": "Ponowne generowanie…",
   "asset.regenDone": "Materiał wygenerowany ponownie",
   "asset.regenFailed": "Nie udało się ponownie wygenerować materiału",
+
+  // Real analytics
+  "dash.analyticsLive": "Prawdziwe liczby z Twojego workspace'u — bez próżnych metryk.",
+  "dash.publishedPosts": "Opublikowane posty",
+  "dash.scheduledPosts": "Zaplanowane posty",
+  "dash.likedAssets": "Polubione materiały",
+  "dash.scheduledLower": "zaplanowane",
+  "dash.assetMix": "Struktura materiałów",
+  "dash.recentPublishes": "Ostatnio opublikowane",
+  "dash.noAnalytics": "Brak aktywności — wygeneruj materiały, zaplanuj je na swoich platformach, a Twoje prawdziwe wyniki pojawią się tutaj.",
 };
