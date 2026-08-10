@@ -500,4 +500,10 @@ export const ko: Record<string, string> = {
   "lint.cat.violence": "폭력",
   "lint.cat.clickbait": "낚시성 문구",
   "lint.cat.platform": "플랫폼 위험",
+
+  // Provenance
+  "prov.title": "출처 기록",
+  "prov.actions": "기록된 작업 {count}건",
+  "prov.sigValid": "서명 확인됨",
+  "prov.sigInvalid": "서명 불일치",
 };

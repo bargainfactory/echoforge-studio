@@ -467,4 +467,10 @@ export const hi: Record<string, string> = {
   "lint.cat.violence": "हिंसा",
   "lint.cat.clickbait": "क्लिकबेट",
   "lint.cat.platform": "प्लेटफ़ॉर्म जोखिम",
+
+  // Provenance
+  "prov.title": "उद्गम रिकॉर्ड",
+  "prov.actions": "{count} दर्ज कार्रवाइयाँ",
+  "prov.sigValid": "हस्ताक्षर सत्यापित",
+  "prov.sigInvalid": "हस्ताक्षर मेल नहीं खाता",
 };

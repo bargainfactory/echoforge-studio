@@ -467,4 +467,10 @@ export const tr: Record<string, string> = {
   "lint.cat.violence": "Şiddet",
   "lint.cat.clickbait": "Tık tuzağı",
   "lint.cat.platform": "Platform riski",
+
+  // Provenance
+  "prov.title": "Köken kaydı",
+  "prov.actions": "{count} kayıtlı işlem",
+  "prov.sigValid": "imza doğrulandı",
+  "prov.sigInvalid": "imza uyuşmuyor",
 };

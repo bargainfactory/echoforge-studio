@@ -467,4 +467,10 @@ export const id: Record<string, string> = {
   "lint.cat.violence": "Kekerasan",
   "lint.cat.clickbait": "Clickbait",
   "lint.cat.platform": "Risiko platform",
+
+  // Provenance
+  "prov.title": "Provenans",
+  "prov.actions": "{count} tindakan tercatat",
+  "prov.sigValid": "tanda tangan terverifikasi",
+  "prov.sigInvalid": "tanda tangan tidak cocok",
 };

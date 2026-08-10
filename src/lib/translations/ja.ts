@@ -500,4 +500,10 @@ export const ja: Record<string, string> = {
   "lint.cat.violence": "暴力",
   "lint.cat.clickbait": "クリックベイト",
   "lint.cat.platform": "プラットフォームリスク",
+
+  // Provenance
+  "prov.title": "来歴",
+  "prov.actions": "記録されたアクション: {count}件",
+  "prov.sigValid": "署名検証済み",
+  "prov.sigInvalid": "署名不一致",
 };

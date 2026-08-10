@@ -101,6 +101,11 @@ function getDb(): DatabaseSync {
       user_email TEXT PRIMARY KEY REFERENCES users(email) ON DELETE CASCADE,
       config     TEXT NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS provenance (
+      asset_id  TEXT PRIMARY KEY,
+      manifest  TEXT NOT NULL,
+      signature TEXT NOT NULL
+    );
     CREATE TABLE IF NOT EXISTS app_flags (
       key   TEXT PRIMARY KEY,
       value TEXT NOT NULL
@@ -565,6 +570,29 @@ export function setIntegrationRaw(
       "INSERT OR REPLACE INTO integrations (name, config) VALUES (?, ?)"
     )
     .run(name, JSON.stringify(config));
+}
+
+// --- Provenance (signed per-asset manifests) ---
+
+export function setProvenance(
+  assetId: string,
+  manifest: string,
+  signature: string
+): void {
+  getDb()
+    .prepare(
+      "INSERT OR REPLACE INTO provenance (asset_id, manifest, signature) VALUES (?, ?, ?)"
+    )
+    .run(assetId, manifest, signature);
+}
+
+export function getProvenanceRaw(
+  assetId: string
+): { manifest: string; signature: string } | null {
+  const row = getDb()
+    .prepare("SELECT manifest, signature FROM provenance WHERE asset_id = ?")
+    .get(assetId) as { manifest: string; signature: string } | undefined;
+  return row ?? null;
 }
 
 // --- App flags (operator kill switches / toggles) ---

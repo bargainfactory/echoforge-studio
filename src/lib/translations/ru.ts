@@ -467,4 +467,10 @@ export const ru: Record<string, string> = {
   "lint.cat.violence": "Насилие",
   "lint.cat.clickbait": "Кликбейт",
   "lint.cat.platform": "Риск платформы",
+
+  // Provenance
+  "prov.title": "Происхождение",
+  "prov.actions": "записанных действий: {count}",
+  "prov.sigValid": "подпись подтверждена",
+  "prov.sigInvalid": "подпись не совпадает",
 };

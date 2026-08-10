@@ -467,4 +467,10 @@ export const zhTW: Record<string, string> = {
   "lint.cat.violence": "暴力",
   "lint.cat.clickbait": "標題黨",
   "lint.cat.platform": "平台風險",
+
+  // Provenance
+  "prov.title": "來源紀錄",
+  "prov.actions": "{count} 筆操作紀錄",
+  "prov.sigValid": "簽章已驗證",
+  "prov.sigInvalid": "簽章不符",
 };

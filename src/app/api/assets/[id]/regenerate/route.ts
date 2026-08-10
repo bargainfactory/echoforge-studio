@@ -5,9 +5,16 @@ import {
   getBrandVoice,
   getFlags,
   getProjectSource,
+  getProvenanceRaw,
+  setProvenance,
   updateAsset,
 } from "@/lib/server/db";
 import { regenerateAsset } from "@/lib/server/generate";
+import {
+  appendAction,
+  signManifest,
+  type ProvenanceManifest,
+} from "@/lib/server/provenance";
 import { rateLimit } from "@/lib/server/rate-limit";
 
 export const dynamic = "force-dynamic";
@@ -57,7 +64,7 @@ export async function POST(
   }
 
   const source = getProjectSource(user.email, asset.projectId);
-  const generated = await regenerateAsset(
+  const { asset: generated, engine } = await regenerateAsset(
     { name: asset.name, type: asset.type, content: asset.content ?? "" },
     {
       title: source?.title ?? asset.name,
@@ -72,5 +79,25 @@ export async function POST(
     name: generated.name,
     content: generated.content,
   });
+
+  const raw = getProvenanceRaw(id);
+  if (raw) {
+    try {
+      const manifest = appendAction(
+        JSON.parse(raw.manifest) as ProvenanceManifest,
+        generated.content,
+        {
+          action: "regenerated",
+          at: new Date().toISOString(),
+          engine,
+          feedback: feedback.trim() || undefined,
+        }
+      );
+      setProvenance(id, JSON.stringify(manifest), signManifest(manifest));
+    } catch {
+      /* corrupt stored manifest — leave as-is rather than fabricate */
+    }
+  }
+
   return NextResponse.json({ asset: updated });
 }

@@ -467,4 +467,10 @@ export const th: Record<string, string> = {
   "lint.cat.violence": "ความรุนแรง",
   "lint.cat.clickbait": "พาดหัวล่อคลิก",
   "lint.cat.platform": "ความเสี่ยงของแพลตฟอร์ม",
+
+  // Provenance
+  "prov.title": "ที่มาของเนื้อหา",
+  "prov.actions": "การดำเนินการที่บันทึกไว้ {count} รายการ",
+  "prov.sigValid": "ยืนยันลายเซ็นแล้ว",
+  "prov.sigInvalid": "ลายเซ็นไม่ตรงกัน",
 };

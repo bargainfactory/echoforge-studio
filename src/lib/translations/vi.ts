@@ -467,4 +467,10 @@ export const vi: Record<string, string> = {
   "lint.cat.violence": "Bạo lực",
   "lint.cat.clickbait": "Giật tít",
   "lint.cat.platform": "Rủi ro nền tảng",
+
+  // Provenance
+  "prov.title": "Nguồn gốc",
+  "prov.actions": "{count} thao tác được ghi lại",
+  "prov.sigValid": "chữ ký đã xác minh",
+  "prov.sigInvalid": "chữ ký không khớp",
 };

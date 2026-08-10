@@ -35,6 +35,7 @@ import {
   Loader2,
   ShieldCheck,
   ShieldAlert,
+  Fingerprint,
 } from "lucide-react";
 import type { Project, Asset } from "@/lib/data";
 import IntegrationsPanel from "@/components/integrations-panel";
@@ -95,6 +96,7 @@ export default function Dashboard() {
     risk: "high" | "medium" | "low" | "clean";
     findings: { severity: string; category: string; term: string; snippet: string }[];
   } | null>(null);
+  const [prov, setProv] = useState<{ engine: string; actions: number; valid: boolean } | null>(null);
   const [schedulePlatform, setSchedulePlatform] = useState("TikTok");
   const [scheduleAt, setScheduleAt] = useState("");
   const [settingsForm, setSettingsForm] = useState({
@@ -125,15 +127,26 @@ export default function Dashboard() {
     setRegenFeedback("");
   }, [viewingAsset?.id]);
 
-  // Policy lint tracks the asset's current text, so re-run after edits and
-  // regenerations too (content in the dependency list), not just on open.
+  // Policy lint and provenance track the asset's current text, so re-run after
+  // edits and regenerations too (content in the dependency list), not just on open.
   useEffect(() => {
     setLint(null);
+    setProv(null);
     if (!viewingAsset?.id) return;
     let active = true;
     fetch(`/api/assets/${viewingAsset.id}/lint`, { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => active && d && setLint(d.lint))
+      .catch(() => {});
+    fetch(`/api/assets/${viewingAsset.id}/provenance`, { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!active || !d?.provenance) return;
+        const actions: { engine?: string }[] = d.provenance.manifest.actions ?? [];
+        const lastEngine =
+          [...actions].reverse().find((a) => a.engine)?.engine ?? "—";
+        setProv({ engine: lastEngine, actions: actions.length, valid: d.provenance.valid });
+      })
       .catch(() => {});
     return () => {
       active = false;
@@ -571,6 +584,19 @@ export default function Dashboard() {
                         ))}
                       </ul>
                     )}
+                  </div>
+                )}
+
+                {/* Provenance */}
+                {prov && (
+                  <div className="flex items-center gap-2 text-[11px] text-cyber-muted">
+                    <Fingerprint className="w-3.5 h-3.5 text-neon-purple shrink-0" />
+                    <span>
+                      {t("prov.title")}: {prov.engine} · {t("prov.actions", { count: prov.actions })} ·{" "}
+                      <span className={prov.valid ? "text-success" : "text-red-400"}>
+                        {prov.valid ? t("prov.sigValid") : t("prov.sigInvalid")}
+                      </span>
+                    </span>
                   </div>
                 )}
 

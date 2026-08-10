@@ -500,4 +500,10 @@ export const ar: Record<string, string> = {
   "lint.cat.violence": "عنف",
   "lint.cat.clickbait": "عناوين مضللة",
   "lint.cat.platform": "خطر المنصة",
+
+  // Provenance
+  "prov.title": "المصدر",
+  "prov.actions": "{count} إجراءات مسجلة",
+  "prov.sigValid": "تم التحقق من التوقيع",
+  "prov.sigInvalid": "التوقيع غير مطابق",
 };

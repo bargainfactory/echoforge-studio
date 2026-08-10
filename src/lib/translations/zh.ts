@@ -467,4 +467,10 @@ export const zh: Record<string, string> = {
   "lint.cat.violence": "暴力",
   "lint.cat.clickbait": "标题党",
   "lint.cat.platform": "平台风险",
+
+  // Provenance
+  "prov.title": "来源记录",
+  "prov.actions": "{count} 条操作记录",
+  "prov.sigValid": "签名已验证",
+  "prov.sigInvalid": "签名不匹配",
 };

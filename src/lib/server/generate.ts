@@ -279,7 +279,7 @@ async function llmComplete(
   system: string,
   prompt: string,
   schema: Record<string, unknown>
-): Promise<string | null> {
+): Promise<{ text: string; engine: string } | null> {
   // Resolve keys from env or the integrations store, without a static import
   // cycle at module load.
   const { resolveField } = await import("./integrations");
@@ -301,10 +301,11 @@ async function llmComplete(
       messages: [{ role: "user", content: prompt }],
     });
     const res = await stream.finalMessage();
-    return res.content
+    const text = res.content
       .filter((b) => b.type === "text")
       .map((b) => (b as { text: string }).text)
       .join("");
+    return { text, engine: "anthropic:claude-opus-4-8" };
   }
 
   if (openaiKey) {
@@ -325,7 +326,8 @@ async function llmComplete(
     });
     if (!resp.ok) return null;
     const data = await resp.json();
-    return data?.choices?.[0]?.message?.content ?? null;
+    const text = data?.choices?.[0]?.message?.content;
+    return text ? { text, engine: "openai:gpt-4o" } : null;
   }
 
   return null;
@@ -337,15 +339,9 @@ function langLine(locale?: string): string {
     : "";
 }
 
-async function generateWithLLM(
-  title: string,
-  transcript: string,
-  locale?: string,
-  voice?: BrandVoice
-): Promise<GeneratedAsset[] | null> {
-  const userPrompt = `Title: ${title}\n\nTranscript / script:\n${transcript || "(no transcript provided — infer from the title)"}${voiceBlock(voice)}${langLine(locale)}`;
-  const text = await llmComplete(LLM_SYSTEM, userPrompt, LLM_SCHEMA);
-  return text ? parseAssets(text) : null;
+export interface GenerationResult {
+  assets: GeneratedAsset[];
+  engine: string; // "deterministic" or the LLM identifier that produced them
 }
 
 function parseJsonLoose(text: string): unknown | null {
@@ -381,14 +377,23 @@ export async function generateAssets(
   transcript: string,
   locale?: string,
   voice?: BrandVoice
-): Promise<GeneratedAsset[]> {
+): Promise<GenerationResult> {
   try {
-    const llm = await generateWithLLM(title, transcript, locale, voice);
-    if (llm && llm.length) return applyVoice(llm, voice);
+    const userPrompt = `Title: ${title}\n\nTranscript / script:\n${transcript || "(no transcript provided — infer from the title)"}${voiceBlock(voice)}${langLine(locale)}`;
+    const res = await llmComplete(LLM_SYSTEM, userPrompt, LLM_SCHEMA);
+    if (res) {
+      const parsed = parseAssets(res.text);
+      if (parsed && parsed.length) {
+        return { assets: applyVoice(parsed, voice), engine: res.engine };
+      }
+    }
   } catch {
     /* fall back to deterministic */
   }
-  return generateAssetsDeterministic(title, transcript, locale, voice);
+  return {
+    assets: generateAssetsDeterministic(title, transcript, locale, voice),
+    engine: "deterministic",
+  };
 }
 
 /**
@@ -407,7 +412,7 @@ export async function regenerateAsset(
     voice?: BrandVoice;
     feedback?: string;
   }
-): Promise<GeneratedAsset> {
+): Promise<{ asset: GeneratedAsset; engine: string }> {
   try {
     const prompt = `Title: ${ctx.title}
 
@@ -419,11 +424,16 @@ Type: ${current.type}
 Name: ${current.name}
 Current content:
 ${current.content}${ctx.feedback?.trim() ? `\n\nRevision feedback (apply this): ${ctx.feedback.trim()}` : ""}${voiceBlock(ctx.voice)}${langLine(ctx.locale)}`;
-    const text = await llmComplete(REGEN_SYSTEM, prompt, REGEN_SCHEMA);
-    if (text) {
-      const parsed = cleanAsset(parseJsonLoose(text));
+    const res = await llmComplete(REGEN_SYSTEM, prompt, REGEN_SCHEMA);
+    if (res) {
+      const parsed = cleanAsset(parseJsonLoose(res.text));
       // Keep the original type label so the asset stays grouped consistently.
-      if (parsed) return applyVoice([{ ...parsed, type: current.type }], ctx.voice)[0];
+      if (parsed) {
+        return {
+          asset: applyVoice([{ ...parsed, type: current.type }], ctx.voice)[0],
+          engine: res.engine,
+        };
+      }
     }
   } catch {
     /* fall back to deterministic */
@@ -441,5 +451,8 @@ ${current.content}${ctx.feedback?.trim() ? `\n\nRevision feedback (apply this): 
     sameType[0] ??
     det.find((a) => a.content !== current.content) ??
     det[0];
-  return pick ? { ...pick, type: current.type } : { ...current };
+  return {
+    asset: pick ? { ...pick, type: current.type } : { ...current },
+    engine: "deterministic",
+  };
 }

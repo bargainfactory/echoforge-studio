@@ -500,4 +500,10 @@ export const pt: Record<string, string> = {
   "lint.cat.violence": "Violência",
   "lint.cat.clickbait": "Clickbait",
   "lint.cat.platform": "Risco de plataforma",
+
+  // Provenance
+  "prov.title": "Proveniência",
+  "prov.actions": "{count} ações registradas",
+  "prov.sigValid": "assinatura verificada",
+  "prov.sigInvalid": "assinatura divergente",
 };

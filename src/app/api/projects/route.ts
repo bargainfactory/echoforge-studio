@@ -8,9 +8,19 @@ import {
   getFlags,
   insertNotification,
   listProjects,
+  setProvenance,
 } from "@/lib/server/db";
 import { generateAssets } from "@/lib/server/generate";
+import { createManifest, signManifest } from "@/lib/server/provenance";
 import { rateLimit } from "@/lib/server/rate-limit";
+import type { BrandVoice } from "@/lib/data";
+
+/** True when any profile field would actually steer generation. */
+function voiceIsActive(v: BrandVoice): boolean {
+  return Boolean(
+    v.tone || v.audience || v.cta || v.hashtags || v.bannedWords || v.signature || !v.emojis
+  );
+}
 
 export const dynamic = "force-dynamic";
 
@@ -124,11 +134,12 @@ export async function POST(req: NextRequest) {
 
   // Real generation from the actual input content, in the user's language,
   // steered by the account's brand-voice profile.
-  const generated = await generateAssets(
+  const voice = getBrandVoice(user.email);
+  const { assets: generated, engine } = await generateAssets(
     title,
     transcript,
     locale,
-    getBrandVoice(user.email)
+    voice
   );
 
   const { project, assets } = createProjectWithAssets(
@@ -143,6 +154,22 @@ export async function POST(req: NextRequest) {
     },
     generated
   );
+
+  // Signed provenance manifest per asset: source hash, engine, action trail.
+  const sourceText = `${title}\n${transcript}`;
+  const now = new Date().toISOString();
+  for (const a of assets) {
+    const manifest = createManifest({
+      assetId: a.id,
+      projectId: project.id,
+      content: a.content ?? "",
+      sourceText,
+      locale,
+      voiceApplied: voiceIsActive(voice),
+      firstAction: { action: "generated", at: now, engine },
+    });
+    setProvenance(a.id, JSON.stringify(manifest), signManifest(manifest));
+  }
 
   insertNotification(user.email, {
     id: `n-${crypto.randomUUID()}`,

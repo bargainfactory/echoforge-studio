@@ -1,6 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/server/auth";
-import { getAsset, updateAsset } from "@/lib/server/db";
+import {
+  getAsset,
+  getProvenanceRaw,
+  setProvenance,
+  updateAsset,
+} from "@/lib/server/db";
+import {
+  appendAction,
+  signManifest,
+  type ProvenanceManifest,
+} from "@/lib/server/provenance";
 
 export const dynamic = "force-dynamic";
 
@@ -39,5 +49,24 @@ export async function PATCH(
   }
 
   const asset = updateAsset(user.email, id, updates);
+
+  // Manual content edits become part of the signed action trail. Legacy assets
+  // without a manifest simply stay without one.
+  if (asset && updates.content !== undefined) {
+    const raw = getProvenanceRaw(id);
+    if (raw) {
+      try {
+        const manifest = appendAction(
+          JSON.parse(raw.manifest) as ProvenanceManifest,
+          updates.content,
+          { action: "edited", at: new Date().toISOString() }
+        );
+        setProvenance(id, JSON.stringify(manifest), signManifest(manifest));
+      } catch {
+        /* corrupt stored manifest — leave as-is rather than fabricate */
+      }
+    }
+  }
+
   return NextResponse.json({ asset });
 }

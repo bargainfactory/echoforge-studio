@@ -467,4 +467,10 @@ export const nl: Record<string, string> = {
   "lint.cat.violence": "Geweld",
   "lint.cat.clickbait": "Clickbait",
   "lint.cat.platform": "Platformrisico",
+
+  // Provenance
+  "prov.title": "Herkomst",
+  "prov.actions": "{count} vastgelegde acties",
+  "prov.sigValid": "handtekening geverifieerd",
+  "prov.sigInvalid": "handtekening klopt niet",
 };
