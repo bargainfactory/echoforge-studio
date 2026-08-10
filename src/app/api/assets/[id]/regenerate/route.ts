@@ -3,6 +3,7 @@ import { getSessionUser } from "@/lib/server/auth";
 import {
   getAsset,
   getBrandVoice,
+  getFlags,
   getProjectSource,
   updateAsset,
 } from "@/lib/server/db";
@@ -23,6 +24,13 @@ export async function POST(
 ) {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  if (!getFlags().generationEnabled) {
+    return NextResponse.json(
+      { error: "Generation is temporarily disabled by the operator" },
+      { status: 503 }
+    );
+  }
 
   const gate = rateLimit(`gen:${user.email}`, GEN_LIMIT, GEN_WINDOW_MS);
   if (!gate.ok) {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateAssetsDeterministic } from "@/lib/server/generate";
-import { insertEvent } from "@/lib/server/db";
+import { getFlags, insertEvent } from "@/lib/server/db";
 import { rateLimit, clientIp } from "@/lib/server/rate-limit";
 
 export const dynamic = "force-dynamic";
@@ -11,6 +11,13 @@ export const dynamic = "force-dynamic";
  * cost, no DB writes) — the signup-gated flow upgrades to Claude/GPT quality.
  */
 export async function POST(req: NextRequest) {
+  if (!getFlags().generationEnabled) {
+    return NextResponse.json(
+      { error: "Generation is temporarily disabled" },
+      { status: 503 }
+    );
+  }
+
   // Public endpoint — throttle per-IP to bound anonymous DB writes / compute.
   const gate = rateLimit(`try:${clientIp(req)}`, 20, 5 * 60 * 1000);
   if (!gate.ok) {

@@ -5,6 +5,7 @@ import { getSessionUser } from "@/lib/server/auth";
 import {
   createProjectWithAssets,
   getBrandVoice,
+  getFlags,
   insertNotification,
   listProjects,
 } from "@/lib/server/db";
@@ -32,6 +33,15 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  // Operator kill switch — lets an admin halt all (potentially paid) generation
+  // platform-wide without a redeploy.
+  if (!getFlags().generationEnabled) {
+    return NextResponse.json(
+      { error: "Generation is temporarily disabled by the operator" },
+      { status: 503 }
+    );
+  }
 
   const gate = rateLimit(`gen:${user.email}`, GEN_LIMIT, GEN_WINDOW_MS);
   if (!gate.ok) {

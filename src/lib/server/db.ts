@@ -101,6 +101,17 @@ function getDb(): DatabaseSync {
       user_email TEXT PRIMARY KEY REFERENCES users(email) ON DELETE CASCADE,
       config     TEXT NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS app_flags (
+      key   TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS audit_log (
+      id     INTEGER PRIMARY KEY AUTOINCREMENT,
+      actor  TEXT NOT NULL,
+      action TEXT NOT NULL,
+      detail TEXT,
+      ts     INTEGER NOT NULL
+    );
     CREATE TABLE IF NOT EXISTS scheduled_posts (
       id           TEXT PRIMARY KEY,
       user_email   TEXT NOT NULL REFERENCES users(email) ON DELETE CASCADE,
@@ -554,6 +565,103 @@ export function setIntegrationRaw(
       "INSERT OR REPLACE INTO integrations (name, config) VALUES (?, ?)"
     )
     .run(name, JSON.stringify(config));
+}
+
+// --- App flags (operator kill switches / toggles) ---
+
+export interface AppFlags {
+  generationEnabled: boolean;
+}
+
+const DEFAULT_FLAGS: AppFlags = { generationEnabled: true };
+
+export function getFlags(): AppFlags {
+  const row = getDb()
+    .prepare("SELECT value FROM app_flags WHERE key = 'config'")
+    .get() as { value: string } | undefined;
+  if (!row) return { ...DEFAULT_FLAGS };
+  try {
+    return { ...DEFAULT_FLAGS, ...(JSON.parse(row.value) as Partial<AppFlags>) };
+  } catch {
+    return { ...DEFAULT_FLAGS };
+  }
+}
+
+export function setFlags(flags: AppFlags): void {
+  getDb()
+    .prepare("INSERT OR REPLACE INTO app_flags (key, value) VALUES ('config', ?)")
+    .run(JSON.stringify(flags));
+}
+
+// --- Audit log (admin actions) ---
+
+export interface AuditEntry {
+  id: number;
+  actor: string;
+  action: string;
+  detail: string;
+  ts: number;
+}
+
+export function insertAudit(actor: string, action: string, detail: string): void {
+  getDb()
+    .prepare("INSERT INTO audit_log (actor, action, detail, ts) VALUES (?, ?, ?, ?)")
+    .run(actor.slice(0, 128), action.slice(0, 64), detail.slice(0, 512), Date.now());
+}
+
+export function listAudit(limit = 100): AuditEntry[] {
+  return getDb()
+    .prepare("SELECT * FROM audit_log ORDER BY id DESC LIMIT ?")
+    .all(limit) as unknown as AuditEntry[];
+}
+
+// --- Admin: user management + platform totals ---
+
+export interface AdminUserRow {
+  email: string;
+  name: string;
+  plan: string;
+  createdAt: string;
+  projects: number;
+  assets: number;
+}
+
+export function listUsers(): AdminUserRow[] {
+  return (
+    getDb()
+      .prepare(
+        `SELECT u.email, u.name, u.plan, u.created_at AS createdAt,
+           (SELECT COUNT(*) FROM projects p WHERE p.user_email = u.email) AS projects,
+           (SELECT COUNT(*) FROM assets a WHERE a.user_email = u.email) AS assets
+         FROM users u ORDER BY u.created_at DESC`
+      )
+      .all() as unknown as AdminUserRow[]
+  );
+}
+
+export function setUserPlan(email: string, plan: string): boolean {
+  const res = getDb()
+    .prepare("UPDATE users SET plan = ? WHERE email = ?")
+    .run(plan, email.toLowerCase());
+  return Number(res.changes) > 0;
+}
+
+export function adminTotals(): {
+  users: number;
+  projects: number;
+  assets: number;
+  scheduled: number;
+  published: number;
+} {
+  const conn = getDb();
+  const count = (sql: string) => (conn.prepare(sql).get() as { c: number }).c;
+  return {
+    users: count("SELECT COUNT(*) AS c FROM users"),
+    projects: count("SELECT COUNT(*) AS c FROM projects"),
+    assets: count("SELECT COUNT(*) AS c FROM assets"),
+    scheduled: count("SELECT COUNT(*) AS c FROM scheduled_posts WHERE status = 'scheduled'"),
+    published: count("SELECT COUNT(*) AS c FROM scheduled_posts WHERE status = 'published'"),
+  };
 }
 
 // --- Brand voice ---
