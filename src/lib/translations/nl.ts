@@ -454,4 +454,17 @@ export const nl: Record<string, string> = {
   "dash.assetMix": "Asset-mix",
   "dash.recentPublishes": "Onlangs gepubliceerd",
   "dash.noAnalytics": "Nog geen activiteit — genereer assets, plan ze in op je platforms en je echte prestaties verschijnen hier.",
+
+  // Policy lint
+  "lint.title": "Beleidscontrole",
+  "lint.clean": "geen risico's gevonden",
+  "lint.riskHigh": "hoog demonetisatierisico",
+  "lint.riskMedium": "gemiddeld risico",
+  "lint.riskLow": "kleine meldingen",
+  "lint.cat.sensitive": "Gevoelig onderwerp",
+  "lint.cat.medical": "Medische claim",
+  "lint.cat.financial": "Financiële claim",
+  "lint.cat.violence": "Geweld",
+  "lint.cat.clickbait": "Clickbait",
+  "lint.cat.platform": "Platformrisico",
 };

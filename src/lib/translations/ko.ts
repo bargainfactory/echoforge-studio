@@ -487,4 +487,17 @@ export const ko: Record<string, string> = {
   "dash.assetMix": "에셋 구성",
   "dash.recentPublishes": "최근 게시",
   "dash.noAnalytics": "아직 활동이 없습니다. 에셋을 생성하고 플랫폼에 예약하면 실제 성과가 여기에 표시됩니다.",
+
+  // Policy lint
+  "lint.title": "정책 점검",
+  "lint.clean": "위험이 감지되지 않았습니다",
+  "lint.riskHigh": "수익화 제한 위험 높음",
+  "lint.riskMedium": "중간 위험",
+  "lint.riskLow": "경미한 지적",
+  "lint.cat.sensitive": "민감한 주제",
+  "lint.cat.medical": "의학적 주장",
+  "lint.cat.financial": "금전적 주장",
+  "lint.cat.violence": "폭력",
+  "lint.cat.clickbait": "낚시성 문구",
+  "lint.cat.platform": "플랫폼 위험",
 };

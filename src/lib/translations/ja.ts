@@ -487,4 +487,17 @@ export const ja: Record<string, string> = {
   "dash.assetMix": "アセット構成",
   "dash.recentPublishes": "最近の公開",
   "dash.noAnalytics": "まだアクティビティがありません。アセットを生成してプラットフォームに予約すると、実際のパフォーマンスがここに表示されます。",
+
+  // Policy lint
+  "lint.title": "ポリシーチェック",
+  "lint.clean": "リスクは検出されませんでした",
+  "lint.riskHigh": "収益化停止リスク大",
+  "lint.riskMedium": "中程度のリスク",
+  "lint.riskLow": "軽微な指摘",
+  "lint.cat.sensitive": "センシティブな話題",
+  "lint.cat.medical": "医療的主張",
+  "lint.cat.financial": "金銭的主張",
+  "lint.cat.violence": "暴力",
+  "lint.cat.clickbait": "クリックベイト",
+  "lint.cat.platform": "プラットフォームリスク",
 };

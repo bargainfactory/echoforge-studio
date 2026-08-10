@@ -454,4 +454,17 @@ export const zhTW: Record<string, string> = {
   "dash.assetMix": "內容組成",
   "dash.recentPublishes": "最近發佈",
   "dash.noAnalytics": "尚無活動——生成內容並排程到你的平台後,真實表現將顯示在這裡。",
+
+  // Policy lint
+  "lint.title": "政策檢查",
+  "lint.clean": "未偵測到風險",
+  "lint.riskHigh": "高度取消營利風險",
+  "lint.riskMedium": "中等風險",
+  "lint.riskLow": "輕微提示",
+  "lint.cat.sensitive": "敏感話題",
+  "lint.cat.medical": "醫療聲明",
+  "lint.cat.financial": "財務承諾",
+  "lint.cat.violence": "暴力",
+  "lint.cat.clickbait": "標題黨",
+  "lint.cat.platform": "平台風險",
 };

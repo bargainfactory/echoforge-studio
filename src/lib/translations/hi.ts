@@ -454,4 +454,17 @@ export const hi: Record<string, string> = {
   "dash.assetMix": "एसेट मिक्स",
   "dash.recentPublishes": "हाल ही में प्रकाशित",
   "dash.noAnalytics": "अभी कोई गतिविधि नहीं — एसेट जनरेट करें, अपने प्लेटफ़ॉर्म पर शेड्यूल करें और आपका असली प्रदर्शन यहाँ दिखेगा।",
+
+  // Policy lint
+  "lint.title": "नीति जाँच",
+  "lint.clean": "कोई जोखिम नहीं मिला",
+  "lint.riskHigh": "उच्च डिमोनेटाइज़ेशन जोखिम",
+  "lint.riskMedium": "मध्यम जोखिम",
+  "lint.riskLow": "मामूली संकेत",
+  "lint.cat.sensitive": "संवेदनशील विषय",
+  "lint.cat.medical": "चिकित्सा दावा",
+  "lint.cat.financial": "वित्तीय दावा",
+  "lint.cat.violence": "हिंसा",
+  "lint.cat.clickbait": "क्लिकबेट",
+  "lint.cat.platform": "प्लेटफ़ॉर्म जोखिम",
 };

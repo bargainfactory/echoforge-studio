@@ -33,6 +33,8 @@ import {
   Pencil,
   RefreshCw,
   Loader2,
+  ShieldCheck,
+  ShieldAlert,
 } from "lucide-react";
 import type { Project, Asset } from "@/lib/data";
 import IntegrationsPanel from "@/components/integrations-panel";
@@ -89,6 +91,10 @@ export default function Dashboard() {
   const [savingEdit, setSavingEdit] = useState(false);
   const [regenFeedback, setRegenFeedback] = useState("");
   const [regenerating, setRegenerating] = useState(false);
+  const [lint, setLint] = useState<{
+    risk: "high" | "medium" | "low" | "clean";
+    findings: { severity: string; category: string; term: string; snippet: string }[];
+  } | null>(null);
   const [schedulePlatform, setSchedulePlatform] = useState("TikTok");
   const [scheduleAt, setScheduleAt] = useState("");
   const [settingsForm, setSettingsForm] = useState({
@@ -118,6 +124,21 @@ export default function Dashboard() {
     setEditDraft(null);
     setRegenFeedback("");
   }, [viewingAsset?.id]);
+
+  // Policy lint tracks the asset's current text, so re-run after edits and
+  // regenerations too (content in the dependency list), not just on open.
+  useEffect(() => {
+    setLint(null);
+    if (!viewingAsset?.id) return;
+    let active = true;
+    fetch(`/api/assets/${viewingAsset.id}/lint`, { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => active && d && setLint(d.lint))
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [viewingAsset?.id, viewingAsset?.content]);
 
   const handleSaveEdit = useCallback(async () => {
     if (!viewingAsset || editDraft === null) return;
@@ -492,6 +513,67 @@ export default function Dashboard() {
                 )}
               </div>
               <div className="px-6 py-4 border-t border-cyber-border space-y-3">
+                {/* Policy check */}
+                {lint && (
+                  <div
+                    className={`rounded-lg border px-3 py-2.5 ${
+                      lint.risk === "high"
+                        ? "border-red-400/40 bg-red-400/5"
+                        : lint.risk === "medium"
+                          ? "border-warning/40 bg-warning/5"
+                          : lint.risk === "low"
+                            ? "border-electric-blue/30 bg-electric-blue/5"
+                            : "border-success/30 bg-success/5"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      {lint.risk === "clean" ? (
+                        <ShieldCheck className="w-4 h-4 text-success shrink-0" />
+                      ) : (
+                        <ShieldAlert
+                          className={`w-4 h-4 shrink-0 ${
+                            lint.risk === "high"
+                              ? "text-red-400"
+                              : lint.risk === "medium"
+                                ? "text-warning"
+                                : "text-electric-blue"
+                          }`}
+                        />
+                      )}
+                      <span className="text-xs font-medium text-foreground">
+                        {t("lint.title")}:{" "}
+                        {lint.risk === "clean"
+                          ? t("lint.clean")
+                          : lint.risk === "high"
+                            ? t("lint.riskHigh")
+                            : lint.risk === "medium"
+                              ? t("lint.riskMedium")
+                              : t("lint.riskLow")}
+                      </span>
+                    </div>
+                    {lint.findings.length > 0 && (
+                      <ul className="mt-2 space-y-1">
+                        {lint.findings.slice(0, 5).map((f, i) => (
+                          <li key={`${f.term}-${i}`} className="text-[11px] text-cyber-muted leading-relaxed">
+                            <span
+                              className={`font-medium ${
+                                f.severity === "high"
+                                  ? "text-red-400"
+                                  : f.severity === "medium"
+                                    ? "text-warning"
+                                    : "text-electric-blue"
+                              }`}
+                            >
+                              {t(`lint.cat.${f.category}`)}
+                            </span>{" "}
+                            — “{f.term}”: {f.snippet}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
+
                 {/* Edit + regenerate */}
                 <div className="flex flex-wrap items-center gap-2">
                   {editDraft === null ? (

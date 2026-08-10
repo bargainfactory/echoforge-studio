@@ -454,4 +454,17 @@ export const id: Record<string, string> = {
   "dash.assetMix": "Komposisi aset",
   "dash.recentPublishes": "Baru dipublikasikan",
   "dash.noAnalytics": "Belum ada aktivitas — buat aset, jadwalkan ke platform Anda, dan performa nyata Anda akan muncul di sini.",
+
+  // Policy lint
+  "lint.title": "Pemeriksaan kebijakan",
+  "lint.clean": "tidak ada risiko terdeteksi",
+  "lint.riskHigh": "risiko demonetisasi tinggi",
+  "lint.riskMedium": "risiko sedang",
+  "lint.riskLow": "catatan kecil",
+  "lint.cat.sensitive": "Topik sensitif",
+  "lint.cat.medical": "Klaim medis",
+  "lint.cat.financial": "Klaim finansial",
+  "lint.cat.violence": "Kekerasan",
+  "lint.cat.clickbait": "Clickbait",
+  "lint.cat.platform": "Risiko platform",
 };

@@ -454,4 +454,17 @@ export const zh: Record<string, string> = {
   "dash.assetMix": "内容构成",
   "dash.recentPublishes": "最近发布",
   "dash.noAnalytics": "暂无活动——生成内容并排期到你的平台后,真实表现将显示在这里。",
+
+  // Policy lint
+  "lint.title": "政策检查",
+  "lint.clean": "未检测到风险",
+  "lint.riskHigh": "较高的取消变现风险",
+  "lint.riskMedium": "中等风险",
+  "lint.riskLow": "轻微提示",
+  "lint.cat.sensitive": "敏感话题",
+  "lint.cat.medical": "医疗声明",
+  "lint.cat.financial": "财务承诺",
+  "lint.cat.violence": "暴力",
+  "lint.cat.clickbait": "标题党",
+  "lint.cat.platform": "平台风险",
 };

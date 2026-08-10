@@ -454,4 +454,17 @@ export const ru: Record<string, string> = {
   "dash.assetMix": "Состав ассетов",
   "dash.recentPublishes": "Недавно опубликовано",
   "dash.noAnalytics": "Пока нет активности — создайте ассеты, запланируйте их на свои платформы, и здесь появится ваша реальная статистика.",
+
+  // Policy lint
+  "lint.title": "Проверка правил",
+  "lint.clean": "рисков не обнаружено",
+  "lint.riskHigh": "высокий риск демонетизации",
+  "lint.riskMedium": "умеренный риск",
+  "lint.riskLow": "незначительные замечания",
+  "lint.cat.sensitive": "Чувствительная тема",
+  "lint.cat.medical": "Медицинское заявление",
+  "lint.cat.financial": "Финансовое обещание",
+  "lint.cat.violence": "Насилие",
+  "lint.cat.clickbait": "Кликбейт",
+  "lint.cat.platform": "Риск платформы",
 };

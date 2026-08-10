@@ -487,4 +487,17 @@ export const ar: Record<string, string> = {
   "dash.assetMix": "توزيع الأصول",
   "dash.recentPublishes": "نُشر مؤخرًا",
   "dash.noAnalytics": "لا نشاط بعد — أنشئ أصولًا وجدولها على منصاتك وسيظهر أداؤك الفعلي هنا.",
+
+  // Policy lint
+  "lint.title": "فحص السياسات",
+  "lint.clean": "لم يتم رصد مخاطر",
+  "lint.riskHigh": "خطر مرتفع لإيقاف تحقيق الدخل",
+  "lint.riskMedium": "خطر متوسط",
+  "lint.riskLow": "ملاحظات طفيفة",
+  "lint.cat.sensitive": "موضوع حساس",
+  "lint.cat.medical": "ادعاء طبي",
+  "lint.cat.financial": "ادعاء مالي",
+  "lint.cat.violence": "عنف",
+  "lint.cat.clickbait": "عناوين مضللة",
+  "lint.cat.platform": "خطر المنصة",
 };

@@ -487,4 +487,17 @@ export const es: Record<string, string> = {
   "dash.assetMix": "Mezcla de activos",
   "dash.recentPublishes": "Publicado recientemente",
   "dash.noAnalytics": "Aún no hay actividad: genera activos, prográmalos en tus plataformas y tu rendimiento real aparecerá aquí.",
+
+  // Policy lint
+  "lint.title": "Revisión de políticas",
+  "lint.clean": "sin riesgos detectados",
+  "lint.riskHigh": "alto riesgo de desmonetización",
+  "lint.riskMedium": "riesgo moderado",
+  "lint.riskLow": "señales menores",
+  "lint.cat.sensitive": "Tema sensible",
+  "lint.cat.medical": "Afirmación médica",
+  "lint.cat.financial": "Afirmación financiera",
+  "lint.cat.violence": "Violencia",
+  "lint.cat.clickbait": "Clickbait",
+  "lint.cat.platform": "Riesgo de plataforma",
 };

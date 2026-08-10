@@ -454,4 +454,17 @@ export const tr: Record<string, string> = {
   "dash.assetMix": "Varlık dağılımı",
   "dash.recentPublishes": "Son yayınlananlar",
   "dash.noAnalytics": "Henüz etkinlik yok — varlık üretin, platformlarınıza planlayın; gerçek performansınız burada görünecek.",
+
+  // Policy lint
+  "lint.title": "Politika denetimi",
+  "lint.clean": "risk tespit edilmedi",
+  "lint.riskHigh": "yüksek gelir kısıtlama riski",
+  "lint.riskMedium": "orta risk",
+  "lint.riskLow": "küçük uyarılar",
+  "lint.cat.sensitive": "Hassas konu",
+  "lint.cat.medical": "Tıbbi iddia",
+  "lint.cat.financial": "Finansal iddia",
+  "lint.cat.violence": "Şiddet",
+  "lint.cat.clickbait": "Tık tuzağı",
+  "lint.cat.platform": "Platform riski",
 };

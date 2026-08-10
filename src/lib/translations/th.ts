@@ -454,4 +454,17 @@ export const th: Record<string, string> = {
   "dash.assetMix": "สัดส่วนชิ้นงาน",
   "dash.recentPublishes": "เผยแพร่ล่าสุด",
   "dash.noAnalytics": "ยังไม่มีกิจกรรม — สร้างชิ้นงาน ตั้งเวลาลงแพลตฟอร์มของคุณ แล้วผลงานจริงจะแสดงที่นี่",
+
+  // Policy lint
+  "lint.title": "ตรวจสอบนโยบาย",
+  "lint.clean": "ไม่พบความเสี่ยง",
+  "lint.riskHigh": "ความเสี่ยงสูงต่อการถูกตัดรายได้",
+  "lint.riskMedium": "ความเสี่ยงปานกลาง",
+  "lint.riskLow": "ข้อสังเกตเล็กน้อย",
+  "lint.cat.sensitive": "หัวข้ออ่อนไหว",
+  "lint.cat.medical": "คำกล่าวอ้างทางการแพทย์",
+  "lint.cat.financial": "คำกล่าวอ้างทางการเงิน",
+  "lint.cat.violence": "ความรุนแรง",
+  "lint.cat.clickbait": "พาดหัวล่อคลิก",
+  "lint.cat.platform": "ความเสี่ยงของแพลตฟอร์ม",
 };

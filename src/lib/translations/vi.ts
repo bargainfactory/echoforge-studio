@@ -454,4 +454,17 @@ export const vi: Record<string, string> = {
   "dash.assetMix": "Cơ cấu nội dung",
   "dash.recentPublishes": "Mới đăng gần đây",
   "dash.noAnalytics": "Chưa có hoạt động — hãy tạo nội dung, lên lịch đăng lên các nền tảng và hiệu suất thực của bạn sẽ hiển thị tại đây.",
+
+  // Policy lint
+  "lint.title": "Kiểm tra chính sách",
+  "lint.clean": "không phát hiện rủi ro",
+  "lint.riskHigh": "rủi ro tắt kiếm tiền cao",
+  "lint.riskMedium": "rủi ro trung bình",
+  "lint.riskLow": "cảnh báo nhỏ",
+  "lint.cat.sensitive": "Chủ đề nhạy cảm",
+  "lint.cat.medical": "Tuyên bố y tế",
+  "lint.cat.financial": "Tuyên bố tài chính",
+  "lint.cat.violence": "Bạo lực",
+  "lint.cat.clickbait": "Giật tít",
+  "lint.cat.platform": "Rủi ro nền tảng",
 };
