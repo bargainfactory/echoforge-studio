@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { resolveField } from "@/lib/server/integrations";
-import { findUser, createUser, seedUser } from "@/lib/server/db";
+import { findUser, createUser, seedUser, consumePendingPlan } from "@/lib/server/db";
 import {
   SESSION_COOKIE,
   SESSION_MAX_AGE,
@@ -54,7 +54,8 @@ export async function GET(req: NextRequest) {
     let user = findUser(email);
     if (!user) {
       const passwordHash = await hashPassword(crypto.randomUUID());
-      createUser({ email, name, passwordHash, plan: "Starter", createdAt: new Date().toISOString() });
+      const plan = consumePendingPlan(email) ?? "Starter";
+      createUser({ email, name, passwordHash, plan, createdAt: new Date().toISOString() });
       seedUser(email);
       user = findUser(email)!;
     }

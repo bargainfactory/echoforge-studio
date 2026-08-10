@@ -42,6 +42,16 @@ export const INTEGRATIONS: IntegrationDef[] = [
     ],
   },
   {
+    name: "transcription",
+    label: "Transcription (Deepgram / Whisper)",
+    description:
+      "Transcribes uploaded audio/video automatically, so pasting a transcript becomes optional. Falls back to your OpenAI key (Whisper, files up to 25 MB) when no Deepgram key is set.",
+    docsHint: "Add a Deepgram API key for large files, or rely on your OpenAI key.",
+    fields: [
+      { key: "deepgramApiKey", label: "Deepgram API key", envVar: "DEEPGRAM_API_KEY", secret: true, placeholder: "dg_..." },
+    ],
+  },
+  {
     name: "email",
     label: "Email (Resend)",
     description:
@@ -60,6 +70,7 @@ export const INTEGRATIONS: IntegrationDef[] = [
     docsHint: "Add your Stripe secret key.",
     fields: [
       { key: "secretKey", label: "Stripe secret key", envVar: "STRIPE_SECRET_KEY", secret: true, placeholder: "sk_live_...", required: true },
+      { key: "webhookSecret", label: "Webhook signing secret", envVar: "STRIPE_WEBHOOK_SECRET", secret: true, placeholder: "whsec_..." },
     ],
   },
   {

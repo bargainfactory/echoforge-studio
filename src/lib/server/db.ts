@@ -101,6 +101,11 @@ function getDb(): DatabaseSync {
       user_email TEXT PRIMARY KEY REFERENCES users(email) ON DELETE CASCADE,
       config     TEXT NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS pending_plans (
+      email      TEXT PRIMARY KEY,
+      plan       TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
     CREATE TABLE IF NOT EXISTS provenance (
       asset_id  TEXT PRIMARY KEY,
       manifest  TEXT NOT NULL,
@@ -188,6 +193,27 @@ export function createUser(user: DbUser): void {
     );
 }
 
+// --- Pending plans (paid via Stripe before an account existed) ---
+
+export function setPendingPlan(email: string, plan: string): void {
+  getDb()
+    .prepare(
+      "INSERT OR REPLACE INTO pending_plans (email, plan, created_at) VALUES (?, ?, ?)"
+    )
+    .run(email.toLowerCase(), plan, new Date().toISOString());
+}
+
+/** Returns and clears the plan a checkout reserved for this email, if any. */
+export function consumePendingPlan(email: string): string | null {
+  const conn = getDb();
+  const row = conn
+    .prepare("SELECT plan FROM pending_plans WHERE email = ?")
+    .get(email.toLowerCase()) as { plan: string } | undefined;
+  if (!row) return null;
+  conn.prepare("DELETE FROM pending_plans WHERE email = ?").run(email.toLowerCase());
+  return row.plan;
+}
+
 // --- Projects ---
 
 function mapProject(row: Record<string, unknown>): Project {
@@ -211,6 +237,17 @@ export function listProjects(email: string): Project[] {
       .prepare("SELECT * FROM projects WHERE user_email = ? ORDER BY sort DESC")
       .all(email.toLowerCase()) as Record<string, unknown>[]
   ).map(mapProject);
+}
+
+/** Projects created since an ISO timestamp — used for monthly plan quotas. */
+export function countProjectsSince(email: string, sinceIso: string): number {
+  return (
+    getDb()
+      .prepare(
+        "SELECT COUNT(*) AS c FROM projects WHERE user_email = ? AND created_at >= ?"
+      )
+      .get(email.toLowerCase(), sinceIso) as { c: number }
+  ).c;
 }
 
 export function insertProject(email: string, p: Project): void {
@@ -886,6 +923,15 @@ export function createScheduledPost(
       Date.now()
     );
   return { ...post, createdAt: now };
+}
+
+/** Every still-scheduled post across all users — the scheduler tick's worklist. */
+export function listAllScheduledPending(): (ScheduledPost & { userEmail: string })[] {
+  return (
+    getDb()
+      .prepare("SELECT * FROM scheduled_posts WHERE status = 'scheduled'")
+      .all() as Record<string, unknown>[]
+  ).map((row) => ({ ...mapScheduled(row), userEmail: row.user_email as string }));
 }
 
 export function setScheduledStatus(

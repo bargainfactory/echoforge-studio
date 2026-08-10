@@ -6,7 +6,7 @@ import {
   hashPassword,
   initialsFor,
 } from "@/lib/auth/session";
-import { createUser, findUser, seedUser } from "@/lib/server/db";
+import { consumePendingPlan, createUser, findUser, seedUser } from "@/lib/server/db";
 import { rateLimit, clientIp } from "@/lib/server/rate-limit";
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
@@ -51,7 +51,8 @@ export async function POST(req: NextRequest) {
   }
 
   const passwordHash = await hashPassword(password);
-  const plan = "Starter";
+  // A Stripe checkout completed before signup reserves a plan for this email.
+  const plan = consumePendingPlan(email) ?? "Starter";
   createUser({
     email,
     name,

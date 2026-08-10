@@ -48,6 +48,27 @@ export interface PricingConfig {
   comparison: ComparisonData[];
 }
 
+/** Checkout priceId → the plan name stored on users. */
+export const PRICE_ID_TO_PLAN: Record<string, string> = {
+  free: "Free",
+  lite: "Lite",
+  starter: "Starter",
+  creatorPro: "Creator Pro",
+  agency: "Agency",
+};
+
+/**
+ * Monthly project-generation allowance per plan (a "project" is one upload →
+ * asset-set generation). Infinity = unmetered. Enforced by /api/projects.
+ */
+export const PLAN_MONTHLY_PROJECTS: Record<string, number> = {
+  Free: 1,
+  Lite: 2,
+  Starter: 4,
+  "Creator Pro": 8,
+  Agency: Number.POSITIVE_INFINITY,
+};
+
 export const DEFAULT_PRICING: PricingConfig = {
   plans: [
     {

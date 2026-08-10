@@ -3,7 +3,9 @@ import path from "node:path";
 import fs from "node:fs";
 import { getSessionUser } from "@/lib/server/auth";
 import {
+  countProjectsSince,
   createProjectWithAssets,
+  findUser,
   getBrandVoice,
   getFlags,
   insertNotification,
@@ -11,8 +13,10 @@ import {
   setProvenance,
 } from "@/lib/server/db";
 import { generateAssets } from "@/lib/server/generate";
+import { PLAN_MONTHLY_PROJECTS } from "@/lib/server/pricing";
 import { createManifest, signManifest } from "@/lib/server/provenance";
 import { rateLimit } from "@/lib/server/rate-limit";
+import { transcribeMedia } from "@/lib/server/transcribe";
 import type { BrandVoice } from "@/lib/data";
 
 /** True when any profile field would actually steer generation. */
@@ -61,6 +65,25 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Plan quota: monthly project generations, checked against the live DB plan
+  // (the session's copy can be stale after a Stripe-webhook upgrade).
+  const plan = findUser(user.email)?.plan ?? "Starter";
+  const cap = PLAN_MONTHLY_PROJECTS[plan] ?? PLAN_MONTHLY_PROJECTS.Starter;
+  if (Number.isFinite(cap)) {
+    const monthStart = new Date();
+    monthStart.setUTCDate(1);
+    monthStart.setUTCHours(0, 0, 0, 0);
+    const used = countProjectsSince(user.email, monthStart.toISOString());
+    if (used >= cap) {
+      return NextResponse.json(
+        {
+          error: `Monthly limit reached — the ${plan} plan includes ${cap} project${cap === 1 ? "" : "s"} per month. Upgrade to keep generating.`,
+        },
+        { status: 402 }
+      );
+    }
+  }
+
   // Reject an oversized body before Next buffers it (multipart is parsed fully
   // into memory), rather than after.
   const declaredLength = Number(req.headers.get("content-length") ?? 0);
@@ -78,6 +101,7 @@ export async function POST(req: NextRequest) {
   let fileName: string | undefined;
   let fileSize: string | undefined;
   let storagePath: string | undefined;
+  let transcribedBy: string | undefined;
 
   if (contentType.includes("multipart/form-data")) {
     const form = await req.formData();
@@ -95,9 +119,9 @@ export async function POST(req: NextRequest) {
       }
       fileName = f.name;
       fileSize = `${(f.size / (1024 * 1024)).toFixed(1)} MB`;
+      const bytes = Buffer.from(await f.arrayBuffer());
       // Persist the real bytes under data/uploads/<user>/<project>/.
       try {
-        const bytes = Buffer.from(await f.arrayBuffer());
         const dir = path.join(
           process.cwd(),
           "data",
@@ -111,6 +135,15 @@ export async function POST(req: NextRequest) {
         storagePath = path.relative(process.cwd(), dest);
       } catch {
         /* storage is best-effort; generation still proceeds */
+      }
+      // No pasted transcript → transcribe the media itself when a provider is
+      // connected, so generation runs off what was actually said in the file.
+      if (!transcript) {
+        const tr = await transcribeMedia(bytes, f.name, f.type);
+        if (tr) {
+          transcript = tr.text;
+          transcribedBy = tr.provider;
+        }
       }
     }
   } else {
@@ -169,6 +202,17 @@ export async function POST(req: NextRequest) {
       firstAction: { action: "generated", at: now, engine },
     });
     setProvenance(a.id, JSON.stringify(manifest), signManifest(manifest));
+  }
+
+  if (transcribedBy) {
+    insertNotification(user.email, {
+      id: `n-${crypto.randomUUID()}`,
+      title: "Media Transcribed",
+      message: `"${fileName}" was transcribed automatically (${transcribedBy}) and drove this generation.`,
+      time: "Just now",
+      read: false,
+      type: "info",
+    });
   }
 
   insertNotification(user.email, {

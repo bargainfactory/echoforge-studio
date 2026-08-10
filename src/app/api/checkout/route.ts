@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getSessionUser } from "@/lib/server/auth";
 import { getPricingConfig } from "@/lib/server/db";
 import { resolveField, isConfigured } from "@/lib/server/integrations";
 import { rateLimit, clientIp } from "@/lib/server/rate-limit";
@@ -46,22 +47,32 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Plan is not purchasable" }, { status: 400 });
     }
     try {
+      // metadata.priceId is what lets the webhook attribute a completed
+      // session back to a plan; customer_email pre-fills for signed-in buyers
+      // and guarantees the webhook knows which account (or future account,
+      // via pending_plans) the purchase belongs to.
+      const sessionUser = await getSessionUser();
+      const params: Record<string, string> = {
+        mode: "subscription",
+        "line_items[0][quantity]": "1",
+        "line_items[0][price_data][currency]": "usd",
+        "line_items[0][price_data][unit_amount]": String(Math.round(amount * 100)),
+        "line_items[0][price_data][recurring][interval]": "month",
+        "line_items[0][price_data][product_data][name]": `EchoForge ${priceId}`,
+        "metadata[priceId]": priceId,
+        "subscription_data[metadata][priceId]": priceId,
+        client_reference_id: priceId,
+        success_url: `${req.nextUrl.origin}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${req.nextUrl.origin}/pricing`,
+      };
+      if (sessionUser) params.customer_email = sessionUser.email;
       const resp = await fetch("https://api.stripe.com/v1/checkout/sessions", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${secret}`,
           "Content-Type": "application/x-www-form-urlencoded",
         },
-        body: form({
-          mode: "subscription",
-          "line_items[0][quantity]": "1",
-          "line_items[0][price_data][currency]": "usd",
-          "line_items[0][price_data][unit_amount]": String(Math.round(amount * 100)),
-          "line_items[0][price_data][recurring][interval]": "month",
-          "line_items[0][price_data][product_data][name]": `EchoForge ${priceId}`,
-          success_url: `${req.nextUrl.origin}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
-          cancel_url: `${req.nextUrl.origin}/pricing`,
-        }),
+        body: form(params),
       });
       const data = await resp.json();
       if (resp.ok && data.url) {
