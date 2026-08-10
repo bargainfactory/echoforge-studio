@@ -43,6 +43,8 @@ interface AppState {
   removeProject: (id: string) => Promise<void>;
   approveProject: (id: string) => Promise<void>;
   toggleAssetLike: (id: string) => void;
+  editAsset: (id: string, updates: { name?: string; content?: string }) => Promise<Asset | null>;
+  regenerateAsset: (id: string, feedback?: string) => Promise<Asset | null>;
   markNotificationRead: (id: string) => void;
   markAllNotificationsRead: () => void;
   addToast: (message: string, type?: Toast["type"]) => void;
@@ -276,6 +278,34 @@ export function AppProvider({ children }: { children: ReactNode }) {
     api(`/api/assets/${id}/like`, { method: "POST" }).catch(() => {});
   }, []);
 
+  const editAsset = useCallback(
+    async (id: string, updates: { name?: string; content?: string }) => {
+      const res = await api(`/api/assets/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify(updates),
+      });
+      if (!res.ok) return null;
+      const { asset } = (await res.json()) as { asset: Asset };
+      setAssets((prev) => prev.map((a) => (a.id === id ? asset : a)));
+      return asset;
+    },
+    []
+  );
+
+  const regenerateAsset = useCallback(async (id: string, feedback?: string) => {
+    const res = await api(`/api/assets/${id}/regenerate`, {
+      method: "POST",
+      body: JSON.stringify({
+        feedback: feedback ?? "",
+        locale: localStorage.getItem("ef_locale") || "en",
+      }),
+    });
+    if (!res.ok) return null;
+    const { asset } = (await res.json()) as { asset: Asset };
+    setAssets((prev) => prev.map((a) => (a.id === id ? asset : a)));
+    return asset;
+  }, []);
+
   const markNotificationRead = useCallback((id: string) => {
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, read: true } : n))
@@ -305,6 +335,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         removeProject,
         approveProject,
         toggleAssetLike,
+        editAsset,
+        regenerateAsset,
         markNotificationRead,
         markAllNotificationsRead,
         addToast,

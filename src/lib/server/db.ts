@@ -1,11 +1,12 @@
 import { DatabaseSync } from "node:sqlite";
 import path from "node:path";
 import fs from "node:fs";
-import type { Project, Asset, Notification } from "@/lib/data";
+import type { Project, Asset, Notification, BrandVoice } from "@/lib/data";
 import {
   defaultProjects,
   defaultAssets,
   defaultNotifications,
+  DEFAULT_VOICE,
 } from "@/lib/data";
 import { DEFAULT_PRICING, type PricingConfig } from "./pricing";
 
@@ -95,6 +96,10 @@ function getDb(): DatabaseSync {
       path  TEXT,
       ts    INTEGER NOT NULL,
       meta  TEXT
+    );
+    CREATE TABLE IF NOT EXISTS brand_voice (
+      user_email TEXT PRIMARY KEY REFERENCES users(email) ON DELETE CASCADE,
+      config     TEXT NOT NULL
     );
     CREATE TABLE IF NOT EXISTS scheduled_posts (
       id           TEXT PRIMARY KEY,
@@ -374,6 +379,52 @@ export function setProjectAssetsStatus(
     .run(status, projectId, email.toLowerCase());
 }
 
+export function getAsset(email: string, id: string): Asset | null {
+  const row = getDb()
+    .prepare("SELECT * FROM assets WHERE id = ? AND user_email = ?")
+    .get(id, email.toLowerCase()) as Record<string, unknown> | undefined;
+  return row ? mapAsset(row) : null;
+}
+
+export function updateAsset(
+  email: string,
+  id: string,
+  updates: { name?: string; content?: string }
+): Asset | null {
+  const conn = getDb();
+  const sets: string[] = [];
+  const values: string[] = [];
+  if (updates.name !== undefined) {
+    sets.push("name = ?");
+    values.push(updates.name);
+  }
+  if (updates.content !== undefined) {
+    sets.push("content = ?");
+    values.push(updates.content);
+  }
+  if (sets.length > 0) {
+    values.push(id, email.toLowerCase());
+    conn
+      .prepare(`UPDATE assets SET ${sets.join(", ")} WHERE id = ? AND user_email = ?`)
+      .run(...values);
+  }
+  return getAsset(email, id);
+}
+
+/** Title + stored transcript of the project an asset belongs to. */
+export function getProjectSource(
+  email: string,
+  projectId: string
+): { title: string; transcript: string } | null {
+  const row = getDb()
+    .prepare("SELECT title, transcript FROM projects WHERE id = ? AND user_email = ?")
+    .get(projectId, email.toLowerCase()) as
+    | { title: string; transcript: string | null }
+    | undefined;
+  if (!row) return null;
+  return { title: row.title, transcript: row.transcript ?? "" };
+}
+
 export function toggleAssetLike(email: string, id: string): Asset | null {
   const conn = getDb();
   conn
@@ -503,6 +554,28 @@ export function setIntegrationRaw(
       "INSERT OR REPLACE INTO integrations (name, config) VALUES (?, ?)"
     )
     .run(name, JSON.stringify(config));
+}
+
+// --- Brand voice ---
+
+export function getBrandVoice(email: string): BrandVoice {
+  const row = getDb()
+    .prepare("SELECT config FROM brand_voice WHERE user_email = ?")
+    .get(email.toLowerCase()) as { config: string } | undefined;
+  if (!row) return { ...DEFAULT_VOICE };
+  try {
+    return { ...DEFAULT_VOICE, ...(JSON.parse(row.config) as Partial<BrandVoice>) };
+  } catch {
+    return { ...DEFAULT_VOICE };
+  }
+}
+
+export function setBrandVoice(email: string, voice: BrandVoice): void {
+  getDb()
+    .prepare(
+      "INSERT OR REPLACE INTO brand_voice (user_email, config) VALUES (?, ?)"
+    )
+    .run(email.toLowerCase(), JSON.stringify(voice));
 }
 
 // --- Password reset tokens ---

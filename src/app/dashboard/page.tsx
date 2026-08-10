@@ -30,9 +30,13 @@ import {
   FileText,
   Calendar,
   Send,
+  Pencil,
+  RefreshCw,
+  Loader2,
 } from "lucide-react";
 import type { Project, Asset } from "@/lib/data";
 import IntegrationsPanel from "@/components/integrations-panel";
+import BrandVoicePanel from "@/components/brand-voice-panel";
 
 type Tab = "Overview" | "Projects" | "Upload" | "Schedule" | "Analytics" | "Notifications" | "Settings";
 
@@ -67,6 +71,8 @@ export default function Dashboard() {
     approveProject,
     removeProject,
     toggleAssetLike,
+    editAsset,
+    regenerateAsset,
     markNotificationRead,
     markAllNotificationsRead,
     addToast,
@@ -79,6 +85,10 @@ export default function Dashboard() {
   const [uploading, setUploading] = useState(false);
   const [uploadPct, setUploadPct] = useState(0);
   const [viewingAsset, setViewingAsset] = useState<Asset | null>(null);
+  const [editDraft, setEditDraft] = useState<string | null>(null);
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [regenFeedback, setRegenFeedback] = useState("");
+  const [regenerating, setRegenerating] = useState(false);
   const [schedulePlatform, setSchedulePlatform] = useState("TikTok");
   const [scheduleAt, setScheduleAt] = useState("");
   const [settingsForm, setSettingsForm] = useState({
@@ -101,6 +111,42 @@ export default function Dashboard() {
     setUploading(false);
     setUploadPct(0);
   }, []);
+
+  // Leaving edit/regenerate state behind when switching assets would apply it
+  // to the wrong asset — reset whenever the viewer target changes.
+  useEffect(() => {
+    setEditDraft(null);
+    setRegenFeedback("");
+  }, [viewingAsset?.id]);
+
+  const handleSaveEdit = useCallback(async () => {
+    if (!viewingAsset || editDraft === null) return;
+    setSavingEdit(true);
+    const updated = await editAsset(viewingAsset.id, { content: editDraft });
+    setSavingEdit(false);
+    if (updated) {
+      setViewingAsset(updated);
+      setEditDraft(null);
+      addToast(t("asset.updated"));
+    } else {
+      addToast(t("asset.updateFailed"), "error");
+    }
+  }, [viewingAsset, editDraft, editAsset, addToast, t]);
+
+  const handleRegenerate = useCallback(async () => {
+    if (!viewingAsset || regenerating) return;
+    setRegenerating(true);
+    const updated = await regenerateAsset(viewingAsset.id, regenFeedback);
+    setRegenerating(false);
+    if (updated) {
+      setViewingAsset(updated);
+      setRegenFeedback("");
+      setEditDraft(null);
+      addToast(t("asset.regenDone"));
+    } else {
+      addToast(t("asset.regenFailed"), "error");
+    }
+  }, [viewingAsset, regenerating, regenFeedback, regenerateAsset, addToast, t]);
 
   const handleSchedule = useCallback(async () => {
     if (!viewingAsset || !scheduleAt) return;
@@ -432,11 +478,69 @@ export default function Dashboard() {
                 </button>
               </div>
               <div className="p-6 overflow-y-auto">
-                <pre className="whitespace-pre-wrap font-sans text-sm text-foreground/90 leading-relaxed">
-                  {viewingAsset.content || "No content generated for this asset."}
-                </pre>
+                {editDraft !== null ? (
+                  <textarea
+                    value={editDraft}
+                    onChange={(e) => setEditDraft(e.target.value)}
+                    rows={14}
+                    className="w-full px-3 py-2.5 bg-cyber-dark border border-cyber-border rounded-xl text-sm text-foreground focus:outline-none focus:border-neon-purple/50 resize-y font-sans leading-relaxed"
+                  />
+                ) : (
+                  <pre className="whitespace-pre-wrap font-sans text-sm text-foreground/90 leading-relaxed">
+                    {viewingAsset.content || "No content generated for this asset."}
+                  </pre>
+                )}
               </div>
               <div className="px-6 py-4 border-t border-cyber-border space-y-3">
+                {/* Edit + regenerate */}
+                <div className="flex flex-wrap items-center gap-2">
+                  {editDraft === null ? (
+                    <button
+                      onClick={() => setEditDraft(viewingAsset.content || "")}
+                      className="px-3 py-2 rounded-lg bg-cyber-dark border border-cyber-border text-xs font-medium text-foreground hover:border-neon-purple/50 transition-colors flex items-center gap-1.5"
+                    >
+                      <Pencil className="w-3.5 h-3.5" /> {t("asset.edit")}
+                    </button>
+                  ) : (
+                    <>
+                      <button
+                        onClick={handleSaveEdit}
+                        disabled={savingEdit}
+                        className="px-3 py-2 rounded-lg bg-gradient-to-r from-neon-purple to-electric-blue text-white text-xs font-medium hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-1.5"
+                      >
+                        {savingEdit ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Check className="w-3.5 h-3.5" />
+                        )}
+                        {t("asset.editSave")}
+                      </button>
+                      <button
+                        onClick={() => setEditDraft(null)}
+                        disabled={savingEdit}
+                        className="px-3 py-2 rounded-lg bg-cyber-dark border border-cyber-border text-xs text-cyber-muted hover:text-foreground transition-colors"
+                      >
+                        {t("asset.editCancel")}
+                      </button>
+                    </>
+                  )}
+                  <input
+                    type="text"
+                    value={regenFeedback}
+                    onChange={(e) => setRegenFeedback(e.target.value)}
+                    placeholder={t("asset.regenPh")}
+                    maxLength={500}
+                    className="flex-1 min-w-[160px] px-3 py-2 bg-cyber-dark border border-cyber-border rounded-lg text-xs text-foreground placeholder:text-cyber-muted focus:outline-none focus:border-neon-purple/50"
+                  />
+                  <button
+                    onClick={handleRegenerate}
+                    disabled={regenerating}
+                    className="px-3 py-2 rounded-lg bg-cyber-dark border border-neon-purple/40 text-xs font-medium text-neon-purple hover:bg-neon-purple/10 transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${regenerating ? "animate-spin" : ""}`} />
+                    {regenerating ? t("asset.regenerating") : t("asset.regen")}
+                  </button>
+                </div>
                 <div className="flex flex-wrap items-end gap-2">
                   <div className="flex-1 min-w-[120px]">
                     <label className="block text-[11px] text-cyber-muted mb-1">Platform</label>
@@ -1092,6 +1196,8 @@ function SettingsTab({
           </label>
         </div>
       </div>
+
+      <BrandVoicePanel />
 
       <IntegrationsPanel />
 

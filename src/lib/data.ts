@@ -43,6 +43,31 @@ export interface Notification {
   type: "info" | "success" | "warning";
 }
 
+/**
+ * Per-user brand-voice profile. Every field is optional free text; an empty
+ * profile leaves generation unchanged. Applied by both the deterministic
+ * engine and the LLM path so output "sounds like" the creator.
+ */
+export interface BrandVoice {
+  tone: string;
+  audience: string;
+  cta: string;
+  hashtags: string;
+  bannedWords: string;
+  signature: string;
+  emojis: boolean;
+}
+
+export const DEFAULT_VOICE: BrandVoice = {
+  tone: "",
+  audience: "",
+  cta: "",
+  hashtags: "",
+  bannedWords: "",
+  signature: "",
+  emojis: true,
+};
+
 export const blogPosts: BlogPost[] = [
   {
     slug: "build-10k-faceless-youtube-channel",

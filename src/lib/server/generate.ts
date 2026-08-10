@@ -7,9 +7,14 @@
  * an LLM (Claude/GPT) can be dropped in for higher-quality output: set an API
  * key and implement `generateWithLLM`, and `generateAssets` will prefer it and
  * fall back to the deterministic engine on any error.
+ *
+ * Both paths honor the user's BrandVoice profile: tone/audience steer the LLM
+ * prompt, while CTA/hashtags/signature/banned-words/emoji policy are applied
+ * mechanically so they hold even in deterministic mode.
  */
 
 import { labelsFor } from "./generate-labels";
+import type { BrandVoice } from "@/lib/data";
 
 export interface GeneratedAsset {
   name: string;
@@ -62,6 +67,71 @@ function scoreHook(s: string): number {
   return score;
 }
 
+// --- Brand voice application (mechanical transforms, engine-agnostic) ---
+
+function stripEmojis(s: string): string {
+  return s
+    .replace(/[\p{Extended_Pictographic}\u{FE0F}\u{200D}]/gu, "")
+    .replace(/ {2,}/g, " ")
+    .replace(/^ +/gm, "");
+}
+
+function removeBanned(s: string, banned: string): string {
+  const words = banned
+    .split(/[,\n]/)
+    .map((w) => w.trim())
+    .filter(Boolean);
+  let out = s;
+  for (const w of words) {
+    const esc = w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    out = out.replace(new RegExp(`\\b${esc}\\b`, "gi"), "").replace(/ {2,}/g, " ");
+  }
+  return out;
+}
+
+/**
+ * Enforces the parts of the voice profile that can be applied to finished
+ * text (banned words, emoji policy). Runs on LLM output too, as a backstop —
+ * the model is instructed to comply, but this makes it a guarantee.
+ */
+export function applyVoice(
+  assets: GeneratedAsset[],
+  voice?: BrandVoice
+): GeneratedAsset[] {
+  if (!voice) return assets;
+  return assets.map((a) => {
+    let name = a.name;
+    let content = a.content;
+    if (voice.bannedWords.trim()) {
+      name = removeBanned(name, voice.bannedWords);
+      content = removeBanned(content, voice.bannedWords);
+    }
+    if (!voice.emojis) {
+      name = stripEmojis(name);
+      content = stripEmojis(content);
+    }
+    return { ...a, name: name.trim(), content: content.trim() };
+  });
+}
+
+/** Renders the voice profile as prompt directives for the LLM path. */
+function voiceBlock(voice?: BrandVoice): string {
+  if (!voice) return "";
+  const lines: string[] = [];
+  if (voice.tone.trim()) lines.push(`Tone of voice: ${voice.tone.trim()}`);
+  if (voice.audience.trim()) lines.push(`Target audience: ${voice.audience.trim()}`);
+  if (voice.cta.trim()) lines.push(`Default call-to-action to use: ${voice.cta.trim()}`);
+  if (voice.hashtags.trim()) lines.push(`Preferred hashtags: ${voice.hashtags.trim()}`);
+  if (voice.bannedWords.trim())
+    lines.push(`NEVER use these words/phrases: ${voice.bannedWords.trim()}`);
+  if (voice.signature.trim())
+    lines.push(`Sign-off / signature for newsletters and threads: ${voice.signature.trim()}`);
+  if (!voice.emojis) lines.push("Do NOT use emojis anywhere.");
+  return lines.length
+    ? `\n\nBrand voice profile (follow strictly):\n- ${lines.join("\n- ")}`
+    : "";
+}
+
 /**
  * Deterministic generator. Produces clips + a LinkedIn carousel, a newsletter,
  * and an X thread whose contents are extracted/condensed from the transcript.
@@ -69,7 +139,8 @@ function scoreHook(s: string): number {
 export function generateAssetsDeterministic(
   title: string,
   transcript: string,
-  locale?: string
+  locale?: string,
+  voice?: BrandVoice
 ): GeneratedAsset[] {
   const L = labelsFor(locale);
   const topic = shortTitle(title, 8);
@@ -78,6 +149,10 @@ export function generateAssetsDeterministic(
   const ranked = source
     .map((s, i) => ({ s, i, score: scoreHook(s) }))
     .sort((a, b) => b.score - a.score);
+
+  const cta = voice?.cta.trim() || "";
+  const tags = voice?.hashtags.trim() || "";
+  const signature = voice?.signature.trim() || "";
 
   const assets: GeneratedAsset[] = [];
 
@@ -102,8 +177,8 @@ ${L.body}
 ${source.slice(h.i, h.i + 2).join(" ")}
 
 ${L.caption} ${name}
-${L.ctaWord}: ${L.ctaFollow} ${topic}.
-${hashtag(topic)} ${L.hashtags}`,
+${L.ctaWord}: ${cta || `${L.ctaFollow} ${topic}.`}
+${tags || `${hashtag(topic)} ${L.hashtags}`}`,
     });
   });
 
@@ -118,7 +193,7 @@ ${hashtag(topic)} ${L.hashtags}`,
 
 ${L.slide} 1 (${L.hookWord}): ${topic}
 ${slides.join("\n")}
-${L.slide} 9 (${L.ctaWord}): ${L.carouselCta}`,
+${L.slide} 9 (${L.ctaWord}): ${cta || L.carouselCta}`,
   });
 
   // --- Newsletter ---
@@ -139,11 +214,12 @@ ${ranked
   .map((h, i) => `${i + 1}. ${condense(h.s, 120)}`)
   .join("\n")}
 
-${L.newsletterOutro}`,
+${L.newsletterOutro}${signature ? `\n\n${signature}` : ""}`,
   });
 
   // --- X / Twitter thread ---
   const tweets = ranked.slice(0, 8).map((h, i) => `${i + 2}/ ${condense(h.s, 240)}`);
+  const close = [L.threadClose, cta, signature].filter(Boolean).join("\n");
   assets.push({
     name: `${shortTitle(topic)} — ${L.nameThread}`,
     type: L.typeThread,
@@ -151,10 +227,10 @@ ${L.newsletterOutro}`,
 
 1/ ${topic} — ${L.threadOpen}
 ${tweets.join("\n")}
-${tweets.length + 2}/ ${L.threadClose}`,
+${tweets.length + 2}/ ${close}`,
   });
 
-  return assets;
+  return applyVoice(assets, voice);
 }
 
 const LLM_SYSTEM = `You are EchoForge's content-repurposing engine. Given a title and a transcript/script of long-form content, produce a set of ready-to-post short-form assets derived from the ACTUAL content (never generic filler).
@@ -181,27 +257,34 @@ const LLM_SCHEMA = {
   },
 } as const;
 
+const REGEN_SYSTEM = `You are EchoForge's content-repurposing engine. Regenerate ONE existing short-form asset from the source transcript/script. Keep the same asset type and general format, but produce a fresh, improved version derived from the ACTUAL source content (never generic filler). If revision feedback is provided, applying it takes priority. "content" is the full ready-to-post text. "name" is a short human label.`;
+
+const REGEN_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  required: ["name", "type", "content"],
+  properties: {
+    name: { type: "string" },
+    type: { type: "string" },
+    content: { type: "string" },
+  },
+} as const;
+
 /**
- * LLM upgrade path. Uses Anthropic (Claude) when an Anthropic key is configured
+ * Shared LLM call. Uses Anthropic (Claude) when an Anthropic key is configured
  * (env or the integrations store), else OpenAI when that key is present, else
  * returns null so the deterministic engine runs. Any error falls through.
  */
-async function generateWithLLM(
-  title: string,
-  transcript: string,
-  locale?: string
-): Promise<GeneratedAsset[] | null> {
+async function llmComplete(
+  system: string,
+  prompt: string,
+  schema: Record<string, unknown>
+): Promise<string | null> {
   // Resolve keys from env or the integrations store, without a static import
   // cycle at module load.
   const { resolveField } = await import("./integrations");
   const anthropicKey = resolveField("llm", "anthropicApiKey");
   const openaiKey = resolveField("llm", "openaiApiKey");
-
-  const langLine =
-    locale && locale !== "en"
-      ? `\n\nWrite ALL asset names and content in this language (BCP-47 code): ${locale}.`
-      : "";
-  const userPrompt = `Title: ${title}\n\nTranscript / script:\n${transcript || "(no transcript provided — infer from the title)"}${langLine}`;
 
   if (anthropicKey) {
     const { default: Anthropic } = await import("@anthropic-ai/sdk");
@@ -213,16 +296,15 @@ async function generateWithLLM(
       model: "claude-opus-4-8",
       max_tokens: 32000,
       thinking: { type: "adaptive" },
-      system: LLM_SYSTEM,
-      output_config: { format: { type: "json_schema", schema: LLM_SCHEMA } },
-      messages: [{ role: "user", content: userPrompt }],
+      system,
+      output_config: { format: { type: "json_schema", schema } },
+      messages: [{ role: "user", content: prompt }],
     });
     const res = await stream.finalMessage();
-    const text = res.content
+    return res.content
       .filter((b) => b.type === "text")
       .map((b) => (b as { text: string }).text)
       .join("");
-    return parseAssets(text);
   }
 
   if (openaiKey) {
@@ -236,50 +318,128 @@ async function generateWithLLM(
         model: "gpt-4o",
         response_format: { type: "json_object" },
         messages: [
-          { role: "system", content: LLM_SYSTEM + " Respond with a JSON object {\"assets\": [...]}." },
-          { role: "user", content: userPrompt },
+          { role: "system", content: system + " Respond with a single JSON object." },
+          { role: "user", content: prompt },
         ],
       }),
     });
     if (!resp.ok) return null;
     const data = await resp.json();
-    return parseAssets(data?.choices?.[0]?.message?.content ?? "");
+    return data?.choices?.[0]?.message?.content ?? null;
   }
 
   return null;
 }
 
-function parseAssets(text: string): GeneratedAsset[] | null {
+function langLine(locale?: string): string {
+  return locale && locale !== "en"
+    ? `\n\nWrite ALL asset names and content in this language (BCP-47 code): ${locale}.`
+    : "";
+}
+
+async function generateWithLLM(
+  title: string,
+  transcript: string,
+  locale?: string,
+  voice?: BrandVoice
+): Promise<GeneratedAsset[] | null> {
+  const userPrompt = `Title: ${title}\n\nTranscript / script:\n${transcript || "(no transcript provided — infer from the title)"}${voiceBlock(voice)}${langLine(locale)}`;
+  const text = await llmComplete(LLM_SYSTEM, userPrompt, LLM_SCHEMA);
+  return text ? parseAssets(text) : null;
+}
+
+function parseJsonLoose(text: string): unknown | null {
   try {
     const start = text.indexOf("{");
     const end = text.lastIndexOf("}");
     if (start === -1 || end === -1) return null;
-    const parsed = JSON.parse(text.slice(start, end + 1));
-    const assets = Array.isArray(parsed) ? parsed : parsed.assets;
-    if (!Array.isArray(assets)) return null;
-    const clean = assets
-      .filter((a) => a && a.name && a.type && a.content)
-      .map((a) => ({
-        name: String(a.name),
-        type: String(a.type),
-        content: String(a.content),
-      }));
-    return clean.length ? clean : null;
+    return JSON.parse(text.slice(start, end + 1));
   } catch {
     return null;
   }
 }
 
+function cleanAsset(a: unknown): GeneratedAsset | null {
+  const r = a as Record<string, unknown> | null;
+  if (!r || !r.name || !r.type || !r.content) return null;
+  return { name: String(r.name), type: String(r.type), content: String(r.content) };
+}
+
+function parseAssets(text: string): GeneratedAsset[] | null {
+  const parsed = parseJsonLoose(text);
+  if (!parsed) return null;
+  const assets = Array.isArray(parsed)
+    ? parsed
+    : (parsed as Record<string, unknown>).assets;
+  if (!Array.isArray(assets)) return null;
+  const clean = assets.map(cleanAsset).filter((a): a is GeneratedAsset => a !== null);
+  return clean.length ? clean : null;
+}
+
 export async function generateAssets(
   title: string,
   transcript: string,
-  locale?: string
+  locale?: string,
+  voice?: BrandVoice
 ): Promise<GeneratedAsset[]> {
   try {
-    const llm = await generateWithLLM(title, transcript, locale);
-    if (llm && llm.length) return llm;
+    const llm = await generateWithLLM(title, transcript, locale, voice);
+    if (llm && llm.length) return applyVoice(llm, voice);
   } catch {
     /* fall back to deterministic */
   }
-  return generateAssetsDeterministic(title, transcript, locale);
+  return generateAssetsDeterministic(title, transcript, locale, voice);
+}
+
+/**
+ * Regenerates a single asset in place. The LLM path rewrites it from the
+ * project's source transcript, honoring the optional user feedback and the
+ * brand voice. Without a connected key, the deterministic engine re-runs and
+ * the best same-type candidate is returned (feedback cannot be honored there —
+ * the UI labels that mode accordingly).
+ */
+export async function regenerateAsset(
+  current: { name: string; type: string; content: string },
+  ctx: {
+    title: string;
+    transcript: string;
+    locale?: string;
+    voice?: BrandVoice;
+    feedback?: string;
+  }
+): Promise<GeneratedAsset> {
+  try {
+    const prompt = `Title: ${ctx.title}
+
+Source transcript / script:
+${ctx.transcript || "(none — infer from the title)"}
+
+Asset to regenerate:
+Type: ${current.type}
+Name: ${current.name}
+Current content:
+${current.content}${ctx.feedback?.trim() ? `\n\nRevision feedback (apply this): ${ctx.feedback.trim()}` : ""}${voiceBlock(ctx.voice)}${langLine(ctx.locale)}`;
+    const text = await llmComplete(REGEN_SYSTEM, prompt, REGEN_SCHEMA);
+    if (text) {
+      const parsed = cleanAsset(parseJsonLoose(text));
+      // Keep the original type label so the asset stays grouped consistently.
+      if (parsed) return applyVoice([{ ...parsed, type: current.type }], ctx.voice)[0];
+    }
+  } catch {
+    /* fall back to deterministic */
+  }
+
+  const det = generateAssetsDeterministic(
+    ctx.title,
+    ctx.transcript,
+    ctx.locale,
+    ctx.voice
+  );
+  const sameType = det.filter((a) => a.type === current.type);
+  const pick =
+    sameType.find((a) => a.content !== current.content) ??
+    sameType[0] ??
+    det.find((a) => a.content !== current.content) ??
+    det[0];
+  return pick ? { ...pick, type: current.type } : { ...current };
 }

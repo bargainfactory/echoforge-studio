@@ -4,6 +4,7 @@ import fs from "node:fs";
 import { getSessionUser } from "@/lib/server/auth";
 import {
   createProjectWithAssets,
+  getBrandVoice,
   insertNotification,
   listProjects,
 } from "@/lib/server/db";
@@ -111,8 +112,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Title is required" }, { status: 400 });
   }
 
-  // Real generation from the actual input content, in the user's language.
-  const generated = await generateAssets(title, transcript, locale);
+  // Real generation from the actual input content, in the user's language,
+  // steered by the account's brand-voice profile.
+  const generated = await generateAssets(
+    title,
+    transcript,
+    locale,
+    getBrandVoice(user.email)
+  );
 
   const { project, assets } = createProjectWithAssets(
     user.email,
