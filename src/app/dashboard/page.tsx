@@ -36,6 +36,10 @@ import {
   ShieldCheck,
   ShieldAlert,
   Fingerprint,
+  Plus,
+  ChevronLeft,
+  ChevronRight,
+  List,
 } from "lucide-react";
 import type { Project, Asset } from "@/lib/data";
 import IntegrationsPanel from "@/components/integrations-panel";
@@ -358,7 +362,7 @@ export default function Dashboard() {
               onStart={() => setShowUploadModal(true)}
             />
           )}
-          {activeTab === "Schedule" && <ScheduleTab addToast={addToast} />}
+          {activeTab === "Schedule" && <ScheduleTab />}
           {activeTab === "Analytics" && <AnalyticsTab />}
           {activeTab === "Notifications" && (
             <NotificationsTab
@@ -986,18 +990,62 @@ function UploadTab({
   );
 }
 
-// --- Schedule Tab ---
+// --- Schedule Tab (calendar + list scheduling dashboard) ---
 interface SchedPost {
   id: string;
+  assetId: string;
   assetName: string;
   platform: string;
   scheduledAt: string;
   status: "scheduled" | "published" | "canceled";
 }
 
-function ScheduleTab({ addToast }: { addToast: (m: string, t?: "success" | "error" | "info") => void }) {
+const SCHED_PLATFORMS = ["TikTok", "YouTube", "Instagram", "LinkedIn", "X"];
+
+const schedStatusColor: Record<string, string> = {
+  scheduled: "text-warning bg-warning/10",
+  published: "text-success bg-success/10",
+  canceled: "text-cyber-muted bg-cyber-dark",
+};
+
+const schedChipColor: Record<string, string> = {
+  scheduled: "bg-warning/15 text-warning border-warning/30",
+  published: "bg-success/15 text-success border-success/30",
+  canceled: "bg-cyber-dark text-cyber-muted border-cyber-border",
+};
+
+function toLocalInput(d: Date): string {
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+function schedDayKey(d: Date): string {
+  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+}
+
+function ScheduleTab() {
+  const { assets, addToast } = useApp();
+  const { t, locale } = useTranslation();
   const [posts, setPosts] = useState<SchedPost[]>([]);
   const [loading, setLoading] = useState(true);
+  const [view, setView] = useState<"calendar" | "list">("calendar");
+  const [month, setMonth] = useState(() => {
+    const n = new Date();
+    return new Date(n.getFullYear(), n.getMonth(), 1);
+  });
+  const [composerOpen, setComposerOpen] = useState(false);
+  const [selected, setSelected] = useState<SchedPost | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [formAsset, setFormAsset] = useState("");
+  const [formPlatform, setFormPlatform] = useState("TikTok");
+  const [formAt, setFormAt] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    d.setHours(9, 0, 0, 0);
+    return toLocalInput(d);
+  });
+  const [editAt, setEditAt] = useState("");
+  const [editPlatform, setEditPlatform] = useState("TikTok");
 
   useEffect(() => {
     let active = true;
@@ -1011,6 +1059,38 @@ function ScheduleTab({ addToast }: { addToast: (m: string, t?: "success" | "erro
     };
   }, []);
 
+  const openDetail = useCallback((p: SchedPost) => {
+    setSelected(p);
+    setEditPlatform(p.platform);
+    const d = new Date(p.scheduledAt);
+    setEditAt(Number.isNaN(d.getTime()) ? "" : toLocalInput(d));
+  }, []);
+
+  const createPost = useCallback(async () => {
+    const asset = assets.find((a) => a.id === formAsset);
+    if (!asset || !formAt) return;
+    setSaving(true);
+    const res = await fetch("/api/schedule", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        assetId: asset.id,
+        assetName: asset.name,
+        platform: formPlatform,
+        scheduledAt: formAt,
+      }),
+    });
+    setSaving(false);
+    if (res.ok) {
+      const { post } = await res.json();
+      setPosts((prev) => [post, ...prev]);
+      setComposerOpen(false);
+      addToast(t("sched.toastScheduled", { platform: formPlatform }));
+    } else {
+      addToast(t("sched.toastFailed"), "error");
+    }
+  }, [assets, formAsset, formPlatform, formAt, addToast, t]);
+
   const act = useCallback(
     async (id: string, action: "publish" | "cancel") => {
       const res = await fetch(
@@ -1020,74 +1100,407 @@ function ScheduleTab({ addToast }: { addToast: (m: string, t?: "success" | "erro
       if (res.ok) {
         const d = await res.json();
         setPosts(d.posts);
+        setSelected(null);
         addToast(
           action === "cancel"
-            ? "Post canceled"
+            ? t("sched.toastCanceled")
             : d.connected
-            ? "Published via your connected account"
-            : "Published (demo — connect a platform app to deliver for real)"
+              ? t("sched.toastPublished")
+              : t("sched.toastPublishedDemo")
         );
       }
     },
-    [addToast]
+    [addToast, t]
   );
 
-  const statusColor: Record<string, string> = {
-    scheduled: "text-warning bg-warning/10",
-    published: "text-success bg-success/10",
-    canceled: "text-cyber-muted bg-cyber-dark",
-  };
+  const reschedule = useCallback(async () => {
+    if (!selected || !editAt) return;
+    setSaving(true);
+    const res = await fetch(`/api/schedule/${selected.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ platform: editPlatform, scheduledAt: editAt }),
+    });
+    setSaving(false);
+    if (res.ok) {
+      const d = await res.json();
+      setPosts(d.posts);
+      setSelected(null);
+      addToast(t("sched.toastRescheduled"));
+    } else {
+      addToast(t("sched.toastFailed"), "error");
+    }
+  }, [selected, editAt, editPlatform, addToast, t]);
+
+  // Month grid: 6 weeks starting on the Sunday on/before the 1st.
+  const gridStart = new Date(month);
+  gridStart.setDate(1 - month.getDay());
+  const cells = Array.from({ length: 42 }, (_, i) => {
+    const d = new Date(gridStart);
+    d.setDate(gridStart.getDate() + i);
+    return d;
+  });
+  const weekdays = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(gridStart);
+    d.setDate(gridStart.getDate() + i);
+    return d.toLocaleDateString(locale, { weekday: "short" });
+  });
+  const byDay = new Map<string, SchedPost[]>();
+  for (const p of posts) {
+    const d = new Date(p.scheduledAt);
+    if (Number.isNaN(d.getTime())) continue;
+    const key = schedDayKey(d);
+    byDay.set(key, [...(byDay.get(key) ?? []), p]);
+  }
+  const todayKey = schedDayKey(new Date());
+
+  const upcoming = posts
+    .filter((p) => p.status === "scheduled")
+    .sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt));
+  const past = posts
+    .filter((p) => p.status !== "scheduled")
+    .sort((a, b) => b.scheduledAt.localeCompare(a.scheduledAt));
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <div className="w-8 h-8 rounded-full border-2 border-cyber-border border-t-neon-purple animate-spin" />
+      </div>
+    );
+  }
+
+  const listRow = (p: SchedPost) => (
+    <div
+      key={p.id}
+      onClick={() => openDetail(p)}
+      className="bg-cyber-card border border-cyber-border rounded-xl p-4 flex items-center gap-4 cursor-pointer hover:border-neon-purple/40 transition-colors"
+    >
+      <div className="w-10 h-10 rounded-lg bg-cyber-dark border border-cyber-border flex items-center justify-center shrink-0">
+        <Send className="w-4 h-4 text-neon-purple" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium text-foreground truncate">{p.assetName}</p>
+        <div className="flex flex-wrap items-center gap-2 mt-1">
+          <span className="text-xs text-cyber-muted">{p.platform}</span>
+          <span className="text-xs text-cyber-muted">
+            {new Date(p.scheduledAt).toLocaleString(locale)}
+          </span>
+          <span className={`text-xs px-2 py-0.5 rounded-full ${schedStatusColor[p.status]}`}>
+            {t(`sched.status.${p.status}`)}
+          </span>
+        </div>
+      </div>
+      {p.status === "scheduled" && (
+        <div className="flex items-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
+          <button
+            onClick={() => act(p.id, "publish")}
+            className="px-3 py-1.5 text-xs font-medium rounded-lg bg-gradient-to-r from-neon-purple to-electric-blue text-white hover:opacity-90"
+          >
+            {t("sched.publishNow")}
+          </button>
+          <button
+            onClick={() => act(p.id, "cancel")}
+            className="px-3 py-1.5 text-xs rounded-lg bg-cyber-dark border border-cyber-border text-cyber-muted hover:text-red-400"
+          >
+            {t("sched.cancelPost")}
+          </button>
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-cyber-muted">
-        Schedule approved assets to your platforms. Connect a publishing app in Settings → Integrations to deliver for real.
-      </p>
-      {loading ? (
-        <div className="text-center py-16 text-cyber-muted">Loading…</div>
-      ) : posts.length === 0 ? (
-        <div className="text-center py-16 text-cyber-muted">
-          Nothing scheduled yet. Open an asset and pick a platform + time to schedule it.
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-cyber-muted">{t("sched.intro")}</p>
+        <div className="flex items-center gap-2">
+          <div className="flex rounded-lg border border-cyber-border overflow-hidden">
+            <button
+              onClick={() => setView("calendar")}
+              className={`px-3 py-1.5 text-xs font-medium flex items-center gap-1.5 transition-colors ${
+                view === "calendar" ? "bg-neon-purple/15 text-neon-purple" : "text-cyber-muted hover:text-foreground"
+              }`}
+            >
+              <Calendar className="w-3.5 h-3.5" /> {t("sched.calendar")}
+            </button>
+            <button
+              onClick={() => setView("list")}
+              className={`px-3 py-1.5 text-xs font-medium flex items-center gap-1.5 transition-colors ${
+                view === "list" ? "bg-neon-purple/15 text-neon-purple" : "text-cyber-muted hover:text-foreground"
+              }`}
+            >
+              <List className="w-3.5 h-3.5" /> {t("sched.list")}
+            </button>
+          </div>
+          <button
+            onClick={() => setComposerOpen(true)}
+            className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-neon-purple to-electric-blue text-white text-xs font-medium hover:opacity-90 transition-opacity flex items-center gap-1.5"
+          >
+            <Plus className="w-3.5 h-3.5" /> {t("sched.new")}
+          </button>
         </div>
-      ) : (
-        <div className="space-y-3">
-          {posts.map((p) => (
-            <div key={p.id} className="bg-cyber-card border border-cyber-border rounded-xl p-4 flex items-center gap-4">
-              <div className="w-10 h-10 rounded-lg bg-cyber-dark border border-cyber-border flex items-center justify-center shrink-0">
-                <Send className="w-4 h-4 text-neon-purple" />
+      </div>
+
+      {view === "calendar" ? (
+        <div className="bg-cyber-card border border-cyber-border rounded-xl overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-cyber-border">
+            <button
+              onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))}
+              className="p-1.5 rounded-lg text-cyber-muted hover:text-foreground hover:bg-cyber-dark transition-colors"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <span className="text-sm font-semibold text-foreground capitalize">
+              {month.toLocaleDateString(locale, { month: "long", year: "numeric" })}
+            </span>
+            <button
+              onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))}
+              className="p-1.5 rounded-lg text-cyber-muted hover:text-foreground hover:bg-cyber-dark transition-colors"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="grid grid-cols-7 border-b border-cyber-border">
+            {weekdays.map((w) => (
+              <div key={w} className="px-2 py-2 text-center text-[11px] font-medium text-cyber-muted capitalize">
+                {w}
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">{p.assetName}</p>
-                <div className="flex flex-wrap items-center gap-2 mt-1">
-                  <span className="text-xs text-cyber-muted">{p.platform}</span>
-                  <span className="text-xs text-cyber-muted">
-                    {new Date(p.scheduledAt).toLocaleString()}
+            ))}
+          </div>
+          <div className="grid grid-cols-7">
+            {cells.map((d, i) => {
+              const key = schedDayKey(d);
+              const inMonth = d.getMonth() === month.getMonth();
+              const dayPosts = byDay.get(key) ?? [];
+              return (
+                <div
+                  key={i}
+                  className={`min-h-[92px] p-1.5 border-b border-r border-cyber-border/60 ${
+                    inMonth ? "" : "opacity-40"
+                  }`}
+                >
+                  <span
+                    className={`inline-flex items-center justify-center w-6 h-6 text-[11px] rounded-full mb-1 ${
+                      key === todayKey
+                        ? "bg-neon-purple text-white font-bold"
+                        : "text-cyber-muted"
+                    }`}
+                  >
+                    {d.getDate()}
                   </span>
-                  <span className={`text-xs px-2 py-0.5 rounded-full capitalize ${statusColor[p.status]}`}>
-                    {p.status}
-                  </span>
+                  <div className="space-y-1">
+                    {dayPosts.slice(0, 3).map((p) => (
+                      <button
+                        key={p.id}
+                        onClick={() => openDetail(p)}
+                        title={`${p.assetName} — ${p.platform}`}
+                        className={`w-full text-left px-1.5 py-0.5 rounded border text-[10px] leading-tight truncate ${schedChipColor[p.status]}`}
+                      >
+                        {p.platform} · {p.assetName}
+                      </button>
+                    ))}
+                    {dayPosts.length > 3 && (
+                      <span className="block text-[10px] text-cyber-muted px-1.5">
+                        +{dayPosts.length - 3}
+                      </span>
+                    )}
+                  </div>
                 </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : posts.length === 0 ? (
+        <div className="text-center py-16 text-cyber-muted">{t("sched.empty")}</div>
+      ) : (
+        <div className="space-y-5">
+          {upcoming.length > 0 && (
+            <div className="space-y-3">
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-cyber-muted">
+                {t("sched.upcoming")}
+              </h3>
+              {upcoming.map(listRow)}
+            </div>
+          )}
+          {past.length > 0 && (
+            <div className="space-y-3">
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-cyber-muted">
+                {t("sched.past")}
+              </h3>
+              {past.map(listRow)}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Composer */}
+      <AnimatePresence>
+        {composerOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => setComposerOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-cyber-card border border-cyber-border rounded-2xl p-6 w-full max-w-md"
+            >
+              <div className="flex items-center justify-between mb-5">
+                <h3 className="text-lg font-semibold text-foreground">{t("sched.new")}</h3>
+                <button onClick={() => setComposerOpen(false)} className="text-cyber-muted hover:text-foreground">
+                  <X className="w-5 h-5" />
+                </button>
               </div>
-              {p.status === "scheduled" && (
-                <div className="flex items-center gap-2 shrink-0">
+              {assets.length === 0 ? (
+                <p className="text-sm text-cyber-muted py-6 text-center">{t("sched.noAssets")}</p>
+              ) : (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm text-cyber-muted mb-1.5">{t("sched.asset")}</label>
+                    <select
+                      value={formAsset}
+                      onChange={(e) => setFormAsset(e.target.value)}
+                      className="w-full px-3 py-2.5 bg-cyber-dark border border-cyber-border rounded-xl text-sm text-foreground focus:outline-none focus:border-neon-purple/50"
+                    >
+                      <option value="">{t("sched.chooseAsset")}</option>
+                      {assets.map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.type} — {a.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm text-cyber-muted mb-1.5">Platform</label>
+                      <select
+                        value={formPlatform}
+                        onChange={(e) => setFormPlatform(e.target.value)}
+                        className="w-full px-3 py-2.5 bg-cyber-dark border border-cyber-border rounded-xl text-sm text-foreground focus:outline-none focus:border-neon-purple/50"
+                      >
+                        {SCHED_PLATFORMS.map((p) => (
+                          <option key={p} value={p}>{p}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm text-cyber-muted mb-1.5">{t("sched.when")}</label>
+                      <input
+                        type="datetime-local"
+                        value={formAt}
+                        onChange={(e) => setFormAt(e.target.value)}
+                        className="w-full px-3 py-2.5 bg-cyber-dark border border-cyber-border rounded-xl text-sm text-foreground focus:outline-none focus:border-neon-purple/50"
+                      />
+                    </div>
+                  </div>
                   <button
-                    onClick={() => act(p.id, "publish")}
-                    className="px-3 py-1.5 text-xs font-medium rounded-lg bg-gradient-to-r from-neon-purple to-electric-blue text-white hover:opacity-90"
+                    onClick={createPost}
+                    disabled={saving || !formAsset || !formAt}
+                    className="w-full py-2.5 rounded-xl bg-gradient-to-r from-neon-purple to-electric-blue text-white font-medium text-sm hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
                   >
-                    Publish now
-                  </button>
-                  <button
-                    onClick={() => act(p.id, "cancel")}
-                    className="px-3 py-1.5 text-xs rounded-lg bg-cyber-dark border border-cyber-border text-cyber-muted hover:text-red-400"
-                  >
-                    Cancel
+                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Calendar className="w-4 h-4" />}
+                    {t("sched.confirm")}
                   </button>
                 </div>
               )}
-            </div>
-          ))}
-        </div>
-      )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Detail / reschedule */}
+      <AnimatePresence>
+        {selected && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => setSelected(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-cyber-card border border-cyber-border rounded-2xl p-6 w-full max-w-md"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-foreground truncate">{selected.assetName}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-xs text-cyber-muted">{selected.platform}</span>
+                    <span className="text-xs text-cyber-muted">
+                      {new Date(selected.scheduledAt).toLocaleString(locale)}
+                    </span>
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${schedStatusColor[selected.status]}`}>
+                      {t(`sched.status.${selected.status}`)}
+                    </span>
+                  </div>
+                </div>
+                <button onClick={() => setSelected(null)} className="text-cyber-muted hover:text-foreground shrink-0">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {selected.status === "scheduled" && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs text-cyber-muted mb-1.5">Platform</label>
+                      <select
+                        value={editPlatform}
+                        onChange={(e) => setEditPlatform(e.target.value)}
+                        className="w-full px-3 py-2 bg-cyber-dark border border-cyber-border rounded-xl text-sm text-foreground focus:outline-none focus:border-neon-purple/50"
+                      >
+                        {SCHED_PLATFORMS.map((p) => (
+                          <option key={p} value={p}>{p}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-cyber-muted mb-1.5">{t("sched.when")}</label>
+                      <input
+                        type="datetime-local"
+                        value={editAt}
+                        onChange={(e) => setEditAt(e.target.value)}
+                        className="w-full px-3 py-2 bg-cyber-dark border border-cyber-border rounded-xl text-sm text-foreground focus:outline-none focus:border-neon-purple/50"
+                      />
+                    </div>
+                  </div>
+                  <button
+                    onClick={reschedule}
+                    disabled={saving || !editAt}
+                    className="w-full py-2.5 rounded-xl bg-cyber-dark border border-neon-purple/40 text-neon-purple font-medium text-sm hover:bg-neon-purple/10 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Clock className="w-4 h-4" />}
+                    {t("sched.reschedule")}
+                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => act(selected.id, "publish")}
+                      className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-neon-purple to-electric-blue text-white text-sm font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
+                    >
+                      <Send className="w-4 h-4" /> {t("sched.publishNow")}
+                    </button>
+                    <button
+                      onClick={() => act(selected.id, "cancel")}
+                      className="flex-1 py-2.5 rounded-xl bg-cyber-dark border border-cyber-border text-cyber-muted text-sm hover:text-red-400 transition-colors"
+                    >
+                      {t("sched.cancelPost")}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

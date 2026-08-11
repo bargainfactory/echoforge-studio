@@ -934,6 +934,39 @@ export function listAllScheduledPending(): (ScheduledPost & { userEmail: string 
   ).map((row) => ({ ...mapScheduled(row), userEmail: row.user_email as string }));
 }
 
+/** Reschedule a still-pending post (time and/or platform). Published and
+ *  canceled posts are immutable history — the WHERE clause enforces it. */
+export function updateScheduledPost(
+  email: string,
+  id: string,
+  updates: { platform?: string; scheduledAt?: string }
+): ScheduledPost | null {
+  const conn = getDb();
+  const sets: string[] = [];
+  const values: string[] = [];
+  if (updates.platform !== undefined) {
+    sets.push("platform = ?");
+    values.push(updates.platform);
+  }
+  if (updates.scheduledAt !== undefined) {
+    sets.push("scheduled_at = ?");
+    values.push(updates.scheduledAt);
+  }
+  if (sets.length > 0) {
+    values.push(id, email.toLowerCase());
+    conn
+      .prepare(
+        `UPDATE scheduled_posts SET ${sets.join(", ")}
+         WHERE id = ? AND user_email = ? AND status = 'scheduled'`
+      )
+      .run(...values);
+  }
+  const row = conn
+    .prepare("SELECT * FROM scheduled_posts WHERE id = ? AND user_email = ?")
+    .get(id, email.toLowerCase()) as Record<string, unknown> | undefined;
+  return row ? mapScheduled(row) : null;
+}
+
 export function setScheduledStatus(
   email: string,
   id: string,
