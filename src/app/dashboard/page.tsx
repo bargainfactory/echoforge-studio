@@ -46,6 +46,8 @@ import {
   Download,
   Mail,
   ExternalLink,
+  DollarSign,
+  Mic2,
 } from "lucide-react";
 import type { Project, Asset } from "@/lib/data";
 import IntegrationsPanel from "@/components/integrations-panel";
@@ -59,6 +61,7 @@ type Tab =
   | "Schedule"
   | "Analytics"
   | "Audience"
+  | "Business"
   | "Notifications"
   | "Settings";
 
@@ -70,6 +73,7 @@ const sidebarItems: { icon: typeof LayoutDashboard; label: Tab; tKey: string }[]
   { icon: Calendar, label: "Schedule", tKey: "dash.schedule" },
   { icon: BarChart3, label: "Analytics", tKey: "dash.analytics" },
   { icon: Users, label: "Audience", tKey: "dash.audience" },
+  { icon: DollarSign, label: "Business", tKey: "dash.business" },
   { icon: Bell, label: "Notifications", tKey: "dash.notifications" },
   { icon: Settings, label: "Settings", tKey: "dash.settings" },
 ];
@@ -400,6 +404,7 @@ export default function Dashboard() {
               onToggleLike={toggleAssetLike}
               onViewAll={() => setActiveTab("Projects")}
               onView={setViewingAsset}
+              onNavigate={setActiveTab}
             />
           )}
           {activeTab === "Projects" && (
@@ -422,6 +427,7 @@ export default function Dashboard() {
           {activeTab === "Schedule" && <ScheduleTab />}
           {activeTab === "Analytics" && <AnalyticsTab />}
           {activeTab === "Audience" && <AudienceTab />}
+          {activeTab === "Business" && <BusinessTab />}
           {activeTab === "Notifications" && (
             <NotificationsTab
               notifications={notifications}
@@ -797,6 +803,7 @@ function OverviewTab({
   onToggleLike,
   onViewAll,
   onView,
+  onNavigate,
 }: {
   projects: Project[];
   assets: Asset[];
@@ -804,6 +811,7 @@ function OverviewTab({
   onToggleLike: (id: string) => void;
   onViewAll: () => void;
   onView: (asset: Asset) => void;
+  onNavigate: (tab: Tab) => void;
 }) {
   const { t } = useTranslation();
   const activeCount = projects.filter((p) => p.status === "processing" || p.status === "review").length;
@@ -817,8 +825,39 @@ function OverviewTab({
     rejected: { label: t("dash.rejected"), color: statusColorMap.rejected },
   };
 
+  const onboardingSteps = [
+    { icon: Mic2, text: t("onb.step1"), cta: t("onb.go1"), tab: "Settings" as Tab },
+    { icon: Lightbulb, text: t("onb.step2"), cta: t("onb.go2"), tab: "Ideas" as Tab },
+    { icon: Calendar, text: t("onb.step3"), cta: t("onb.go3"), tab: "Schedule" as Tab },
+  ];
+
   return (
     <div className="space-y-6">
+      {projects.length === 0 && (
+        <div className="bg-cyber-card border border-neon-purple/30 rounded-xl p-6">
+          <h2 className="font-semibold text-foreground mb-4">{t("onb.title")}</h2>
+          <div className="grid sm:grid-cols-3 gap-4">
+            {onboardingSteps.map((s, i) => (
+              <div key={i} className="bg-cyber-dark border border-cyber-border rounded-xl p-4 flex flex-col">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-6 h-6 rounded-full bg-neon-purple/10 text-neon-purple text-xs flex items-center justify-center font-bold shrink-0">
+                    {i + 1}
+                  </div>
+                  <s.icon className="w-4 h-4 text-neon-purple" />
+                </div>
+                <p className="text-xs text-cyber-muted flex-1">{s.text}</p>
+                <button
+                  onClick={() => onNavigate(s.tab)}
+                  className="mt-3 px-3 py-1.5 rounded-lg bg-gradient-to-r from-neon-purple to-electric-blue text-white text-xs font-medium hover:opacity-90 self-start"
+                >
+                  {s.cta}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           { label: t("dashTeaser.activeProjects"), value: String(activeCount), icon: Clock, color: "text-warning" },
@@ -874,8 +913,16 @@ function OverviewTab({
       </div>
 
       <div className="bg-cyber-card border border-cyber-border rounded-xl">
-        <div className="px-6 py-4 border-b border-cyber-border">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-cyber-border">
           <h2 className="font-semibold text-foreground">{t("dash.recentAssets")}</h2>
+          {assets.length > 0 && (
+            <button
+              onClick={() => downloadBlob("echoforge-assets.csv", "text/csv", assetsToCsv(assets))}
+              className="text-xs text-neon-purple hover:underline flex items-center gap-1.5"
+            >
+              <Download className="w-3.5 h-3.5" /> {t("dash.exportCsv")}
+            </button>
+          )}
         </div>
         <div className="divide-y divide-cyber-border">
           {assets.slice(0, 6).map((asset) => (
@@ -2190,6 +2237,421 @@ function AudienceTab() {
             {broadcasting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
             {t("aud.broadcastSend", { count: subs.length })}
           </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- Business Tab (creator revenue ledger + brand-deal pipeline) ---
+interface RevenueRow {
+  id: string;
+  month: string;
+  stream: string;
+  amount: number;
+  note: string;
+  createdAt: string;
+}
+interface DealRow {
+  id: string;
+  brand: string;
+  contact: string;
+  value: number;
+  stage: "lead" | "negotiating" | "booked" | "delivered" | "paid";
+  platform: string;
+  notes: string;
+}
+
+const BIZ_STREAMS = ["adsense", "sponsorship", "affiliate", "products", "membership", "other"];
+const BIZ_STAGES: DealRow["stage"][] = ["lead", "negotiating", "booked", "delivered", "paid"];
+
+const bizStageColor: Record<string, string> = {
+  lead: "text-electric-blue bg-electric-blue/10",
+  negotiating: "text-warning bg-warning/10",
+  booked: "text-neon-purple bg-neon-purple/10",
+  delivered: "text-foreground bg-cyber-dark",
+  paid: "text-success bg-success/10",
+};
+
+function money(n: number): string {
+  return `$${n.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+}
+
+function BusinessTab() {
+  const { addToast } = useApp();
+  const { t } = useTranslation();
+  const [entries, setEntries] = useState<RevenueRow[]>([]);
+  const [deals, setDeals] = useState<DealRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const thisMonth = new Date().toISOString().slice(0, 7);
+  const [formMonth, setFormMonth] = useState(thisMonth);
+  const [formStream, setFormStream] = useState("sponsorship");
+  const [formAmount, setFormAmount] = useState("");
+  const [formNote, setFormNote] = useState("");
+  const [addingEntry, setAddingEntry] = useState(false);
+  const [dealBrand, setDealBrand] = useState("");
+  const [dealValue, setDealValue] = useState("");
+  const [dealPlatform, setDealPlatform] = useState("TikTok");
+  const [dealContact, setDealContact] = useState("");
+  const [addingDeal, setAddingDeal] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    Promise.all([
+      fetch("/api/revenue", { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)),
+      fetch("/api/deals", { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)),
+    ])
+      .then(([r, d]) => {
+        if (!active) return;
+        if (r) setEntries(r.entries);
+        if (d) setDeals(d.deals);
+      })
+      .catch(() => {})
+      .finally(() => active && setLoading(false));
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const addEntry = useCallback(async () => {
+    const amount = Number(formAmount);
+    if (!amount || amount <= 0) return;
+    setAddingEntry(true);
+    const res = await fetch("/api/revenue", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ month: formMonth, stream: formStream, amount, note: formNote }),
+    });
+    setAddingEntry(false);
+    if (res.ok) {
+      const { entry } = await res.json();
+      setEntries((prev) => [entry, ...prev]);
+      setFormAmount("");
+      setFormNote("");
+    }
+  }, [formMonth, formStream, formAmount, formNote]);
+
+  const removeEntry = useCallback(
+    async (id: string) => {
+      setEntries((prev) => prev.filter((e) => e.id !== id));
+      addToast(t("biz.entryDeleted"), "info");
+      await fetch(`/api/revenue/${id}`, { method: "DELETE" }).catch(() => {});
+    },
+    [addToast, t]
+  );
+
+  const addDeal = useCallback(async () => {
+    if (!dealBrand.trim()) return;
+    setAddingDeal(true);
+    const res = await fetch("/api/deals", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        brand: dealBrand.trim(),
+        value: Number(dealValue) || 0,
+        platform: dealPlatform,
+        contact: dealContact.trim(),
+      }),
+    });
+    setAddingDeal(false);
+    if (res.ok) {
+      const { deal } = await res.json();
+      setDeals((prev) => [deal, ...prev]);
+      setDealBrand("");
+      setDealValue("");
+      setDealContact("");
+    }
+  }, [dealBrand, dealValue, dealPlatform, dealContact]);
+
+  const setStage = useCallback(
+    async (id: string, stage: DealRow["stage"]) => {
+      const res = await fetch(`/api/deals/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ stage }),
+      });
+      if (res.ok) {
+        const { deal, revenueAdded } = await res.json();
+        setDeals((prev) => prev.map((d) => (d.id === id ? deal : d)));
+        if (revenueAdded) {
+          addToast(t("biz.paidToRevenue"));
+          fetch("/api/revenue", { cache: "no-store" })
+            .then((r) => (r.ok ? r.json() : null))
+            .then((d) => d && setEntries(d.entries))
+            .catch(() => {});
+        }
+      }
+    },
+    [addToast, t]
+  );
+
+  const removeDeal = useCallback(
+    async (id: string) => {
+      setDeals((prev) => prev.filter((d) => d.id !== id));
+      addToast(t("biz.dealDeleted"), "info");
+      await fetch(`/api/deals/${id}`, { method: "DELETE" }).catch(() => {});
+    },
+    [addToast, t]
+  );
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <div className="w-8 h-8 rounded-full border-2 border-cyber-border border-t-neon-purple animate-spin" />
+      </div>
+    );
+  }
+
+  const lastMonth = new Date(new Date().setMonth(new Date().getMonth() - 1))
+    .toISOString()
+    .slice(0, 7);
+  const sum = (rows: RevenueRow[]) => rows.reduce((s, e) => s + e.amount, 0);
+  const thisMonthTotal = sum(entries.filter((e) => e.month === thisMonth));
+  const lastMonthTotal = sum(entries.filter((e) => e.month === lastMonth));
+  const allTimeTotal = sum(entries);
+  const byStream = BIZ_STREAMS.map((s) => ({
+    stream: s,
+    total: sum(entries.filter((e) => e.month === thisMonth && e.stream === s)),
+  })).filter((s) => s.total > 0);
+  const maxStream = Math.max(1, ...byStream.map((s) => s.total));
+
+  const pipelineValue = sum2(deals.filter((d) => d.stage === "lead" || d.stage === "negotiating"));
+  const bookedValue = sum2(deals.filter((d) => d.stage === "booked" || d.stage === "delivered"));
+  const paidValue = sum2(deals.filter((d) => d.stage === "paid"));
+  function sum2(rows: DealRow[]): number {
+    return rows.reduce((s, d) => s + d.value, 0);
+  }
+
+  const field =
+    "px-3 py-2.5 bg-cyber-dark border border-cyber-border rounded-xl text-sm text-foreground placeholder:text-cyber-muted focus:outline-none focus:border-neon-purple/50";
+
+  return (
+    <div className="space-y-6">
+      <p className="text-sm text-cyber-muted">{t("biz.intro")}</p>
+
+      {/* Revenue summary */}
+      <div className="grid grid-cols-3 gap-4">
+        {[
+          { label: t("biz.thisMonth"), value: thisMonthTotal },
+          { label: t("biz.lastMonth"), value: lastMonthTotal },
+          { label: t("biz.allTime"), value: allTimeTotal },
+        ].map((c) => (
+          <div key={c.label} className="bg-cyber-card border border-cyber-border rounded-xl p-4">
+            <p className="text-2xl font-bold text-foreground">{money(c.value)}</p>
+            <p className="text-xs text-cyber-muted mt-1">{c.label}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Revenue ledger */}
+      <div className="bg-cyber-card border border-cyber-border rounded-xl">
+        <div className="flex items-center gap-2 px-6 py-4 border-b border-cyber-border">
+          <DollarSign className="w-4 h-4 text-neon-purple" />
+          <h2 className="font-semibold text-foreground">{t("biz.revenue")}</h2>
+        </div>
+        <div className="p-6 space-y-4">
+          {byStream.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-cyber-muted">{t("biz.byStream")}</p>
+              {byStream.map((s) => (
+                <div key={s.stream} className="flex items-center gap-3">
+                  <span className="text-xs text-foreground w-28 shrink-0">
+                    {t(`biz.stream.${s.stream}`)}
+                  </span>
+                  <div className="flex-1 h-2 bg-cyber-border rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-neon-purple to-electric-blue rounded-full"
+                      style={{ width: `${(s.total / maxStream) * 100}%` }}
+                    />
+                  </div>
+                  <span className="text-xs text-cyber-muted w-20 text-right">{money(s.total)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="flex flex-wrap gap-2">
+            <input
+              type="month"
+              value={formMonth}
+              onChange={(e) => setFormMonth(e.target.value)}
+              className={field}
+            />
+            <select
+              value={formStream}
+              onChange={(e) => setFormStream(e.target.value)}
+              className={field}
+            >
+              {BIZ_STREAMS.map((s) => (
+                <option key={s} value={s}>
+                  {t(`biz.stream.${s}`)}
+                </option>
+              ))}
+            </select>
+            <div className="flex items-center gap-1">
+              <span className="text-sm text-cyber-muted">$</span>
+              <input
+                type="number"
+                min={0}
+                value={formAmount}
+                onChange={(e) => setFormAmount(e.target.value)}
+                placeholder="0"
+                className={`${field} w-28`}
+              />
+            </div>
+            <input
+              type="text"
+              value={formNote}
+              onChange={(e) => setFormNote(e.target.value)}
+              placeholder={t("biz.notePh")}
+              maxLength={200}
+              className={`${field} flex-1 min-w-[140px]`}
+            />
+            <button
+              onClick={addEntry}
+              disabled={addingEntry || !Number(formAmount)}
+              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-neon-purple to-electric-blue text-white text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2"
+            >
+              {addingEntry ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+              {t("biz.add")}
+            </button>
+          </div>
+          {entries.length === 0 ? (
+            <p className="text-sm text-cyber-muted text-center py-4">{t("biz.noRevenue")}</p>
+          ) : (
+            <div className="divide-y divide-cyber-border max-h-64 overflow-y-auto">
+              {entries.map((e) => (
+                <div key={e.id} className="flex items-center gap-3 py-2.5">
+                  <span className="text-xs text-cyber-muted w-16 shrink-0">{e.month}</span>
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-cyber-dark text-cyber-muted shrink-0">
+                    {t(`biz.stream.${e.stream}`)}
+                  </span>
+                  <span className="text-sm text-foreground flex-1 truncate">{e.note}</span>
+                  <span className="text-sm font-medium text-foreground shrink-0">
+                    {money(e.amount)}
+                  </span>
+                  <button
+                    onClick={() => removeEntry(e.id)}
+                    className="p-1 text-cyber-muted hover:text-red-400 transition-colors shrink-0"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Brand deals */}
+      <div className="bg-cyber-card border border-cyber-border rounded-xl">
+        <div className="flex flex-wrap items-center justify-between gap-2 px-6 py-4 border-b border-cyber-border">
+          <h2 className="font-semibold text-foreground">{t("biz.deals")}</h2>
+          <div className="flex items-center gap-4 text-xs">
+            <span className="text-electric-blue">
+              {t("biz.pipelineValue")}: {money(pipelineValue)}
+            </span>
+            <span className="text-neon-purple">
+              {t("biz.bookedValue")}: {money(bookedValue)}
+            </span>
+            <span className="text-success">
+              {t("biz.paidValue")}: {money(paidValue)}
+            </span>
+          </div>
+        </div>
+        <div className="p-6 space-y-4">
+          <div className="flex flex-wrap gap-2">
+            <input
+              type="text"
+              value={dealBrand}
+              onChange={(e) => setDealBrand(e.target.value)}
+              placeholder={t("biz.brandPh")}
+              maxLength={100}
+              className={`${field} flex-1 min-w-[140px]`}
+            />
+            <div className="flex items-center gap-1">
+              <span className="text-sm text-cyber-muted">$</span>
+              <input
+                type="number"
+                min={0}
+                value={dealValue}
+                onChange={(e) => setDealValue(e.target.value)}
+                placeholder="0"
+                className={`${field} w-28`}
+              />
+            </div>
+            <select
+              value={dealPlatform}
+              onChange={(e) => setDealPlatform(e.target.value)}
+              className={field}
+            >
+              {SCHED_PLATFORMS.map((p) => (
+                <option key={p} value={p}>
+                  {p}
+                </option>
+              ))}
+            </select>
+            <input
+              type="text"
+              value={dealContact}
+              onChange={(e) => setDealContact(e.target.value)}
+              placeholder={t("biz.contactPh")}
+              maxLength={200}
+              className={`${field} flex-1 min-w-[140px]`}
+            />
+            <button
+              onClick={addDeal}
+              disabled={addingDeal || !dealBrand.trim()}
+              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-neon-purple to-electric-blue text-white text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2"
+            >
+              {addingDeal ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+              {t("biz.addDeal")}
+            </button>
+          </div>
+          {deals.length === 0 ? (
+            <p className="text-sm text-cyber-muted text-center py-4">{t("biz.noDeals")}</p>
+          ) : (
+            <div className="space-y-2">
+              {deals.map((d) => (
+                <div
+                  key={d.id}
+                  className="flex flex-wrap items-center gap-3 p-3 rounded-xl bg-cyber-dark border border-cyber-border"
+                >
+                  <div className="flex-1 min-w-[140px]">
+                    <p className="text-sm font-medium text-foreground truncate">{d.brand}</p>
+                    <p className="text-xs text-cyber-muted truncate">
+                      {d.platform}
+                      {d.contact ? ` · ${d.contact}` : ""}
+                    </p>
+                  </div>
+                  <span className="text-sm font-medium text-foreground shrink-0">
+                    {money(d.value)}
+                  </span>
+                  <span
+                    className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${bizStageColor[d.stage]}`}
+                  >
+                    {t(`biz.stage.${d.stage}`)}
+                  </span>
+                  <select
+                    value={d.stage}
+                    onChange={(e) => setStage(d.id, e.target.value as DealRow["stage"])}
+                    className="px-2 py-1.5 bg-cyber-card border border-cyber-border rounded-lg text-xs text-foreground focus:outline-none focus:border-neon-purple/50 shrink-0"
+                  >
+                    {BIZ_STAGES.map((s) => (
+                      <option key={s} value={s}>
+                        {t(`biz.stage.${s}`)}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={() => removeDeal(d.id)}
+                    className="p-1 text-cyber-muted hover:text-red-400 transition-colors shrink-0"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -129,6 +129,27 @@ function getDb(): DatabaseSync {
       rates        TEXT,
       enabled      INTEGER NOT NULL DEFAULT 1
     );
+    CREATE TABLE IF NOT EXISTS revenue_entries (
+      id         TEXT PRIMARY KEY,
+      user_email TEXT NOT NULL REFERENCES users(email) ON DELETE CASCADE,
+      month      TEXT NOT NULL,
+      stream     TEXT NOT NULL,
+      amount     REAL NOT NULL,
+      note       TEXT,
+      created_at TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS deals (
+      id         TEXT PRIMARY KEY,
+      user_email TEXT NOT NULL REFERENCES users(email) ON DELETE CASCADE,
+      brand      TEXT NOT NULL,
+      contact    TEXT,
+      value      REAL NOT NULL DEFAULT 0,
+      stage      TEXT NOT NULL,
+      platform   TEXT,
+      notes      TEXT,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
     CREATE TABLE IF NOT EXISTS pending_plans (
       email      TEXT PRIMARY KEY,
       plan       TEXT NOT NULL,
@@ -423,6 +444,161 @@ export function upsertCreatorPage(email: string, page: CreatorPage): boolean {
       page.enabled ? 1 : 0
     );
   return true;
+}
+
+// --- Revenue ledger (the creator's income, not the platform's) ---
+
+export interface RevenueEntry {
+  id: string;
+  month: string; // "2026-08"
+  stream: string;
+  amount: number;
+  note: string;
+  createdAt: string;
+}
+
+export function listRevenue(email: string): RevenueEntry[] {
+  return getDb()
+    .prepare(
+      `SELECT id, month, stream, amount, COALESCE(note, '') AS note, created_at AS createdAt
+       FROM revenue_entries WHERE user_email = ? ORDER BY month DESC, created_at DESC`
+    )
+    .all(email.toLowerCase()) as unknown as RevenueEntry[];
+}
+
+export function insertRevenue(
+  email: string,
+  entry: Omit<RevenueEntry, "createdAt">
+): RevenueEntry {
+  const now = new Date().toISOString();
+  getDb()
+    .prepare(
+      `INSERT INTO revenue_entries (id, user_email, month, stream, amount, note, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`
+    )
+    .run(
+      entry.id,
+      email.toLowerCase(),
+      entry.month,
+      entry.stream,
+      entry.amount,
+      entry.note || null,
+      now
+    );
+  return { ...entry, createdAt: now };
+}
+
+export function deleteRevenue(email: string, id: string): void {
+  getDb()
+    .prepare("DELETE FROM revenue_entries WHERE id = ? AND user_email = ?")
+    .run(id, email.toLowerCase());
+}
+
+// --- Brand deals (sponsorship pipeline) ---
+
+export interface Deal {
+  id: string;
+  brand: string;
+  contact: string;
+  value: number;
+  stage: "lead" | "negotiating" | "booked" | "delivered" | "paid";
+  platform: string;
+  notes: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+function mapDeal(row: Record<string, unknown>): Deal {
+  return {
+    id: row.id as string,
+    brand: row.brand as string,
+    contact: (row.contact as string) ?? "",
+    value: row.value as number,
+    stage: row.stage as Deal["stage"],
+    platform: (row.platform as string) ?? "",
+    notes: (row.notes as string) ?? "",
+    createdAt: row.created_at as string,
+    updatedAt: row.updated_at as string,
+  };
+}
+
+export function listDeals(email: string): Deal[] {
+  return (
+    getDb()
+      .prepare("SELECT * FROM deals WHERE user_email = ? ORDER BY updated_at DESC")
+      .all(email.toLowerCase()) as Record<string, unknown>[]
+  ).map(mapDeal);
+}
+
+export function getDeal(email: string, id: string): Deal | null {
+  const row = getDb()
+    .prepare("SELECT * FROM deals WHERE id = ? AND user_email = ?")
+    .get(id, email.toLowerCase()) as Record<string, unknown> | undefined;
+  return row ? mapDeal(row) : null;
+}
+
+export function insertDeal(
+  email: string,
+  deal: Omit<Deal, "createdAt" | "updatedAt">
+): Deal {
+  const now = new Date().toISOString();
+  getDb()
+    .prepare(
+      `INSERT INTO deals (id, user_email, brand, contact, value, stage, platform, notes, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    )
+    .run(
+      deal.id,
+      email.toLowerCase(),
+      deal.brand,
+      deal.contact || null,
+      deal.value,
+      deal.stage,
+      deal.platform || null,
+      deal.notes || null,
+      now,
+      now
+    );
+  return { ...deal, createdAt: now, updatedAt: now };
+}
+
+export function updateDeal(
+  email: string,
+  id: string,
+  updates: Partial<Pick<Deal, "brand" | "contact" | "value" | "stage" | "platform" | "notes">>
+): Deal | null {
+  const cols: Record<string, string> = {
+    brand: "brand",
+    contact: "contact",
+    value: "value",
+    stage: "stage",
+    platform: "platform",
+    notes: "notes",
+  };
+  const sets: string[] = [];
+  const values: (string | number)[] = [];
+  for (const [key, col] of Object.entries(cols)) {
+    const v = updates[key as keyof typeof updates];
+    if (v !== undefined) {
+      sets.push(`${col} = ?`);
+      values.push(v as string | number);
+    }
+  }
+  if (sets.length > 0) {
+    sets.push("updated_at = ?");
+    values.push(new Date().toISOString());
+    values.push(id, email.toLowerCase());
+    getDb()
+      .prepare(`UPDATE deals SET ${sets.join(", ")} WHERE id = ? AND user_email = ?`)
+      .run(...values);
+  }
+  return getDeal(email, id);
+}
+
+export function deleteDeal(email: string, id: string): void {
+  getDb()
+    .prepare("DELETE FROM deals WHERE id = ? AND user_email = ?")
+    .run(id, email.toLowerCase());
 }
 
 // --- Pending plans (paid via Stripe before an account existed) ---
