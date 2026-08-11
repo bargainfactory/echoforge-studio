@@ -607,4 +607,35 @@ export const vi: Record<string, string> = {
   "onb.go1": "Thiết lập giọng",
   "onb.go2": "Thêm ý tưởng",
   "onb.go3": "Mở lịch",
+
+  // Performance flywheel
+  "sched.resultsTitle": "Ghi lại kết quả bài đăng này từ phân tích của nền tảng — chúng tạo nên nội dung hàng đầu và định hướng các lần tạo tiếp theo.",
+  "sched.views": "Lượt xem",
+  "sched.likes": "Lượt thích",
+  "sched.comments": "Bình luận",
+  "sched.saveResults": "Lưu kết quả",
+  "sched.resultsSaved": "Đã lưu kết quả — nội dung thắng cuộc giờ định hướng việc tạo",
+  "dash.measuredViews": "Lượt xem đã đo",
+  "dash.engagements": "Tương tác",
+  "dash.topPerformers": "Nội dung hàng đầu",
+  "dash.flywheelHint": "Các lần tạo mới tự động học hook của những nội dung thắng cuộc — ghi càng nhiều kết quả, nội dung tiếp theo càng sắc bén.",
+
+  // Audience import + referral
+  "aud.import": "Nhập",
+  "aud.importPh": "Dán email ở bất kỳ định dạng nào — CSV, mỗi dòng một email, tùy bạn. Chúng tôi sẽ tìm và loại trùng.",
+  "aud.importDone": "Đã thêm {added}, {skipped} đã có trong danh sách",
+  "aud.referral": "Chia sẻ EchoForge",
+  "aud.referralDesc": "Trang công khai của bạn đã mang liên kết này — hãy chia sẻ thêm ở nơi khác.",
+  "aud.referralCount": "{count} nhà sáng tạo đã tham gia qua liên kết của bạn",
+  "aud.copied": "Đã sao chép liên kết",
+
+  // Trust pillars
+  "trust.title": "Nội dung mà các nền tảng tin tưởng",
+  "trust.sub": "Mỗi nội dung EchoForge tạo ra đều mang những bảo đảm cấu trúc mà không công cụ cắt clip nào có.",
+  "trust.p1t": "Nguồn gốc có chữ ký",
+  "trust.p1d": "Mỗi nội dung mang một bản kê khai được ký mã hóa: nguồn, công cụ tạo và toàn bộ lịch sử chỉnh sửa — theo dạng C2PA, sẵn sàng cho quy định công bố AI.",
+  "trust.p2t": "Kiểm tra chính sách trước khi đăng",
+  "trust.p2d": "Mỗi nội dung được rà soát các yếu tố gây tắt kiếm tiền và vi phạm chính sách — bạn thấy rủi ro trước thuật toán.",
+  "trust.p3t": "Giọng của bạn, được bảo đảm",
+  "trust.p3d": "Từ cấm, giọng điệu và CTA được áp dụng máy móc trong mọi lần tạo — không phải gợi ý, mà là bảo đảm.",
 };

@@ -607,4 +607,35 @@ export const tr: Record<string, string> = {
   "onb.go1": "Sesi ayarla",
   "onb.go2": "Fikir ekle",
   "onb.go3": "Takvimi aç",
+
+  // Performance flywheel
+  "sched.resultsTitle": "Bu gönderinin sonuçlarını platform analizlerinden kaydedin — en iyi işlerinizi besler ve gelecek üretimleri yönlendirir.",
+  "sched.views": "Görüntülenme",
+  "sched.likes": "Beğeni",
+  "sched.comments": "Yorum",
+  "sched.saveResults": "Sonuçları kaydet",
+  "sched.resultsSaved": "Sonuçlar kaydedildi — kazananlarınız artık üretimi yönlendiriyor",
+  "dash.measuredViews": "Ölçülen görüntülenme",
+  "dash.engagements": "Etkileşim",
+  "dash.topPerformers": "En iyi performans",
+  "dash.flywheelHint": "Yeni üretimler bu kazananların kancalarını otomatik öğrenir — ne kadar çok sonuç kaydederseniz, sonraki varlıklar o kadar keskinleşir.",
+
+  // Audience import + referral
+  "aud.import": "İçe aktar",
+  "aud.importPh": "E-postaları herhangi bir biçimde yapıştırın — CSV, satır satır, fark etmez. Bulur ve tekrarları ayıklarız.",
+  "aud.importDone": "{added} eklendi, {skipped} zaten listenizdeydi",
+  "aud.referral": "EchoForge'u paylaş",
+  "aud.referralDesc": "Herkese açık sayfalarınız bu bağlantıyı zaten taşıyor — başka yerlerde de paylaşın.",
+  "aud.referralCount": "Bağlantınızla {count} üretici katıldı",
+  "aud.copied": "Bağlantı kopyalandı",
+
+  // Trust pillars
+  "trust.title": "Platformların güvendiği içerik",
+  "trust.sub": "EchoForge'un ürettiği her varlık, hiçbir klip aracının sunmadığı yapısal güvenceler taşır.",
+  "trust.p1t": "İmzalı köken",
+  "trust.p1d": "Her varlık kriptografik imzalı bir manifest taşır: kaynak, motor ve tam düzenleme izi — C2PA biçiminde, yapay zekâ bildirim kurallarına hazır.",
+  "trust.p2t": "Yayından önce politika denetimi",
+  "trust.p2d": "Her varlık, gelir kısıtlama ve platform politikası tetikleyicilerine karşı denetlenir — riski algoritmadan önce görürsünüz.",
+  "trust.p3t": "Sesiniz, garanti",
+  "trust.p3d": "Yasaklı kelimeler, ton ve CTA'lar her üretimde mekanik olarak uygulanır — öneri değil, garanti.",
 };

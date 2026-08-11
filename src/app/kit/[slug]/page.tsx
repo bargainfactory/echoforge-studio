@@ -25,6 +25,7 @@ export default function MediaKitPage() {
   const { t } = useTranslation();
   const [page, setPage] = useState<KitPage | null>(null);
   const [stats, setStats] = useState<KitStats | null>(null);
+  const [ownerRef, setOwnerRef] = useState("");
   const [state, setState] = useState<"loading" | "missing" | "ready">("loading");
 
   useEffect(() => {
@@ -37,6 +38,7 @@ export default function MediaKitPage() {
         if (d?.page) {
           setPage(d.page);
           setStats(d.stats);
+          setOwnerRef(d.ownerRef ?? "");
           setState("ready");
         } else {
           setState("missing");
@@ -128,7 +130,10 @@ export default function MediaKitPage() {
 
         <div className="flex items-center justify-center gap-1.5 text-[11px] text-cyber-muted">
           <Zap className="w-3 h-3 text-neon-purple" />
-          <Link href="/" className="hover:text-foreground transition-colors">
+          <Link
+            href={ownerRef ? `/?ref=${ownerRef}` : "/"}
+            className="hover:text-foreground transition-colors"
+          >
             {t("pub.poweredBy")}
           </Link>
         </div>

@@ -640,4 +640,35 @@ export const es: Record<string, string> = {
   "onb.go1": "Configurar voz",
   "onb.go2": "Añadir idea",
   "onb.go3": "Abrir calendario",
+
+  // Performance flywheel
+  "sched.resultsTitle": "Registra los resultados de esta publicación desde las analíticas de la plataforma: alimentan tus mejores contenidos y guían las próximas generaciones.",
+  "sched.views": "Vistas",
+  "sched.likes": "Me gusta",
+  "sched.comments": "Comentarios",
+  "sched.saveResults": "Guardar resultados",
+  "sched.resultsSaved": "Resultados guardados: tus ganadores ya guían la generación",
+  "dash.measuredViews": "Vistas medidas",
+  "dash.engagements": "Interacciones",
+  "dash.topPerformers": "Mejores contenidos",
+  "dash.flywheelHint": "Las nuevas generaciones estudian automáticamente los ganchos de estos ganadores: cuantos más resultados registres, mejores serán tus próximos activos.",
+
+  // Audience import + referral
+  "aud.import": "Importar",
+  "aud.importPh": "Pega correos en cualquier formato: un CSV, uno por línea, lo que sea. Los detectamos y deduplicamos.",
+  "aud.importDone": "{added} añadidos, {skipped} ya estaban en tu lista",
+  "aud.referral": "Comparte EchoForge",
+  "aud.referralDesc": "Tus páginas públicas ya llevan este enlace; compártelo también donde quieras.",
+  "aud.referralCount": "{count} creadores se unieron con tu enlace",
+  "aud.copied": "Enlace copiado",
+
+  // Trust pillars
+  "trust.title": "Contenido en el que las plataformas confían",
+  "trust.sub": "Cada activo que produce EchoForge lleva garantías estructurales que ninguna herramienta de clips ofrece.",
+  "trust.p1t": "Procedencia firmada",
+  "trust.p1d": "Cada activo lleva un manifiesto firmado criptográficamente: origen, motor y rastro completo de ediciones — con forma C2PA, listo para las normas de divulgación de IA.",
+  "trust.p2t": "Revisado contra políticas antes de publicar",
+  "trust.p2d": "Cada activo se analiza contra desencadenantes de desmonetización y políticas de plataforma: ves el riesgo antes que el algoritmo.",
+  "trust.p3t": "Tu voz, garantizada",
+  "trust.p3d": "Palabras prohibidas, tono y CTA se aplican mecánicamente en cada generación: no es una sugerencia, es una garantía.",
 };

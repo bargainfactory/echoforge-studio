@@ -640,4 +640,35 @@ export const fr: Record<string, string> = {
   "onb.go1": "Définir la voix",
   "onb.go2": "Ajouter une idée",
   "onb.go3": "Ouvrir le calendrier",
+
+  // Performance flywheel
+  "sched.resultsTitle": "Enregistrez les résultats de ce post depuis les statistiques de la plateforme — ils alimentent vos meilleurs contenus et guident les prochaines générations.",
+  "sched.views": "Vues",
+  "sched.likes": "J'aime",
+  "sched.comments": "Commentaires",
+  "sched.saveResults": "Enregistrer les résultats",
+  "sched.resultsSaved": "Résultats enregistrés — vos gagnants guident désormais la génération",
+  "dash.measuredViews": "Vues mesurées",
+  "dash.engagements": "Interactions",
+  "dash.topPerformers": "Meilleurs contenus",
+  "dash.flywheelHint": "Les nouvelles générations étudient automatiquement les accroches de ces gagnants — plus vous enregistrez de résultats, plus vos prochains contenus s'affinent.",
+
+  // Audience import + referral
+  "aud.import": "Importer",
+  "aud.importPh": "Collez des emails dans n'importe quel format — export CSV, un par ligne, peu importe. On les détecte et déduplique.",
+  "aud.importDone": "{added} ajoutés, {skipped} déjà dans votre liste",
+  "aud.referral": "Partagez EchoForge",
+  "aud.referralDesc": "Vos pages publiques portent déjà ce lien — partagez-le aussi ailleurs.",
+  "aud.referralCount": "{count} créateurs ont rejoint via votre lien",
+  "aud.copied": "Lien copié",
+
+  // Trust pillars
+  "trust.title": "Du contenu digne de confiance pour les plateformes",
+  "trust.sub": "Chaque contenu produit par EchoForge porte des garanties structurelles qu'aucun outil de clips n'offre.",
+  "trust.p1t": "Provenance signée",
+  "trust.p1d": "Chaque contenu porte un manifeste signé cryptographiquement : source, moteur et historique complet — au format C2PA, prêt pour les règles de divulgation IA.",
+  "trust.p2t": "Vérifié avant publication",
+  "trust.p2d": "Chaque contenu est analysé contre les déclencheurs de démonétisation et de politique de plateforme — vous voyez le risque avant l'algorithme.",
+  "trust.p3t": "Votre voix, garantie",
+  "trust.p3d": "Mots interdits, ton et CTA sont appliqués mécaniquement à chaque génération — pas une suggestion, une garantie.",
 };

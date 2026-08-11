@@ -1181,6 +1181,10 @@ function ScheduleTab() {
   });
   const [editAt, setEditAt] = useState("");
   const [editPlatform, setEditPlatform] = useState("TikTok");
+  const [metViews, setMetViews] = useState("");
+  const [metLikes, setMetLikes] = useState("");
+  const [metComments, setMetComments] = useState("");
+  const [savingMetrics, setSavingMetrics] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -1199,7 +1203,32 @@ function ScheduleTab() {
     setEditPlatform(p.platform);
     const d = new Date(p.scheduledAt);
     setEditAt(Number.isNaN(d.getTime()) ? "" : toLocalInput(d));
+    setMetViews("");
+    setMetLikes("");
+    setMetComments("");
   }, []);
+
+  const saveResults = useCallback(async () => {
+    if (!selected) return;
+    setSavingMetrics(true);
+    const res = await fetch("/api/metrics", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        postId: selected.id,
+        views: Number(metViews) || 0,
+        likes: Number(metLikes) || 0,
+        comments: Number(metComments) || 0,
+      }),
+    });
+    setSavingMetrics(false);
+    if (res.ok) {
+      setSelected(null);
+      addToast(t("sched.resultsSaved"));
+    } else {
+      addToast(t("sched.toastFailed"), "error");
+    }
+  }, [selected, metViews, metLikes, metComments, addToast, t]);
 
   const createPost = useCallback(async () => {
     const asset = assets.find((a) => a.id === formAsset);
@@ -1583,6 +1612,39 @@ function ScheduleTab() {
                 </button>
               </div>
 
+              {selected.status === "published" && (
+                <div className="space-y-3">
+                  <p className="text-xs text-cyber-muted">{t("sched.resultsTitle")}</p>
+                  <div className="grid grid-cols-3 gap-3">
+                    {[
+                      { label: t("sched.views"), val: metViews, set: setMetViews },
+                      { label: t("sched.likes"), val: metLikes, set: setMetLikes },
+                      { label: t("sched.comments"), val: metComments, set: setMetComments },
+                    ].map((f) => (
+                      <div key={f.label}>
+                        <label className="block text-xs text-cyber-muted mb-1.5">{f.label}</label>
+                        <input
+                          type="number"
+                          min={0}
+                          value={f.val}
+                          onChange={(e) => f.set(e.target.value)}
+                          placeholder="0"
+                          className="w-full px-3 py-2 bg-cyber-dark border border-cyber-border rounded-xl text-sm text-foreground focus:outline-none focus:border-neon-purple/50"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <button
+                    onClick={saveResults}
+                    disabled={savingMetrics || (!metViews && !metLikes && !metComments)}
+                    className="w-full py-2.5 rounded-xl bg-gradient-to-r from-neon-purple to-electric-blue text-white text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {savingMetrics ? <Loader2 className="w-4 h-4 animate-spin" /> : <TrendingUp className="w-4 h-4" />}
+                    {t("sched.saveResults")}
+                  </button>
+                </div>
+              )}
+
               {selected.status === "scheduled" && (
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-3">
@@ -1963,6 +2025,21 @@ function AudienceTab() {
   const [savingPage, setSavingPage] = useState(false);
   const [broadcastAsset, setBroadcastAsset] = useState("");
   const [broadcasting, setBroadcasting] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+  const [importText, setImportText] = useState("");
+  const [importing, setImporting] = useState(false);
+  const [referral, setReferral] = useState<{ link: string; count: number } | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/referral", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => active && d && setReferral({ link: d.link, count: d.count }))
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -2033,6 +2110,30 @@ function AudienceTab() {
     downloadBlob("subscribers.csv", "text/csv", csv);
   }, [subs]);
 
+  const runImport = useCallback(async () => {
+    if (!importText.trim()) return;
+    setImporting(true);
+    const res = await fetch("/api/subscribers/import", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: importText }),
+    });
+    setImporting(false);
+    if (res.ok) {
+      const d = await res.json();
+      addToast(t("aud.importDone", { added: d.added, skipped: d.skipped }));
+      setImportOpen(false);
+      setImportText("");
+      fetch("/api/subscribers", { cache: "no-store" })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d2) => d2 && setSubs(d2.subscribers))
+        .catch(() => {});
+    } else {
+      const d = await res.json().catch(() => null);
+      addToast(d?.error ?? t("sched.toastFailed"), "error");
+    }
+  }, [importText, addToast, t]);
+
   const broadcast = useCallback(async () => {
     if (!broadcastAsset) return;
     setBroadcasting(true);
@@ -2084,15 +2185,42 @@ function AudienceTab() {
               {t("aud.subscribers")} · {subs.length}
             </h2>
           </div>
-          {subs.length > 0 && (
+          <div className="flex items-center gap-4">
             <button
-              onClick={exportCsv}
+              onClick={() => setImportOpen((v) => !v)}
               className="text-xs text-neon-purple hover:underline flex items-center gap-1.5"
             >
-              <Download className="w-3.5 h-3.5" /> {t("aud.exportCsv")}
+              <Upload className="w-3.5 h-3.5" /> {t("aud.import")}
             </button>
-          )}
+            {subs.length > 0 && (
+              <button
+                onClick={exportCsv}
+                className="text-xs text-neon-purple hover:underline flex items-center gap-1.5"
+              >
+                <Download className="w-3.5 h-3.5" /> {t("aud.exportCsv")}
+              </button>
+            )}
+          </div>
         </div>
+        {importOpen && (
+          <div className="px-6 py-4 border-b border-cyber-border space-y-3">
+            <textarea
+              value={importText}
+              onChange={(e) => setImportText(e.target.value)}
+              rows={4}
+              placeholder={t("aud.importPh")}
+              className="w-full px-3 py-2.5 bg-cyber-dark border border-cyber-border rounded-xl text-xs font-mono text-foreground placeholder:text-cyber-muted focus:outline-none focus:border-neon-purple/50 resize-y"
+            />
+            <button
+              onClick={runImport}
+              disabled={importing || !importText.trim()}
+              className="px-4 py-2 rounded-xl bg-gradient-to-r from-neon-purple to-electric-blue text-white text-xs font-medium hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2"
+            >
+              {importing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+              {t("aud.import")}
+            </button>
+          </div>
+        )}
         {subs.length === 0 ? (
           <p className="px-6 py-8 text-sm text-cyber-muted text-center">{t("aud.noSubs")}</p>
         ) : (
@@ -2209,6 +2337,35 @@ function AudienceTab() {
           {t("aud.save")}
         </button>
       </div>
+
+      {/* Referral loop */}
+      {referral && (
+        <div className="bg-cyber-card border border-cyber-border rounded-xl p-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="min-w-0">
+              <h2 className="font-semibold text-foreground">{t("aud.referral")}</h2>
+              <p className="text-xs text-cyber-muted mt-1">{t("aud.referralDesc")}</p>
+              <p className="text-xs text-neon-purple mt-2">
+                {t("aud.referralCount", { count: referral.count })}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <code className="px-3 py-2 bg-cyber-dark border border-cyber-border rounded-lg text-xs text-foreground max-w-[260px] truncate">
+                {referral.link}
+              </code>
+              <button
+                onClick={() => {
+                  navigator.clipboard?.writeText(referral.link);
+                  addToast(t("aud.copied"));
+                }}
+                className="px-3 py-2 rounded-lg bg-gradient-to-r from-neon-purple to-electric-blue text-white text-xs font-medium hover:opacity-90 transition-opacity flex items-center gap-1.5"
+              >
+                <Copy className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Newsletter broadcast */}
       <div className="bg-cyber-card border border-cyber-border rounded-xl p-6 space-y-3">
@@ -2445,9 +2602,28 @@ function BusinessTab() {
 
       {/* Revenue ledger */}
       <div className="bg-cyber-card border border-cyber-border rounded-xl">
-        <div className="flex items-center gap-2 px-6 py-4 border-b border-cyber-border">
-          <DollarSign className="w-4 h-4 text-neon-purple" />
-          <h2 className="font-semibold text-foreground">{t("biz.revenue")}</h2>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-cyber-border">
+          <div className="flex items-center gap-2">
+            <DollarSign className="w-4 h-4 text-neon-purple" />
+            <h2 className="font-semibold text-foreground">{t("biz.revenue")}</h2>
+          </div>
+          {entries.length > 0 && (
+            <button
+              onClick={() => {
+                const esc = (s: string) => `"${(s ?? "").replace(/"/g, '""')}"`;
+                const csv = [
+                  "month,stream,amount,note",
+                  ...entries.map((e) =>
+                    [e.month, e.stream, String(e.amount), e.note].map(esc).join(",")
+                  ),
+                ].join("\n");
+                downloadBlob("echoforge-revenue.csv", "text/csv", csv);
+              }}
+              className="text-xs text-neon-purple hover:underline flex items-center gap-1.5"
+            >
+              <Download className="w-3.5 h-3.5" /> {t("aud.exportCsv")}
+            </button>
+          )}
         </div>
         <div className="p-6 space-y-4">
           {byStream.length > 0 && (
@@ -2672,6 +2848,15 @@ interface AnalyticsData {
   platforms: { platform: string; scheduled: number; published: number }[];
   types: { type: string; count: number }[];
   recentPublished: { assetName: string; platform: string; scheduledAt: string }[];
+  measured: { posts: number; views: number; likes: number; comments: number };
+  topPerformers: {
+    assetId: string;
+    assetName: string;
+    platform: string;
+    views: number;
+    likes: number;
+    comments: number;
+  }[];
 }
 
 function AnalyticsTab() {
@@ -2773,6 +2958,44 @@ function AnalyticsTab() {
           ))}
         </div>
       </div>
+
+      {data.measured.posts > 0 && (
+        <div className="bg-cyber-card border border-cyber-border rounded-xl p-6">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+            <h3 className="font-semibold text-foreground">{t("dash.topPerformers")}</h3>
+            <div className="flex items-center gap-4 text-xs">
+              <span className="text-neon-purple">
+                {t("dash.measuredViews")}: {data.measured.views.toLocaleString()}
+              </span>
+              <span className="text-electric-blue">
+                {t("dash.engagements")}:{" "}
+                {(data.measured.likes + data.measured.comments).toLocaleString()}
+              </span>
+            </div>
+          </div>
+          <div className="space-y-3">
+            {data.topPerformers.map((p, i) => (
+              <div key={`${p.assetId}-${i}`} className="flex items-center gap-4 p-3 rounded-lg bg-cyber-dark">
+                <span className="text-lg font-bold text-neon-purple w-8">#{i + 1}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground truncate">{p.assetName}</p>
+                  <p className="text-xs text-cyber-muted">{p.platform}</p>
+                </div>
+                <div className="text-right shrink-0">
+                  <p className="text-sm font-medium text-foreground">
+                    {p.views.toLocaleString()}
+                    <span className="text-xs text-cyber-muted"> {t("sched.views").toLowerCase()}</span>
+                  </p>
+                  <p className="text-xs text-cyber-muted">
+                    {(p.likes + p.comments).toLocaleString()} {t("dash.engagements").toLowerCase()}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="text-[11px] text-cyber-muted mt-4">{t("dash.flywheelHint")}</p>
+        </div>
+      )}
 
       {data.recentPublished.length > 0 && (
         <div className="bg-cyber-card border border-cyber-border rounded-xl p-6">

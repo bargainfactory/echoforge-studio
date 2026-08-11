@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getCreatorPageOwner, userAnalytics } from "@/lib/server/db";
+import { getCreatorPageOwner, getReferralInfo, userAnalytics } from "@/lib/server/db";
 
 export const dynamic = "force-dynamic";
 
@@ -23,5 +23,8 @@ export async function GET(
       published: analytics.totals.published,
       platforms: analytics.platforms.map((p) => p.platform),
     },
+    // Powered-by links on the public pages carry the owner's referral code, so
+    // every shared page doubles as an attributed acquisition channel.
+    ownerRef: getReferralInfo(found.email).code,
   });
 }

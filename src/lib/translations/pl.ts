@@ -607,4 +607,35 @@ export const pl: Record<string, string> = {
   "onb.go1": "Ustaw głos",
   "onb.go2": "Dodaj pomysł",
   "onb.go3": "Otwórz kalendarz",
+
+  // Performance flywheel
+  "sched.resultsTitle": "Zapisz wyniki tego posta z analityki platformy — zasilają twoich liderów i sterują kolejnymi generacjami.",
+  "sched.views": "Wyświetlenia",
+  "sched.likes": "Polubienia",
+  "sched.comments": "Komentarze",
+  "sched.saveResults": "Zapisz wyniki",
+  "sched.resultsSaved": "Wyniki zapisane — zwycięzcy sterują teraz generacją",
+  "dash.measuredViews": "Zmierzone wyświetlenia",
+  "dash.engagements": "Interakcje",
+  "dash.topPerformers": "Najlepsze wyniki",
+  "dash.flywheelHint": "Nowe generacje automatycznie uczą się haków tych zwycięzców — im więcej wyników zapiszesz, tym ostrzejsze będą kolejne materiały.",
+
+  // Audience import + referral
+  "aud.import": "Importuj",
+  "aud.importPh": "Wklej adresy w dowolnym formacie — eksport CSV, po jednym w linii, cokolwiek. Znajdziemy je i usuniemy duplikaty.",
+  "aud.importDone": "Dodano {added}, {skipped} już było na liście",
+  "aud.referral": "Udostępnij EchoForge",
+  "aud.referralDesc": "Twoje publiczne strony już niosą ten link — udostępniaj go też gdzie indziej.",
+  "aud.referralCount": "{count} twórców dołączyło z twojego linku",
+  "aud.copied": "Link skopiowany",
+
+  // Trust pillars
+  "trust.title": "Treści, którym ufają platformy",
+  "trust.sub": "Każdy materiał z EchoForge niesie strukturalne gwarancje, których nie daje żadne narzędzie do klipów.",
+  "trust.p1t": "Podpisane pochodzenie",
+  "trust.p1d": "Każdy materiał niesie kryptograficznie podpisany manifest: źródło, silnik i pełny ślad edycji — w formie C2PA, gotowy na zasady ujawniania AI.",
+  "trust.p2t": "Kontrola zasad przed publikacją",
+  "trust.p2d": "Każdy materiał jest sprawdzany pod kątem demonetyzacji i zasad platform — ryzyko widzisz przed algorytmem.",
+  "trust.p3t": "Twój głos, gwarantowany",
+  "trust.p3d": "Zakazane słowa, ton i CTA są egzekwowane mechanicznie przy każdej generacji — to nie sugestia, to gwarancja.",
 };

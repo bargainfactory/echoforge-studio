@@ -607,4 +607,35 @@ export const zh: Record<string, string> = {
   "onb.go1": "设置语气",
   "onb.go2": "添加灵感",
   "onb.go3": "打开日历",
+
+  // Performance flywheel
+  "sched.resultsTitle": "从平台数据分析中记录这条帖子的成绩——它们会汇入你的最佳内容,并指导后续生成。",
+  "sched.views": "播放量",
+  "sched.likes": "点赞",
+  "sched.comments": "评论",
+  "sched.saveResults": "保存成绩",
+  "sched.resultsSaved": "成绩已保存——你的爆款开始指导生成",
+  "dash.measuredViews": "已记录播放量",
+  "dash.engagements": "互动量",
+  "dash.topPerformers": "最佳内容",
+  "dash.flywheelHint": "新的生成会自动学习这些爆款的钩子——记录的成绩越多,下一批内容越精准。",
+
+  // Audience import + referral
+  "aud.import": "导入",
+  "aud.importPh": "以任意格式粘贴邮箱——CSV 导出、一行一个都行。我们会自动提取并去重。",
+  "aud.importDone": "新增 {added} 个,{skipped} 个已在列表中",
+  "aud.referral": "分享 EchoForge",
+  "aud.referralDesc": "你的公开页面已带上此链接——也可以分享到其他地方。",
+  "aud.referralCount": "已有 {count} 位创作者通过你的链接加入",
+  "aud.copied": "链接已复制",
+
+  // Trust pillars
+  "trust.title": "平台信得过的内容",
+  "trust.sub": "EchoForge 生成的每个内容都带有剪辑工具无法提供的结构性保证。",
+  "trust.p1t": "签名来源记录",
+  "trust.p1d": "每个内容都带有加密签名的清单:来源、引擎与完整编辑轨迹——C2PA 形态,随时应对平台 AI 披露规则。",
+  "trust.p2t": "发布前政策检查",
+  "trust.p2d": "每个内容都会对照取消变现与平台政策触发词进行检查——你比算法更早看到风险。",
+  "trust.p3t": "你的声音,强制生效",
+  "trust.p3d": "禁用词、语气与 CTA 在每次生成中机械化执行——不是建议,是保证。",
 };

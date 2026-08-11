@@ -11,6 +11,7 @@ import {
   insertNotification,
   listProjects,
   setProvenance,
+  topPerformers,
 } from "@/lib/server/db";
 import { generateAssets } from "@/lib/server/generate";
 import { PLAN_MONTHLY_PROJECTS } from "@/lib/server/pricing";
@@ -166,13 +167,15 @@ export async function POST(req: NextRequest) {
   }
 
   // Real generation from the actual input content, in the user's language,
-  // steered by the account's brand-voice profile.
+  // steered by the account's brand-voice profile and their proven winners.
   const voice = getBrandVoice(user.email);
+  const exemplars = topPerformers(user.email, 5).map((p) => p.assetName);
   const { assets: generated, engine } = await generateAssets(
     title,
     transcript,
     locale,
-    voice
+    voice,
+    exemplars
   );
 
   const { project, assets } = createProjectWithAssets(

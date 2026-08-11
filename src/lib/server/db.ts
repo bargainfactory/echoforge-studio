@@ -129,6 +129,15 @@ function getDb(): DatabaseSync {
       rates        TEXT,
       enabled      INTEGER NOT NULL DEFAULT 1
     );
+    CREATE TABLE IF NOT EXISTS post_metrics (
+      post_id    TEXT PRIMARY KEY,
+      user_email TEXT NOT NULL REFERENCES users(email) ON DELETE CASCADE,
+      views      INTEGER NOT NULL DEFAULT 0,
+      likes      INTEGER NOT NULL DEFAULT 0,
+      comments   INTEGER NOT NULL DEFAULT 0,
+      source     TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
     CREATE TABLE IF NOT EXISTS revenue_entries (
       id         TEXT PRIMARY KEY,
       user_email TEXT NOT NULL REFERENCES users(email) ON DELETE CASCADE,
@@ -193,6 +202,8 @@ function getDb(): DatabaseSync {
     "ALTER TABLE projects ADD COLUMN storage_path TEXT",
     "ALTER TABLE assets ADD COLUMN content TEXT",
     "ALTER TABLE assets ADD COLUMN evergreen INTEGER NOT NULL DEFAULT 0",
+    "ALTER TABLE users ADD COLUMN referral_code TEXT",
+    "ALTER TABLE users ADD COLUMN referred_by TEXT",
   ]) {
     try {
       conn.exec(stmt);
@@ -444,6 +455,110 @@ export function upsertCreatorPage(email: string, page: CreatorPage): boolean {
       page.enabled ? 1 : 0
     );
   return true;
+}
+
+// --- Post metrics (the performance flywheel's raw material) ---
+// Written by manual results entry today and by platform-API ingestion later —
+// both land in the same table, so everything downstream is source-agnostic.
+
+export interface PostMetrics {
+  postId: string;
+  views: number;
+  likes: number;
+  comments: number;
+  source: string;
+  updatedAt: string;
+}
+
+export function upsertPostMetrics(
+  email: string,
+  postId: string,
+  m: { views: number; likes: number; comments: number; source: string }
+): void {
+  getDb()
+    .prepare(
+      `INSERT OR REPLACE INTO post_metrics (post_id, user_email, views, likes, comments, source, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`
+    )
+    .run(
+      postId,
+      email.toLowerCase(),
+      m.views,
+      m.likes,
+      m.comments,
+      m.source,
+      new Date().toISOString()
+    );
+}
+
+export function listPostMetrics(email: string): PostMetrics[] {
+  return getDb()
+    .prepare(
+      `SELECT post_id AS postId, views, likes, comments, source, updated_at AS updatedAt
+       FROM post_metrics WHERE user_email = ?`
+    )
+    .all(email.toLowerCase()) as unknown as PostMetrics[];
+}
+
+export interface TopPerformer {
+  assetId: string;
+  assetName: string;
+  platform: string;
+  views: number;
+  likes: number;
+  comments: number;
+}
+
+/** Measured published posts ranked by views — the creator's proven winners. */
+export function topPerformers(email: string, limit = 5): TopPerformer[] {
+  return getDb()
+    .prepare(
+      `SELECT sp.asset_id AS assetId, sp.asset_name AS assetName, sp.platform,
+              pm.views, pm.likes, pm.comments
+       FROM post_metrics pm
+       JOIN scheduled_posts sp ON sp.id = pm.post_id AND sp.user_email = pm.user_email
+       WHERE pm.user_email = ? AND sp.status = 'published'
+       ORDER BY pm.views DESC, pm.likes DESC
+       LIMIT ?`
+    )
+    .all(email.toLowerCase(), limit) as unknown as TopPerformer[];
+}
+
+export function getScheduledPost(email: string, id: string): ScheduledPost | null {
+  const row = getDb()
+    .prepare("SELECT * FROM scheduled_posts WHERE id = ? AND user_email = ?")
+    .get(id, email.toLowerCase()) as Record<string, unknown> | undefined;
+  return row ? mapScheduled(row) : null;
+}
+
+// --- Referrals (viral loop) ---
+
+export function getReferralInfo(email: string): { code: string; count: number } {
+  const conn = getDb();
+  const lower = email.toLowerCase();
+  const row = conn
+    .prepare("SELECT referral_code FROM users WHERE email = ?")
+    .get(lower) as { referral_code: string | null } | undefined;
+  let code = row?.referral_code ?? null;
+  if (!code) {
+    // Lazily mint codes for accounts created before referrals existed.
+    code = `ef-${crypto.randomUUID().slice(0, 8)}`;
+    conn.prepare("UPDATE users SET referral_code = ? WHERE email = ?").run(code, lower);
+  }
+  const count = (
+    conn
+      .prepare("SELECT COUNT(*) AS c FROM users WHERE referred_by = ?")
+      .get(code) as { c: number }
+  ).c;
+  return { code, count };
+}
+
+export function setReferredBy(email: string, refCode: string): void {
+  getDb()
+    .prepare(
+      "UPDATE users SET referred_by = ? WHERE email = ? AND referred_by IS NULL"
+    )
+    .run(refCode.slice(0, 40), email.toLowerCase());
 }
 
 // --- Revenue ledger (the creator's income, not the platform's) ---
@@ -1164,6 +1279,8 @@ export interface UserAnalytics {
   platforms: { platform: string; scheduled: number; published: number }[];
   types: { type: string; count: number }[];
   recentPublished: { assetName: string; platform: string; scheduledAt: string }[];
+  measured: { posts: number; views: number; likes: number; comments: number };
+  topPerformers: TopPerformer[];
 }
 
 export function userAnalytics(email: string): UserAnalytics {
@@ -1219,6 +1336,16 @@ export function userAnalytics(email: string): UserAnalytics {
          ORDER BY sort DESC LIMIT 8`
       )
       .all(lower) as unknown as UserAnalytics["recentPublished"],
+    measured: conn
+      .prepare(
+        `SELECT COUNT(*) AS posts,
+                COALESCE(SUM(views), 0) AS views,
+                COALESCE(SUM(likes), 0) AS likes,
+                COALESCE(SUM(comments), 0) AS comments
+         FROM post_metrics WHERE user_email = ?`
+      )
+      .get(lower) as UserAnalytics["measured"],
+    topPerformers: topPerformers(lower, 5),
   };
 }
 

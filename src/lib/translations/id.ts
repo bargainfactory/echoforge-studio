@@ -607,4 +607,35 @@ export const id: Record<string, string> = {
   "onb.go1": "Atur suara",
   "onb.go2": "Tambah ide",
   "onb.go3": "Buka kalender",
+
+  // Performance flywheel
+  "sched.resultsTitle": "Catat hasil post ini dari analitik platform — jadi bahan top performer dan pengarah generasi berikutnya.",
+  "sched.views": "Tayangan",
+  "sched.likes": "Suka",
+  "sched.comments": "Komentar",
+  "sched.saveResults": "Simpan hasil",
+  "sched.resultsSaved": "Hasil tersimpan — pemenang Anda kini mengarahkan generasi",
+  "dash.measuredViews": "Tayangan terukur",
+  "dash.engagements": "Interaksi",
+  "dash.topPerformers": "Performa terbaik",
+  "dash.flywheelHint": "Generasi baru otomatis mempelajari hook para pemenang ini — makin banyak hasil dicatat, makin tajam aset berikutnya.",
+
+  // Audience import + referral
+  "aud.import": "Impor",
+  "aud.importPh": "Tempel email dalam format apa pun — ekspor CSV, satu per baris, bebas. Kami ekstrak dan hapus duplikatnya.",
+  "aud.importDone": "{added} ditambahkan, {skipped} sudah ada di daftar",
+  "aud.referral": "Bagikan EchoForge",
+  "aud.referralDesc": "Halaman publik Anda sudah membawa tautan ini — bagikan juga di tempat lain.",
+  "aud.referralCount": "{count} kreator bergabung lewat tautan Anda",
+  "aud.copied": "Tautan disalin",
+
+  // Trust pillars
+  "trust.title": "Konten yang dipercaya platform",
+  "trust.sub": "Setiap aset EchoForge membawa jaminan struktural yang tidak ditawarkan alat klip mana pun.",
+  "trust.p1t": "Provenans bertanda tangan",
+  "trust.p1d": "Setiap aset membawa manifes bertanda tangan kriptografis: sumber, mesin, dan jejak edit lengkap — berbentuk C2PA, siap untuk aturan disclosure AI.",
+  "trust.p2t": "Dicek kebijakan sebelum terbit",
+  "trust.p2d": "Setiap aset diperiksa terhadap pemicu demonetisasi dan kebijakan platform — Anda melihat risiko sebelum algoritmanya.",
+  "trust.p3t": "Suara Anda, dijamin",
+  "trust.p3d": "Kata terlarang, nada, dan CTA diterapkan secara mekanis di setiap generasi — bukan saran, tapi jaminan.",
 };

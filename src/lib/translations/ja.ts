@@ -640,4 +640,35 @@ export const ja: Record<string, string> = {
   "onb.go1": "ボイスを設定",
   "onb.go2": "アイデアを追加",
   "onb.go3": "カレンダーを開く",
+
+  // Performance flywheel
+  "sched.resultsTitle": "プラットフォームのアナリティクスからこの投稿の結果を記録しましょう。トップパフォーマーの集計と今後の生成に活用されます。",
+  "sched.views": "再生数",
+  "sched.likes": "いいね",
+  "sched.comments": "コメント",
+  "sched.saveResults": "結果を保存",
+  "sched.resultsSaved": "結果を保存しました。勝ちパターンが今後の生成を導きます",
+  "dash.measuredViews": "計測済み再生数",
+  "dash.engagements": "エンゲージメント",
+  "dash.topPerformers": "トップパフォーマー",
+  "dash.flywheelHint": "新しい生成はこれらの勝ちフックを自動で学習します。結果を記録するほど、次のアセットが鋭くなります。",
+
+  // Audience import + referral
+  "aud.import": "インポート",
+  "aud.importPh": "どんな形式でもメールを貼り付けてください。CSVでも1行ずつでもOK。自動で抽出し重複を除きます。",
+  "aud.importDone": "{added}件追加、{skipped}件は既にリストにありました",
+  "aud.referral": "EchoForgeをシェア",
+  "aud.referralDesc": "公開ページには既にこのリンクが入っています。他の場所でもシェアしましょう。",
+  "aud.referralCount": "あなたのリンク経由で{count}人のクリエイターが参加",
+  "aud.copied": "リンクをコピーしました",
+
+  // Trust pillars
+  "trust.title": "プラットフォームに信頼されるコンテンツ",
+  "trust.sub": "EchoForgeが生成するすべてのアセットには、クリップツールにはない構造的保証が付いています。",
+  "trust.p1t": "署名付き来歴",
+  "trust.p1d": "各アセットには暗号署名付きマニフェスト(ソース、エンジン、編集履歴)が付属。C2PA準拠の形式で、AI開示ルールにも対応できます。",
+  "trust.p2t": "公開前のポリシーチェック",
+  "trust.p2d": "すべてのアセットを収益化停止やプラットフォームポリシーのトリガーと照合。アルゴリズムより先にリスクが見えます。",
+  "trust.p3t": "あなたの声を、確実に",
+  "trust.p3d": "禁止ワード、トーン、CTAはすべての生成で機械的に適用されます。提案ではなく、保証です。",
 };

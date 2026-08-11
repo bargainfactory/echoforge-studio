@@ -7,6 +7,7 @@ import {
   getProjectSource,
   getProvenanceRaw,
   setProvenance,
+  topPerformers,
   updateAsset,
 } from "@/lib/server/db";
 import { regenerateAsset } from "@/lib/server/generate";
@@ -72,6 +73,7 @@ export async function POST(
       locale,
       voice: getBrandVoice(user.email),
       feedback,
+      exemplars: topPerformers(user.email, 5).map((p) => p.assetName),
     }
   );
 

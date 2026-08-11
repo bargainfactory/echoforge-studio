@@ -607,4 +607,35 @@ export const it: Record<string, string> = {
   "onb.go1": "Imposta voce",
   "onb.go2": "Aggiungi idea",
   "onb.go3": "Apri calendario",
+
+  // Performance flywheel
+  "sched.resultsTitle": "Registra i risultati di questo post dalle analytics della piattaforma — alimentano i tuoi top performer e guidano le prossime generazioni.",
+  "sched.views": "Visualizzazioni",
+  "sched.likes": "Mi piace",
+  "sched.comments": "Commenti",
+  "sched.saveResults": "Salva risultati",
+  "sched.resultsSaved": "Risultati salvati — i tuoi vincitori ora guidano la generazione",
+  "dash.measuredViews": "Visualizzazioni misurate",
+  "dash.engagements": "Interazioni",
+  "dash.topPerformers": "Top performer",
+  "dash.flywheelHint": "Le nuove generazioni studiano automaticamente i ganci di questi vincitori — più risultati registri, più affilati saranno i prossimi asset.",
+
+  // Audience import + referral
+  "aud.import": "Importa",
+  "aud.importPh": "Incolla email in qualsiasi formato — export CSV, una per riga, come vuoi. Le troviamo e deduplichiamo noi.",
+  "aud.importDone": "{added} aggiunti, {skipped} già nella tua lista",
+  "aud.referral": "Condividi EchoForge",
+  "aud.referralDesc": "Le tue pagine pubbliche portano già questo link — condividilo anche altrove.",
+  "aud.referralCount": "{count} creator si sono uniti dal tuo link",
+  "aud.copied": "Link copiato",
+
+  // Trust pillars
+  "trust.title": "Contenuti di cui le piattaforme si fidano",
+  "trust.sub": "Ogni asset prodotto da EchoForge porta garanzie strutturali che nessun tool di clip offre.",
+  "trust.p1t": "Provenienza firmata",
+  "trust.p1d": "Ogni asset porta un manifest firmato crittograficamente: fonte, motore e cronologia completa delle modifiche — in forma C2PA, pronto per le regole di divulgazione IA.",
+  "trust.p2t": "Verificato prima della pubblicazione",
+  "trust.p2d": "Ogni asset è controllato contro i trigger di demonetizzazione e delle policy — vedi il rischio prima dell'algoritmo.",
+  "trust.p3t": "La tua voce, garantita",
+  "trust.p3d": "Parole vietate, tono e CTA sono applicati meccanicamente a ogni generazione — non un suggerimento, una garanzia.",
 };

@@ -141,6 +141,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [applyBootstrap]);
 
+  // Referral attribution: a ?ref= on any landing survives until signup.
+  useEffect(() => {
+    try {
+      const ref = new URLSearchParams(window.location.search).get("ref");
+      if (ref) localStorage.setItem("ef_ref", ref.slice(0, 40));
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
   // Hydrate from the server session on first load.
   useEffect(() => {
     let active = true;
@@ -176,7 +186,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     async (name: string, email: string, password: string) => {
       const res = await api("/api/auth/signup", {
         method: "POST",
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({
+          name,
+          email,
+          password,
+          ref: localStorage.getItem("ef_ref") || undefined,
+        }),
       });
       if (!res.ok) return false;
       const { user: u } = await res.json();

@@ -640,4 +640,35 @@ export const ko: Record<string, string> = {
   "onb.go1": "보이스 설정",
   "onb.go2": "아이디어 추가",
   "onb.go3": "캘린더 열기",
+
+  // Performance flywheel
+  "sched.resultsTitle": "플랫폼 분석에서 이 포스트의 성과를 기록하세요. 톱 퍼포머 집계와 향후 생성에 반영됩니다.",
+  "sched.views": "조회수",
+  "sched.likes": "좋아요",
+  "sched.comments": "댓글",
+  "sched.saveResults": "성과 저장",
+  "sched.resultsSaved": "성과 저장됨 — 이제 승자들이 생성을 이끕니다",
+  "dash.measuredViews": "측정된 조회수",
+  "dash.engagements": "참여",
+  "dash.topPerformers": "톱 퍼포머",
+  "dash.flywheelHint": "새 생성은 이 승자들의 훅을 자동으로 학습합니다. 성과를 많이 기록할수록 다음 에셋이 더 정교해집니다.",
+
+  // Audience import + referral
+  "aud.import": "가져오기",
+  "aud.importPh": "어떤 형식이든 이메일을 붙여넣으세요 — CSV, 한 줄에 하나 등. 자동으로 추출하고 중복을 제거합니다.",
+  "aud.importDone": "{added}명 추가, {skipped}명은 이미 목록에 있음",
+  "aud.referral": "EchoForge 공유",
+  "aud.referralDesc": "공개 페이지에는 이미 이 링크가 포함되어 있습니다. 다른 곳에도 공유하세요.",
+  "aud.referralCount": "내 링크로 {count}명의 크리에이터가 가입",
+  "aud.copied": "링크 복사됨",
+
+  // Trust pillars
+  "trust.title": "플랫폼이 신뢰하는 콘텐츠",
+  "trust.sub": "EchoForge가 만드는 모든 에셋에는 클립 도구가 제공하지 못하는 구조적 보장이 담깁니다.",
+  "trust.p1t": "서명된 출처",
+  "trust.p1d": "모든 에셋에 암호 서명된 매니페스트(소스, 엔진, 전체 편집 이력)가 붙습니다 — C2PA 형태로 AI 공개 규정에 대응합니다.",
+  "trust.p2t": "게시 전 정책 점검",
+  "trust.p2d": "모든 에셋을 수익화 제한·플랫폼 정책 트리거와 대조합니다 — 알고리즘보다 먼저 위험을 봅니다.",
+  "trust.p3t": "당신의 보이스, 보장",
+  "trust.p3d": "금지 단어, 톤, CTA가 모든 생성에서 기계적으로 적용됩니다 — 제안이 아니라 보장입니다.",
 };

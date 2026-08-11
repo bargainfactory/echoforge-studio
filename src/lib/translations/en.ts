@@ -640,4 +640,35 @@ export const en: Record<string, string> = {
   "onb.go1": "Set voice",
   "onb.go2": "Add idea",
   "onb.go3": "Open calendar",
+
+  // Performance flywheel
+  "sched.resultsTitle": "Record this post's results from the platform's analytics — they power your top performers and steer future generations.",
+  "sched.views": "Views",
+  "sched.likes": "Likes",
+  "sched.comments": "Comments",
+  "sched.saveResults": "Save results",
+  "sched.resultsSaved": "Results saved — your winners now steer generation",
+  "dash.measuredViews": "Measured views",
+  "dash.engagements": "Engagements",
+  "dash.topPerformers": "Top performers",
+  "dash.flywheelHint": "New generations study these winners' hooks automatically — the more results you record, the sharper your next assets get.",
+
+  // Audience import + referral
+  "aud.import": "Import",
+  "aud.importPh": "Paste emails in any format — a CSV export, one per line, whatever. We'll find and dedupe them.",
+  "aud.importDone": "{added} added, {skipped} already on your list",
+  "aud.referral": "Share EchoForge",
+  "aud.referralDesc": "Your public pages already carry this link — share it anywhere else too.",
+  "aud.referralCount": "{count} creators joined through your link",
+  "aud.copied": "Link copied",
+
+  // Trust pillars
+  "trust.title": "Content platforms can trust",
+  "trust.sub": "Every asset EchoForge produces carries structural guarantees no clip tool offers.",
+  "trust.p1t": "Signed provenance",
+  "trust.p1d": "Each asset carries a cryptographically signed manifest: source, engine, and full edit trail — C2PA-shaped and ready for platform AI-disclosure rules.",
+  "trust.p2t": "Policy-checked before publish",
+  "trust.p2d": "Every asset is linted against demonetization and platform-policy triggers, so you see risk before the algorithm does.",
+  "trust.p3t": "Your voice, enforced",
+  "trust.p3d": "Banned words, tone and CTAs are enforced mechanically on every generation — not suggested, guaranteed.",
 };

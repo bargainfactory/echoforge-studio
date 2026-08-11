@@ -607,4 +607,35 @@ export const nl: Record<string, string> = {
   "onb.go1": "Stem instellen",
   "onb.go2": "Idee toevoegen",
   "onb.go3": "Kalender openen",
+
+  // Performance flywheel
+  "sched.resultsTitle": "Noteer de resultaten van deze post uit de platform-analytics — ze voeden je toppers en sturen toekomstige generaties.",
+  "sched.views": "Weergaven",
+  "sched.likes": "Likes",
+  "sched.comments": "Reacties",
+  "sched.saveResults": "Resultaten opslaan",
+  "sched.resultsSaved": "Resultaten opgeslagen — je winnaars sturen nu de generatie",
+  "dash.measuredViews": "Gemeten weergaven",
+  "dash.engagements": "Interacties",
+  "dash.topPerformers": "Toppers",
+  "dash.flywheelHint": "Nieuwe generaties leren automatisch van de hooks van deze winnaars — hoe meer resultaten je noteert, hoe scherper je volgende assets.",
+
+  // Audience import + referral
+  "aud.import": "Importeren",
+  "aud.importPh": "Plak e-mails in elk formaat — CSV-export, één per regel, maakt niet uit. Wij vinden en ontdubbelen ze.",
+  "aud.importDone": "{added} toegevoegd, {skipped} stonden al op je lijst",
+  "aud.referral": "Deel EchoForge",
+  "aud.referralDesc": "Je publieke pagina's dragen deze link al — deel hem ook elders.",
+  "aud.referralCount": "{count} creators kwamen via jouw link",
+  "aud.copied": "Link gekopieerd",
+
+  // Trust pillars
+  "trust.title": "Content waar platforms op vertrouwen",
+  "trust.sub": "Elk asset van EchoForge draagt structurele garanties die geen enkele cliptool biedt.",
+  "trust.p1t": "Ondertekende herkomst",
+  "trust.p1d": "Elk asset draagt een cryptografisch ondertekend manifest: bron, engine en volledig bewerkingsspoor — in C2PA-vorm, klaar voor AI-transparantieregels.",
+  "trust.p2t": "Beleidscheck vóór publicatie",
+  "trust.p2d": "Elk asset wordt gecontroleerd op demonetisatie- en platformbeleidstriggers — jij ziet het risico eerder dan het algoritme.",
+  "trust.p3t": "Jouw stem, gegarandeerd",
+  "trust.p3d": "Verboden woorden, toon en CTA's worden bij elke generatie mechanisch afgedwongen — geen suggestie, maar garantie.",
 };

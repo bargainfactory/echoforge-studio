@@ -340,6 +340,17 @@ function langLine(locale?: string): string {
     : "";
 }
 
+/**
+ * The performance flywheel's prompt side: hooks that measurably worked for
+ * THIS creator become style exemplars for the next generation.
+ */
+function exemplarBlock(exemplars?: string[]): string {
+  if (!exemplars || exemplars.length === 0) return "";
+  return `\n\nThis creator's PROVEN top-performing hooks so far (study what makes them work — curiosity, specificity, numbers — and emulate the pattern; never copy them verbatim):\n- ${exemplars
+    .slice(0, 5)
+    .join("\n- ")}`;
+}
+
 export interface GenerationResult {
   assets: GeneratedAsset[];
   engine: string; // "deterministic" or the LLM identifier that produced them
@@ -377,10 +388,11 @@ export async function generateAssets(
   title: string,
   transcript: string,
   locale?: string,
-  voice?: BrandVoice
+  voice?: BrandVoice,
+  exemplars?: string[]
 ): Promise<GenerationResult> {
   try {
-    const userPrompt = `Title: ${title}\n\nTranscript / script:\n${transcript || "(no transcript provided — infer from the title)"}${voiceBlock(voice)}${langLine(locale)}`;
+    const userPrompt = `Title: ${title}\n\nTranscript / script:\n${transcript || "(no transcript provided — infer from the title)"}${voiceBlock(voice)}${exemplarBlock(exemplars)}${langLine(locale)}`;
     const res = await llmComplete(LLM_SYSTEM, userPrompt, LLM_SCHEMA);
     if (res) {
       const parsed = parseAssets(res.text);
@@ -482,6 +494,7 @@ export async function regenerateAsset(
     locale?: string;
     voice?: BrandVoice;
     feedback?: string;
+    exemplars?: string[];
   }
 ): Promise<{ asset: GeneratedAsset; engine: string }> {
   try {
@@ -494,7 +507,7 @@ Asset to regenerate:
 Type: ${current.type}
 Name: ${current.name}
 Current content:
-${current.content}${ctx.feedback?.trim() ? `\n\nRevision feedback (apply this): ${ctx.feedback.trim()}` : ""}${voiceBlock(ctx.voice)}${langLine(ctx.locale)}`;
+${current.content}${ctx.feedback?.trim() ? `\n\nRevision feedback (apply this): ${ctx.feedback.trim()}` : ""}${voiceBlock(ctx.voice)}${exemplarBlock(ctx.exemplars)}${langLine(ctx.locale)}`;
     const res = await llmComplete(REGEN_SYSTEM, prompt, REGEN_SCHEMA);
     if (res) {
       const parsed = cleanAsset(parseJsonLoose(res.text));

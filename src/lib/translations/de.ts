@@ -640,4 +640,35 @@ export const de: Record<string, string> = {
   "onb.go1": "Stimme festlegen",
   "onb.go2": "Idee hinzufügen",
   "onb.go3": "Kalender öffnen",
+
+  // Performance flywheel
+  "sched.resultsTitle": "Trage die Ergebnisse dieses Posts aus den Plattform-Analytics ein — sie speisen deine Top-Performer und steuern künftige Generierungen.",
+  "sched.views": "Aufrufe",
+  "sched.likes": "Likes",
+  "sched.comments": "Kommentare",
+  "sched.saveResults": "Ergebnisse speichern",
+  "sched.resultsSaved": "Ergebnisse gespeichert — deine Gewinner steuern jetzt die Generierung",
+  "dash.measuredViews": "Gemessene Aufrufe",
+  "dash.engagements": "Interaktionen",
+  "dash.topPerformers": "Top-Performer",
+  "dash.flywheelHint": "Neue Generierungen lernen automatisch von den Hooks dieser Gewinner — je mehr Ergebnisse du einträgst, desto schärfer werden deine nächsten Assets.",
+
+  // Audience import + referral
+  "aud.import": "Importieren",
+  "aud.importPh": "Füge E-Mails in beliebigem Format ein — CSV-Export, eine pro Zeile, egal. Wir finden und deduplizieren sie.",
+  "aud.importDone": "{added} hinzugefügt, {skipped} waren schon auf deiner Liste",
+  "aud.referral": "EchoForge teilen",
+  "aud.referralDesc": "Deine öffentlichen Seiten tragen diesen Link bereits — teile ihn auch anderswo.",
+  "aud.referralCount": "{count} Creator kamen über deinen Link",
+  "aud.copied": "Link kopiert",
+
+  // Trust pillars
+  "trust.title": "Content, dem Plattformen vertrauen",
+  "trust.sub": "Jedes Asset aus EchoForge trägt strukturelle Garantien, die kein Clip-Tool bietet.",
+  "trust.p1t": "Signierte Herkunft",
+  "trust.p1d": "Jedes Asset trägt ein kryptografisch signiertes Manifest: Quelle, Engine und vollständiger Bearbeitungsverlauf — C2PA-förmig, bereit für KI-Kennzeichnungsregeln.",
+  "trust.p2t": "Richtlinien-geprüft vor der Veröffentlichung",
+  "trust.p2d": "Jedes Asset wird gegen Demonetarisierungs- und Plattformrichtlinien-Trigger geprüft — du siehst das Risiko vor dem Algorithmus.",
+  "trust.p3t": "Deine Stimme, garantiert",
+  "trust.p3d": "Verbotene Wörter, Ton und CTAs werden bei jeder Generierung mechanisch durchgesetzt — nicht vorgeschlagen, garantiert.",
 };

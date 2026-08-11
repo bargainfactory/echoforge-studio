@@ -6,7 +6,14 @@ import {
   hashPassword,
   initialsFor,
 } from "@/lib/auth/session";
-import { consumePendingPlan, createUser, findUser, seedUser } from "@/lib/server/db";
+import {
+  consumePendingPlan,
+  createUser,
+  findUser,
+  getReferralInfo,
+  seedUser,
+  setReferredBy,
+} from "@/lib/server/db";
 import { rateLimit, clientIp } from "@/lib/server/rate-limit";
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
@@ -61,6 +68,11 @@ export async function POST(req: NextRequest) {
     createdAt: new Date().toISOString(),
   });
   seedUser(email);
+  // Mint this account's referral code, and credit the referrer if the signup
+  // arrived through a ?ref= link.
+  getReferralInfo(email);
+  const ref = String(b?.ref ?? "").trim();
+  if (ref) setReferredBy(email, ref);
 
   const user = { name, email, initials: initialsFor(name), plan };
   const token = await createSessionToken(user);
