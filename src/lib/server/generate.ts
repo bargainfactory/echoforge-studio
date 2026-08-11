@@ -50,8 +50,9 @@ function hashtag(t: string): string {
   return "#" + t.replace(/[^a-zA-Z0-9]/g, "").slice(0, 18);
 }
 
-/** Heuristic "virality" score used to pick hook-worthy sentences. */
-function scoreHook(s: string): number {
+/** Heuristic "virality" score used to pick hook-worthy sentences. Also
+ *  exported to score backlog ideas in the Ideas tab. */
+export function scoreHook(s: string): number {
   let score = 0;
   if (/\?/.test(s)) score += 2;
   if (/\d/.test(s)) score += 2;
@@ -403,6 +404,76 @@ export async function generateAssets(
  * the best same-type candidate is returned (feedback cannot be honored there —
  * the UI labels that mode accordingly).
  */
+const SCRIPT_SYSTEM = `You are EchoForge's long-form script writer. Given a content idea (title + optional notes), write a complete, ready-to-record long-form video/podcast script: a strong cold-open hook, a short intro, 4-6 clearly structured sections with concrete substance (specific examples, numbers, actionable steps — never generic filler), a recap, and a closing call to action. Write in a natural spoken voice, plain text with paragraph breaks, no markdown headers. Respond as {"script": "..."}.`;
+
+const SCRIPT_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  required: ["script"],
+  properties: { script: { type: "string" } },
+} as const;
+
+/**
+ * Idea → long-form script (the reverse of repurposing). LLM when keyed; a
+ * structured outline template otherwise, so the flow works in demo mode and
+ * upgrades in place.
+ */
+export async function generateScript(
+  title: string,
+  notes: string,
+  locale?: string,
+  voice?: BrandVoice
+): Promise<{ script: string; engine: string }> {
+  try {
+    const prompt = `Idea: ${title}${notes.trim() ? `\n\nNotes / angle:\n${notes.trim()}` : ""}${voiceBlock(voice)}${langLine(locale)}`;
+    const res = await llmComplete(SCRIPT_SYSTEM, prompt, SCRIPT_SCHEMA);
+    if (res) {
+      const parsed = parseJsonLoose(res.text) as { script?: unknown } | null;
+      const script = typeof parsed?.script === "string" ? parsed.script.trim() : "";
+      if (script) {
+        return {
+          script: applyVoice([{ name: title, type: "Script", content: script }], voice)[0]
+            .content,
+          engine: res.engine,
+        };
+      }
+    }
+  } catch {
+    /* fall back to the outline template */
+  }
+
+  const topic = shortTitle(title, 10);
+  const cta = voice?.cta.trim() || `If this was useful, follow for more on ${topic}.`;
+  const noteLines = notes
+    .split(/\n+/)
+    .map((n) => n.trim())
+    .filter(Boolean);
+  const sections =
+    noteLines.length >= 3
+      ? noteLines.slice(0, 6)
+      : [
+          `The biggest misconception about ${topic} — and what is actually true.`,
+          `The mistake almost everyone makes first, and how to avoid it.`,
+          `A step-by-step way to approach ${topic}, starting today.`,
+          `A concrete example of this working in practice.`,
+          `How to know it is working: the signals worth tracking.`,
+        ];
+  const script = [
+    `Why does ${topic} matter more than people think? Stay with me — by the end of this you'll know exactly what to do about it.`,
+    `Quick context before we get into it: most advice on ${topic} skips the part that actually moves the needle. That's what this is about.`,
+    ...sections.map((s, i) => `Part ${i + 1}. ${s}\n\nLet's break that down with specifics you can act on.`),
+    `Quick recap: ${sections
+      .slice(0, 3)
+      .map((s) => condense(s, 80))
+      .join(" ")}`,
+    `${cta}${voice?.signature.trim() ? `\n\n${voice.signature.trim()}` : ""}`,
+  ].join("\n\n");
+  return {
+    script: applyVoice([{ name: title, type: "Script", content: script }], voice)[0].content,
+    engine: "deterministic",
+  };
+}
+
 export async function regenerateAsset(
   current: { name: string; type: string; content: string },
   ctx: {

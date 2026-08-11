@@ -101,6 +101,34 @@ function getDb(): DatabaseSync {
       user_email TEXT PRIMARY KEY REFERENCES users(email) ON DELETE CASCADE,
       config     TEXT NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS ideas (
+      id         TEXT PRIMARY KEY,
+      user_email TEXT NOT NULL REFERENCES users(email) ON DELETE CASCADE,
+      title      TEXT NOT NULL,
+      notes      TEXT,
+      script     TEXT,
+      score      INTEGER NOT NULL,
+      status     TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      sort       INTEGER NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS subscribers (
+      id          TEXT PRIMARY KEY,
+      owner_email TEXT NOT NULL REFERENCES users(email) ON DELETE CASCADE,
+      email       TEXT NOT NULL,
+      source      TEXT,
+      created_at  TEXT NOT NULL,
+      UNIQUE(owner_email, email)
+    );
+    CREATE TABLE IF NOT EXISTS creator_pages (
+      user_email   TEXT PRIMARY KEY REFERENCES users(email) ON DELETE CASCADE,
+      slug         TEXT NOT NULL UNIQUE,
+      display_name TEXT NOT NULL,
+      bio          TEXT,
+      links        TEXT,
+      rates        TEXT,
+      enabled      INTEGER NOT NULL DEFAULT 1
+    );
     CREATE TABLE IF NOT EXISTS pending_plans (
       email      TEXT PRIMARY KEY,
       plan       TEXT NOT NULL,
@@ -143,6 +171,7 @@ function getDb(): DatabaseSync {
     "ALTER TABLE projects ADD COLUMN transcript TEXT",
     "ALTER TABLE projects ADD COLUMN storage_path TEXT",
     "ALTER TABLE assets ADD COLUMN content TEXT",
+    "ALTER TABLE assets ADD COLUMN evergreen INTEGER NOT NULL DEFAULT 0",
   ]) {
     try {
       conn.exec(stmt);
@@ -191,6 +220,209 @@ export function createUser(user: DbUser): void {
       user.plan,
       user.createdAt
     );
+}
+
+// --- Ideas (content backlog: idea → script → generated assets) ---
+
+export interface Idea {
+  id: string;
+  title: string;
+  notes: string;
+  script: string;
+  score: number;
+  status: "idea" | "scripted" | "generated";
+  createdAt: string;
+}
+
+function mapIdea(row: Record<string, unknown>): Idea {
+  return {
+    id: row.id as string,
+    title: row.title as string,
+    notes: (row.notes as string) ?? "",
+    script: (row.script as string) ?? "",
+    score: row.score as number,
+    status: row.status as Idea["status"],
+    createdAt: row.created_at as string,
+  };
+}
+
+export function listIdeas(email: string): Idea[] {
+  return (
+    getDb()
+      .prepare("SELECT * FROM ideas WHERE user_email = ? ORDER BY sort DESC")
+      .all(email.toLowerCase()) as Record<string, unknown>[]
+  ).map(mapIdea);
+}
+
+export function getIdea(email: string, id: string): Idea | null {
+  const row = getDb()
+    .prepare("SELECT * FROM ideas WHERE id = ? AND user_email = ?")
+    .get(id, email.toLowerCase()) as Record<string, unknown> | undefined;
+  return row ? mapIdea(row) : null;
+}
+
+export function insertIdea(
+  email: string,
+  idea: Omit<Idea, "createdAt">
+): Idea {
+  const now = new Date().toISOString();
+  getDb()
+    .prepare(
+      `INSERT INTO ideas (id, user_email, title, notes, script, score, status, created_at, sort)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    )
+    .run(
+      idea.id,
+      email.toLowerCase(),
+      idea.title,
+      idea.notes || null,
+      idea.script || null,
+      idea.score,
+      idea.status,
+      now,
+      Date.now()
+    );
+  return { ...idea, createdAt: now };
+}
+
+export function updateIdea(
+  email: string,
+  id: string,
+  updates: Partial<Pick<Idea, "title" | "notes" | "script" | "status" | "score">>
+): Idea | null {
+  const cols: Record<string, string> = {
+    title: "title",
+    notes: "notes",
+    script: "script",
+    status: "status",
+    score: "score",
+  };
+  const sets: string[] = [];
+  const values: (string | number)[] = [];
+  for (const [key, col] of Object.entries(cols)) {
+    const v = updates[key as keyof typeof updates];
+    if (v !== undefined) {
+      sets.push(`${col} = ?`);
+      values.push(v as string | number);
+    }
+  }
+  if (sets.length > 0) {
+    values.push(id, email.toLowerCase());
+    getDb()
+      .prepare(`UPDATE ideas SET ${sets.join(", ")} WHERE id = ? AND user_email = ?`)
+      .run(...values);
+  }
+  return getIdea(email, id);
+}
+
+export function deleteIdea(email: string, id: string): void {
+  getDb()
+    .prepare("DELETE FROM ideas WHERE id = ? AND user_email = ?")
+    .run(id, email.toLowerCase());
+}
+
+// --- Subscribers + creator pages (owned audience) ---
+
+export interface Subscriber {
+  id: string;
+  email: string;
+  source: string;
+  createdAt: string;
+}
+
+export function listSubscribers(email: string): Subscriber[] {
+  return getDb()
+    .prepare(
+      `SELECT id, email, source, created_at AS createdAt
+       FROM subscribers WHERE owner_email = ? ORDER BY created_at DESC`
+    )
+    .all(email.toLowerCase()) as unknown as Subscriber[];
+}
+
+/** Returns true when the subscriber is new (INSERT OR IGNORE dedupes). */
+export function addSubscriber(
+  ownerEmail: string,
+  subscriberEmail: string,
+  source: string
+): boolean {
+  const res = getDb()
+    .prepare(
+      `INSERT OR IGNORE INTO subscribers (id, owner_email, email, source, created_at)
+       VALUES (?, ?, ?, ?, ?)`
+    )
+    .run(
+      `sub-${crypto.randomUUID()}`,
+      ownerEmail.toLowerCase(),
+      subscriberEmail.toLowerCase(),
+      source,
+      new Date().toISOString()
+    );
+  return Number(res.changes) > 0;
+}
+
+export interface CreatorPage {
+  slug: string;
+  displayName: string;
+  bio: string;
+  links: { label: string; url: string }[];
+  rates: { platform: string; price: number }[];
+  enabled: boolean;
+}
+
+function mapCreatorPage(row: Record<string, unknown>): CreatorPage {
+  const parse = <T,>(v: unknown, fallback: T): T => {
+    try {
+      return v ? (JSON.parse(v as string) as T) : fallback;
+    } catch {
+      return fallback;
+    }
+  };
+  return {
+    slug: row.slug as string,
+    displayName: row.display_name as string,
+    bio: (row.bio as string) ?? "",
+    links: parse(row.links, []),
+    rates: parse(row.rates, []),
+    enabled: Boolean(row.enabled),
+  };
+}
+
+export function getCreatorPageByEmail(email: string): CreatorPage | null {
+  const row = getDb()
+    .prepare("SELECT * FROM creator_pages WHERE user_email = ?")
+    .get(email.toLowerCase()) as Record<string, unknown> | undefined;
+  return row ? mapCreatorPage(row) : null;
+}
+
+export function getCreatorPageOwner(slug: string): { email: string; page: CreatorPage } | null {
+  const row = getDb()
+    .prepare("SELECT * FROM creator_pages WHERE slug = ? AND enabled = 1")
+    .get(slug.toLowerCase()) as Record<string, unknown> | undefined;
+  return row ? { email: row.user_email as string, page: mapCreatorPage(row) } : null;
+}
+
+/** Returns false when the slug is already taken by another user. */
+export function upsertCreatorPage(email: string, page: CreatorPage): boolean {
+  const conn = getDb();
+  const taken = conn
+    .prepare("SELECT user_email FROM creator_pages WHERE slug = ?")
+    .get(page.slug) as { user_email: string } | undefined;
+  if (taken && taken.user_email !== email.toLowerCase()) return false;
+  conn
+    .prepare(
+      `INSERT OR REPLACE INTO creator_pages (user_email, slug, display_name, bio, links, rates, enabled)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`
+    )
+    .run(
+      email.toLowerCase(),
+      page.slug,
+      page.displayName,
+      page.bio || null,
+      JSON.stringify(page.links),
+      JSON.stringify(page.rates),
+      page.enabled ? 1 : 0
+    );
+  return true;
 }
 
 // --- Pending plans (paid via Stripe before an account existed) ---
@@ -409,7 +641,19 @@ function mapAsset(row: Record<string, unknown>): Asset {
     status: row.status as Asset["status"],
     liked: Boolean(row.liked),
     content: (row.content as string) ?? undefined,
+    evergreen: Boolean(row.evergreen),
   };
+}
+
+export function setAssetEvergreen(
+  email: string,
+  id: string,
+  evergreen: boolean
+): Asset | null {
+  getDb()
+    .prepare("UPDATE assets SET evergreen = ? WHERE id = ? AND user_email = ?")
+    .run(evergreen ? 1 : 0, id, email.toLowerCase());
+  return getAsset(email, id);
 }
 
 export function listAssets(email: string): Asset[] {

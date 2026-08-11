@@ -32,6 +32,8 @@ export interface Asset {
   status: "live" | "sent" | "draft" | "scheduled";
   liked: boolean;
   content?: string;
+  /** Evergreen assets are automatically re-queued after each publish. */
+  evergreen?: boolean;
 }
 
 export interface Notification {

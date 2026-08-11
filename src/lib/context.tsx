@@ -37,8 +37,10 @@ interface AppState {
   uploadProject: (
     file: File | null,
     transcript: string,
-    onProgress?: (pct: number) => void
+    onProgress?: (pct: number) => void,
+    titleOverride?: string
   ) => Promise<Project | null>;
+  toggleAssetEvergreen: (id: string) => void;
   updateProject: (id: string, updates: Partial<Project>) => void;
   removeProject: (id: string) => Promise<void>;
   approveProject: (id: string) => Promise<void>;
@@ -196,11 +198,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     async (
       file: File | null,
       transcript: string,
-      onProgress?: (pct: number) => void
+      onProgress?: (pct: number) => void,
+      titleOverride?: string
     ) => {
       const derivedFromFile = file?.name?.replace(/\.[^.]+$/, "").replace(/[-_]/g, " ");
       const derivedFromText = transcript.trim().split(/\s+/).slice(0, 7).join(" ");
-      const title = (derivedFromFile || derivedFromText || "Untitled project").trim();
+      const title = (titleOverride?.trim() || derivedFromFile || derivedFromText || "Untitled project").trim();
 
       const form = new FormData();
       form.append("title", title);
@@ -278,6 +281,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     api(`/api/assets/${id}/like`, { method: "POST" }).catch(() => {});
   }, []);
 
+  const toggleAssetEvergreen = useCallback((id: string) => {
+    setAssets((prev) =>
+      prev.map((a) => (a.id === id ? { ...a, evergreen: !a.evergreen } : a))
+    );
+    api(`/api/assets/${id}/evergreen`, { method: "POST" }).catch(() => {});
+  }, []);
+
   const editAsset = useCallback(
     async (id: string, updates: { name?: string; content?: string }) => {
       const res = await api(`/api/assets/${id}`, {
@@ -335,6 +345,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         removeProject,
         approveProject,
         toggleAssetLike,
+        toggleAssetEvergreen,
         editAsset,
         regenerateAsset,
         markNotificationRead,

@@ -40,22 +40,77 @@ import {
   ChevronLeft,
   ChevronRight,
   List,
+  Lightbulb,
+  Users,
+  Recycle,
+  Download,
+  Mail,
+  ExternalLink,
 } from "lucide-react";
 import type { Project, Asset } from "@/lib/data";
 import IntegrationsPanel from "@/components/integrations-panel";
 import BrandVoicePanel from "@/components/brand-voice-panel";
 
-type Tab = "Overview" | "Projects" | "Upload" | "Schedule" | "Analytics" | "Notifications" | "Settings";
+type Tab =
+  | "Overview"
+  | "Ideas"
+  | "Projects"
+  | "Upload"
+  | "Schedule"
+  | "Analytics"
+  | "Audience"
+  | "Notifications"
+  | "Settings";
 
 const sidebarItems: { icon: typeof LayoutDashboard; label: Tab; tKey: string }[] = [
   { icon: LayoutDashboard, label: "Overview", tKey: "dash.overview" },
+  { icon: Lightbulb, label: "Ideas", tKey: "dash.ideas" },
   { icon: Film, label: "Projects", tKey: "dash.projects" },
   { icon: Upload, label: "Upload", tKey: "dash.upload" },
   { icon: Calendar, label: "Schedule", tKey: "dash.schedule" },
   { icon: BarChart3, label: "Analytics", tKey: "dash.analytics" },
+  { icon: Users, label: "Audience", tKey: "dash.audience" },
   { icon: Bell, label: "Notifications", tKey: "dash.notifications" },
   { icon: Settings, label: "Settings", tKey: "dash.settings" },
 ];
+
+// --- Client-side export helpers (no server round-trip needed) ---
+
+function downloadBlob(name: string, mime: string, content: string) {
+  const url = URL.createObjectURL(new Blob([content], { type: mime }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function assetsToCsv(assets: Asset[]): string {
+  const esc = (s: string) => `"${(s ?? "").replace(/"/g, '""')}"`;
+  const rows = assets.map((a) =>
+    [a.type, a.name, a.status, a.content ?? ""].map(esc).join(",")
+  );
+  return ["type,name,status,content", ...rows].join("\n");
+}
+
+/** Naive fixed-cadence SRT from asset text — a starting point for editing. */
+function contentToSrt(content: string): string {
+  const fmt = (secs: number) => {
+    const h = String(Math.floor(secs / 3600)).padStart(2, "0");
+    const m = String(Math.floor((secs % 3600) / 60)).padStart(2, "0");
+    const s = String(secs % 60).padStart(2, "0");
+    return `${h}:${m}:${s},000`;
+  };
+  const lines = content.split(/\n+/).map((l) => l.trim()).filter(Boolean);
+  let tSec = 0;
+  return lines
+    .map((l, i) => {
+      const start = tSec;
+      tSec += 3;
+      return `${i + 1}\n${fmt(start)} --> ${fmt(tSec)}\n${l}\n`;
+    })
+    .join("\n");
+}
 
 const statusColorMap: Record<string, string> = {
   uploading: "text-electric-blue bg-electric-blue/10",
@@ -78,6 +133,7 @@ export default function Dashboard() {
     approveProject,
     removeProject,
     toggleAssetLike,
+    toggleAssetEvergreen,
     editAsset,
     regenerateAsset,
     markNotificationRead,
@@ -362,8 +418,10 @@ export default function Dashboard() {
               onStart={() => setShowUploadModal(true)}
             />
           )}
+          {activeTab === "Ideas" && <IdeasTab />}
           {activeTab === "Schedule" && <ScheduleTab />}
           {activeTab === "Analytics" && <AnalyticsTab />}
+          {activeTab === "Audience" && <AudienceTab />}
           {activeTab === "Notifications" && (
             <NotificationsTab
               notifications={notifications}
@@ -683,15 +741,45 @@ export default function Dashboard() {
                     <Calendar className="w-4 h-4" /> Schedule
                   </button>
                 </div>
-                <button
-                  onClick={() => {
-                    navigator.clipboard?.writeText(viewingAsset.content || "");
-                    addToast("Copied to clipboard");
-                  }}
-                  className="text-xs text-cyber-muted hover:text-foreground transition-colors flex items-center gap-1.5"
-                >
-                  <Copy className="w-3.5 h-3.5" /> Copy content
-                </button>
+                <div className="flex flex-wrap items-center gap-4">
+                  <button
+                    onClick={() => {
+                      navigator.clipboard?.writeText(viewingAsset.content || "");
+                      addToast("Copied to clipboard");
+                    }}
+                    className="text-xs text-cyber-muted hover:text-foreground transition-colors flex items-center gap-1.5"
+                  >
+                    <Copy className="w-3.5 h-3.5" /> Copy content
+                  </button>
+                  <button
+                    onClick={() =>
+                      downloadBlob(
+                        `${viewingAsset.name.replace(/[^a-zA-Z0-9 _-]/g, "")}.srt`,
+                        "text/plain",
+                        contentToSrt(viewingAsset.content || "")
+                      )
+                    }
+                    className="text-xs text-cyber-muted hover:text-foreground transition-colors flex items-center gap-1.5"
+                  >
+                    <Download className="w-3.5 h-3.5" /> {t("asset.srt")}
+                  </button>
+                  <button
+                    onClick={() => {
+                      toggleAssetEvergreen(viewingAsset.id);
+                      const next = !viewingAsset.evergreen;
+                      setViewingAsset({ ...viewingAsset, evergreen: next });
+                      addToast(next ? t("asset.evergreenSet") : t("asset.evergreenUnset"), "info");
+                    }}
+                    title={t("asset.evergreenHint")}
+                    className={`text-xs transition-colors flex items-center gap-1.5 ${
+                      viewingAsset.evergreen
+                        ? "text-success hover:text-success/80"
+                        : "text-cyber-muted hover:text-foreground"
+                    }`}
+                  >
+                    <Recycle className="w-3.5 h-3.5" /> {t("asset.evergreen")}
+                  </button>
+                </div>
               </div>
             </motion.div>
           </motion.div>
@@ -1501,6 +1589,609 @@ function ScheduleTab() {
           </motion.div>
         )}
       </AnimatePresence>
+    </div>
+  );
+}
+
+// --- Ideas Tab (backlog: idea → script → assets) ---
+interface IdeaRow {
+  id: string;
+  title: string;
+  notes: string;
+  script: string;
+  score: number;
+  status: "idea" | "scripted" | "generated";
+  createdAt: string;
+}
+
+const ideaStatusColor: Record<string, string> = {
+  idea: "text-electric-blue bg-electric-blue/10",
+  scripted: "text-warning bg-warning/10",
+  generated: "text-success bg-success/10",
+};
+
+function IdeasTab() {
+  const { uploadProject, addToast } = useApp();
+  const { t } = useTranslation();
+  const [ideas, setIdeas] = useState<IdeaRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [title, setTitle] = useState("");
+  const [notes, setNotes] = useState("");
+  const [adding, setAdding] = useState(false);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [scriptIdea, setScriptIdea] = useState<IdeaRow | null>(null);
+  const [scriptDraft, setScriptDraft] = useState("");
+  const [savingScript, setSavingScript] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/ideas", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => active && d && setIdeas(d.ideas))
+      .catch(() => {})
+      .finally(() => active && setLoading(false));
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const patchIdea = useCallback((idea: IdeaRow) => {
+    setIdeas((prev) => prev.map((i) => (i.id === idea.id ? idea : i)));
+  }, []);
+
+  const addIdea = useCallback(async () => {
+    if (!title.trim()) return;
+    setAdding(true);
+    const res = await fetch("/api/ideas", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: title.trim(), notes: notes.trim() }),
+    });
+    setAdding(false);
+    if (res.ok) {
+      const { idea } = await res.json();
+      setIdeas((prev) => [idea, ...prev]);
+      setTitle("");
+      setNotes("");
+    }
+  }, [title, notes]);
+
+  const writeScript = useCallback(
+    async (idea: IdeaRow) => {
+      setBusyId(idea.id);
+      const res = await fetch(`/api/ideas/${idea.id}/script`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ locale: localStorage.getItem("ef_locale") || "en" }),
+      });
+      setBusyId(null);
+      if (res.ok) {
+        const { idea: updated } = await res.json();
+        patchIdea(updated);
+        setScriptIdea(updated);
+        setScriptDraft(updated.script);
+      } else {
+        const d = await res.json().catch(() => null);
+        addToast(d?.error ?? t("ideas.scriptFailed"), "error");
+      }
+    },
+    [patchIdea, addToast, t]
+  );
+
+  const saveScript = useCallback(async () => {
+    if (!scriptIdea) return;
+    setSavingScript(true);
+    const res = await fetch(`/api/ideas/${scriptIdea.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ script: scriptDraft }),
+    });
+    setSavingScript(false);
+    if (res.ok) {
+      const { idea } = await res.json();
+      patchIdea(idea);
+      addToast(t("ideas.scriptSaved"));
+    }
+  }, [scriptIdea, scriptDraft, patchIdea, addToast, t]);
+
+  const genAssets = useCallback(
+    async (idea: IdeaRow) => {
+      setBusyId(idea.id);
+      const transcript = idea.script || `${idea.title}\n${idea.notes}`;
+      const project = await uploadProject(null, transcript, undefined, idea.title);
+      if (project) {
+        const res = await fetch(`/api/ideas/${idea.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: "generated" }),
+        });
+        if (res.ok) {
+          const { idea: updated } = await res.json();
+          patchIdea(updated);
+        }
+        setScriptIdea(null);
+        addToast(t("ideas.assetsQueued"));
+      }
+      setBusyId(null);
+    },
+    [uploadProject, patchIdea, addToast, t]
+  );
+
+  const remove = useCallback(
+    async (id: string) => {
+      setIdeas((prev) => prev.filter((i) => i.id !== id));
+      addToast(t("ideas.deleted"), "info");
+      await fetch(`/api/ideas/${id}`, { method: "DELETE" }).catch(() => {});
+    },
+    [addToast, t]
+  );
+
+  return (
+    <div className="space-y-5">
+      <p className="text-sm text-cyber-muted">{t("ideas.intro")}</p>
+
+      <div className="bg-cyber-card border border-cyber-border rounded-xl p-4 space-y-3">
+        <input
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && addIdea()}
+          placeholder={t("ideas.placeholder")}
+          maxLength={200}
+          className="w-full px-3 py-2.5 bg-cyber-dark border border-cyber-border rounded-xl text-sm text-foreground placeholder:text-cyber-muted focus:outline-none focus:border-neon-purple/50"
+        />
+        <div className="flex gap-3">
+          <input
+            type="text"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder={t("ideas.notesPh")}
+            maxLength={2000}
+            className="flex-1 px-3 py-2.5 bg-cyber-dark border border-cyber-border rounded-xl text-sm text-foreground placeholder:text-cyber-muted focus:outline-none focus:border-neon-purple/50"
+          />
+          <button
+            onClick={addIdea}
+            disabled={adding || !title.trim()}
+            className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-neon-purple to-electric-blue text-white text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2 shrink-0"
+          >
+            {adding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+            {t("ideas.add")}
+          </button>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="flex items-center justify-center py-16">
+          <div className="w-8 h-8 rounded-full border-2 border-cyber-border border-t-neon-purple animate-spin" />
+        </div>
+      ) : ideas.length === 0 ? (
+        <div className="text-center py-16 text-cyber-muted">{t("ideas.empty")}</div>
+      ) : (
+        <div className="space-y-3">
+          {ideas.map((idea) => (
+            <div
+              key={idea.id}
+              className="bg-cyber-card border border-cyber-border rounded-xl p-4 flex items-start gap-4"
+            >
+              <div
+                title={t("ideas.scoreHint")}
+                className="w-10 h-10 rounded-xl bg-neon-purple/10 border border-neon-purple/30 flex items-center justify-center shrink-0 text-sm font-bold text-neon-purple"
+              >
+                {idea.score}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-foreground">{idea.title}</p>
+                {idea.notes && (
+                  <p className="text-xs text-cyber-muted mt-0.5 line-clamp-2">{idea.notes}</p>
+                )}
+                <span
+                  className={`inline-block mt-1.5 text-xs px-2 py-0.5 rounded-full ${ideaStatusColor[idea.status]}`}
+                >
+                  {t(`ideas.status.${idea.status}`)}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+                <button
+                  onClick={() =>
+                    idea.script
+                      ? (setScriptIdea(idea), setScriptDraft(idea.script))
+                      : writeScript(idea)
+                  }
+                  disabled={busyId === idea.id}
+                  className="px-3 py-1.5 text-xs font-medium rounded-lg bg-cyber-dark border border-cyber-border text-foreground hover:border-neon-purple/50 transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                >
+                  {busyId === idea.id ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <FileText className="w-3.5 h-3.5" />
+                  )}
+                  {idea.script ? t("ideas.viewScript") : t("ideas.writeScript")}
+                </button>
+                <button
+                  onClick={() => genAssets(idea)}
+                  disabled={busyId === idea.id}
+                  className="px-3 py-1.5 text-xs font-medium rounded-lg bg-gradient-to-r from-neon-purple to-electric-blue text-white hover:opacity-90 disabled:opacity-50 flex items-center gap-1.5"
+                >
+                  <Sparkles className="w-3.5 h-3.5" /> {t("ideas.genAssets")}
+                </button>
+                <button
+                  onClick={() => remove(idea.id)}
+                  className="p-1.5 text-cyber-muted hover:text-red-400 transition-colors rounded-lg hover:bg-red-400/10"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Script editor modal */}
+      <AnimatePresence>
+        {scriptIdea && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => setScriptIdea(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-cyber-card border border-cyber-border rounded-2xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden"
+            >
+              <div className="flex items-center justify-between px-6 py-4 border-b border-cyber-border">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-foreground truncate">
+                    {t("ideas.scriptTitle")}: {scriptIdea.title}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setScriptIdea(null)}
+                  className="text-cyber-muted hover:text-foreground shrink-0"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="p-6 overflow-y-auto flex-1">
+                <textarea
+                  value={scriptDraft}
+                  onChange={(e) => setScriptDraft(e.target.value)}
+                  rows={16}
+                  className="w-full px-3 py-2.5 bg-cyber-dark border border-cyber-border rounded-xl text-sm text-foreground focus:outline-none focus:border-neon-purple/50 resize-y leading-relaxed"
+                />
+              </div>
+              <div className="px-6 py-4 border-t border-cyber-border flex flex-wrap gap-2">
+                <button
+                  onClick={saveScript}
+                  disabled={savingScript}
+                  className="px-4 py-2 rounded-lg bg-cyber-dark border border-cyber-border text-sm text-foreground hover:border-neon-purple/50 transition-colors disabled:opacity-50 flex items-center gap-2"
+                >
+                  {savingScript ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                  {t("asset.editSave")}
+                </button>
+                <button
+                  onClick={() => genAssets(scriptIdea)}
+                  disabled={busyId === scriptIdea.id}
+                  className="px-4 py-2 rounded-lg bg-gradient-to-r from-neon-purple to-electric-blue text-white text-sm font-medium hover:opacity-90 disabled:opacity-50 flex items-center gap-2"
+                >
+                  {busyId === scriptIdea.id ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="w-4 h-4" />
+                  )}
+                  {t("ideas.genAssets")}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// --- Audience Tab (subscribers, public page, media kit, broadcast) ---
+interface SubRow {
+  id: string;
+  email: string;
+  source: string;
+  createdAt: string;
+}
+
+function AudienceTab() {
+  const { assets, addToast } = useApp();
+  const { t, locale } = useTranslation();
+  const [subs, setSubs] = useState<SubRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [slug, setSlug] = useState("");
+  const [displayName, setDisplayName] = useState("");
+  const [bio, setBio] = useState("");
+  const [linksText, setLinksText] = useState("");
+  const [rates, setRates] = useState<Record<string, string>>({});
+  const [pageSaved, setPageSaved] = useState(false);
+  const [savingPage, setSavingPage] = useState(false);
+  const [broadcastAsset, setBroadcastAsset] = useState("");
+  const [broadcasting, setBroadcasting] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    Promise.all([
+      fetch("/api/subscribers", { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)),
+      fetch("/api/page", { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)),
+    ])
+      .then(([s, p]) => {
+        if (!active) return;
+        if (s) setSubs(s.subscribers);
+        if (p?.page) {
+          setSlug(p.page.slug);
+          setDisplayName(p.page.displayName);
+          setBio(p.page.bio);
+          setLinksText(
+            (p.page.links as { label: string; url: string }[])
+              .map((l) => `${l.label} | ${l.url}`)
+              .join("\n")
+          );
+          const r: Record<string, string> = {};
+          (p.page.rates as { platform: string; price: number }[]).forEach(
+            (x) => (r[x.platform] = String(x.price))
+          );
+          setRates(r);
+          setPageSaved(true);
+        }
+      })
+      .catch(() => {})
+      .finally(() => active && setLoading(false));
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const savePage = useCallback(async () => {
+    setSavingPage(true);
+    const links = linksText
+      .split("\n")
+      .map((line) => {
+        const [label, ...rest] = line.split("|");
+        return { label: (label ?? "").trim(), url: rest.join("|").trim() };
+      })
+      .filter((l) => l.label && l.url);
+    const ratesArr = Object.entries(rates)
+      .map(([platform, price]) => ({ platform, price: Number(price) || 0 }))
+      .filter((r) => r.price > 0);
+    const res = await fetch("/api/page", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ slug, displayName, bio, links, rates: ratesArr }),
+    });
+    setSavingPage(false);
+    if (res.ok) {
+      setPageSaved(true);
+      addToast(t("aud.saved"));
+    } else {
+      const d = await res.json().catch(() => null);
+      addToast(d?.error ?? t("aud.saveFailed"), "error");
+    }
+  }, [slug, displayName, bio, linksText, rates, addToast, t]);
+
+  const exportCsv = useCallback(() => {
+    const esc = (s: string) => `"${(s ?? "").replace(/"/g, '""')}"`;
+    const csv = [
+      "email,source,subscribed_at",
+      ...subs.map((s) => [s.email, s.source, s.createdAt].map(esc).join(",")),
+    ].join("\n");
+    downloadBlob("subscribers.csv", "text/csv", csv);
+  }, [subs]);
+
+  const broadcast = useCallback(async () => {
+    if (!broadcastAsset) return;
+    setBroadcasting(true);
+    const res = await fetch("/api/broadcast", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ assetId: broadcastAsset }),
+    });
+    setBroadcasting(false);
+    const d = await res.json().catch(() => null);
+    if (res.ok && d) {
+      addToast(
+        d.demo
+          ? t("aud.broadcastDemo", { count: d.subscribers })
+          : t("aud.broadcastSent", { count: d.sent })
+      );
+    } else {
+      addToast(d?.error ?? t("aud.broadcastFailed"), "error");
+    }
+  }, [broadcastAsset, addToast, t]);
+
+  // Newsletter-type assets first in the broadcast picker.
+  const broadcastChoices = [...assets].sort((a, b) => {
+    const an = /news/i.test(a.type) ? 0 : 1;
+    const bn = /news/i.test(b.type) ? 0 : 1;
+    return an - bn;
+  });
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <div className="w-8 h-8 rounded-full border-2 border-cyber-border border-t-neon-purple animate-spin" />
+      </div>
+    );
+  }
+
+  const field = "w-full px-3 py-2.5 bg-cyber-dark border border-cyber-border rounded-xl text-sm text-foreground placeholder:text-cyber-muted focus:outline-none focus:border-neon-purple/50";
+
+  return (
+    <div className="space-y-6">
+      <p className="text-sm text-cyber-muted">{t("aud.intro")}</p>
+
+      {/* Subscribers */}
+      <div className="bg-cyber-card border border-cyber-border rounded-xl">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-cyber-border">
+          <div className="flex items-center gap-2">
+            <Users className="w-4 h-4 text-neon-purple" />
+            <h2 className="font-semibold text-foreground">
+              {t("aud.subscribers")} · {subs.length}
+            </h2>
+          </div>
+          {subs.length > 0 && (
+            <button
+              onClick={exportCsv}
+              className="text-xs text-neon-purple hover:underline flex items-center gap-1.5"
+            >
+              <Download className="w-3.5 h-3.5" /> {t("aud.exportCsv")}
+            </button>
+          )}
+        </div>
+        {subs.length === 0 ? (
+          <p className="px-6 py-8 text-sm text-cyber-muted text-center">{t("aud.noSubs")}</p>
+        ) : (
+          <div className="divide-y divide-cyber-border max-h-72 overflow-y-auto">
+            {subs.map((s) => (
+              <div key={s.id} className="flex items-center justify-between px-6 py-3 gap-3">
+                <span className="text-sm text-foreground truncate">{s.email}</span>
+                <span className="text-xs text-cyber-muted shrink-0">
+                  {s.source} · {new Date(s.createdAt).toLocaleDateString(locale)}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Public page + media kit */}
+      <div className="bg-cyber-card border border-cyber-border rounded-xl p-6 space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="font-semibold text-foreground">{t("aud.pageTitle")}</h2>
+          {pageSaved && slug && (
+            <div className="flex items-center gap-3">
+              <a
+                href={`/c/${slug}`}
+                target="_blank"
+                rel="noreferrer"
+                className="text-xs text-neon-purple hover:underline flex items-center gap-1"
+              >
+                <ExternalLink className="w-3 h-3" /> {t("aud.view")}
+              </a>
+              <a
+                href={`/kit/${slug}`}
+                target="_blank"
+                rel="noreferrer"
+                className="text-xs text-neon-purple hover:underline flex items-center gap-1"
+              >
+                <ExternalLink className="w-3 h-3" /> {t("aud.viewKit")}
+              </a>
+            </div>
+          )}
+        </div>
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm text-cyber-muted mb-1.5">{t("aud.slug")}</label>
+            <div className="flex items-center gap-1">
+              <span className="text-sm text-cyber-muted shrink-0">/c/</span>
+              <input
+                type="text"
+                value={slug}
+                onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
+                placeholder="your-name"
+                maxLength={30}
+                className={field}
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm text-cyber-muted mb-1.5">{t("aud.displayName")}</label>
+            <input
+              type="text"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              maxLength={80}
+              className={field}
+            />
+          </div>
+        </div>
+        <div>
+          <label className="block text-sm text-cyber-muted mb-1.5">{t("aud.bio")}</label>
+          <textarea
+            value={bio}
+            onChange={(e) => setBio(e.target.value)}
+            rows={2}
+            maxLength={500}
+            className={`${field} resize-y`}
+          />
+        </div>
+        <div>
+          <label className="block text-sm text-cyber-muted mb-1.5">{t("aud.links")}</label>
+          <textarea
+            value={linksText}
+            onChange={(e) => setLinksText(e.target.value)}
+            rows={3}
+            placeholder={"YouTube | https://youtube.com/@you\nNewsletter | https://your.site"}
+            className={`${field} resize-y font-mono text-xs`}
+          />
+        </div>
+        <div>
+          <label className="block text-sm text-cyber-muted mb-1.5">{t("aud.rates")}</label>
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+            {SCHED_PLATFORMS.map((p) => (
+              <div key={p}>
+                <span className="block text-[11px] text-cyber-muted mb-1">{p}</span>
+                <div className="flex items-center gap-1">
+                  <span className="text-xs text-cyber-muted">$</span>
+                  <input
+                    type="number"
+                    min={0}
+                    value={rates[p] ?? ""}
+                    onChange={(e) => setRates({ ...rates, [p]: e.target.value })}
+                    className="w-full px-2 py-1.5 bg-cyber-dark border border-cyber-border rounded-lg text-sm text-foreground focus:outline-none focus:border-neon-purple/50"
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <button
+          onClick={savePage}
+          disabled={savingPage || !slug || !displayName.trim()}
+          className="px-5 py-2 rounded-xl bg-gradient-to-r from-neon-purple to-electric-blue text-white font-medium text-sm hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2"
+        >
+          {savingPage ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+          {t("aud.save")}
+        </button>
+      </div>
+
+      {/* Newsletter broadcast */}
+      <div className="bg-cyber-card border border-cyber-border rounded-xl p-6 space-y-3">
+        <div className="flex items-center gap-2">
+          <Mail className="w-4 h-4 text-neon-purple" />
+          <h2 className="font-semibold text-foreground">{t("aud.broadcast")}</h2>
+        </div>
+        <div className="flex flex-wrap gap-3">
+          <select
+            value={broadcastAsset}
+            onChange={(e) => setBroadcastAsset(e.target.value)}
+            className="flex-1 min-w-[220px] px-3 py-2.5 bg-cyber-dark border border-cyber-border rounded-xl text-sm text-foreground focus:outline-none focus:border-neon-purple/50"
+          >
+            <option value="">{t("aud.broadcastPick")}</option>
+            {broadcastChoices.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.type} — {a.name}
+              </option>
+            ))}
+          </select>
+          <button
+            onClick={broadcast}
+            disabled={broadcasting || !broadcastAsset || subs.length === 0}
+            className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-neon-purple to-electric-blue text-white text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2"
+          >
+            {broadcasting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+            {t("aud.broadcastSend", { count: subs.length })}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

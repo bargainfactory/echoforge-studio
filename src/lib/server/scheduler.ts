@@ -10,12 +10,21 @@
  */
 
 import {
+  createScheduledPost,
+  getAsset,
   insertNotification,
   listAllScheduledPending,
   setScheduledStatus,
 } from "./db";
 
 const TICK_MS = 60 * 1000;
+// Evergreen assets are re-queued this long after each automatic publish.
+const RECYCLE_DAYS = 14;
+
+function toLocalStamp(d: Date): string {
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+}
 
 declare global {
   // Survives Next.js dev-mode module reloads so only one interval ever runs.
@@ -38,6 +47,28 @@ export function publishDuePosts(): number {
       type: "success",
     });
     published++;
+
+    // Evergreen recycling: top content goes back in the queue automatically.
+    const asset = getAsset(post.userEmail, post.assetId);
+    if (asset?.evergreen) {
+      const next = new Date(now + RECYCLE_DAYS * 24 * 60 * 60 * 1000);
+      createScheduledPost(post.userEmail, {
+        id: `sch-${crypto.randomUUID()}`,
+        assetId: post.assetId,
+        assetName: post.assetName,
+        platform: post.platform,
+        scheduledAt: toLocalStamp(next),
+        status: "scheduled",
+      });
+      insertNotification(post.userEmail, {
+        id: `n-${crypto.randomUUID()}`,
+        title: "Evergreen Re-queued",
+        message: `"${post.assetName}" is evergreen — scheduled again for ${post.platform} in ${RECYCLE_DAYS} days.`,
+        time: "Just now",
+        read: false,
+        type: "info",
+      });
+    }
   }
   return published;
 }
