@@ -59,7 +59,7 @@ export const INTEGRATIONS: IntegrationDef[] = [
     docsHint: "Add a Resend API key and a verified from-address.",
     fields: [
       { key: "resendApiKey", label: "Resend API key", envVar: "RESEND_API_KEY", secret: true, placeholder: "re_...", required: true },
-      { key: "fromEmail", label: "From address", envVar: "EMAIL_FROM", placeholder: "EchoForge <hello@yourdomain.com>", required: true },
+      { key: "fromEmail", label: "From address", envVar: "EMAIL_FROM", placeholder: "Virafold <hello@yourdomain.com>", required: true },
     ],
   },
   {

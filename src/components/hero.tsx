@@ -158,7 +158,7 @@ export default function Hero() {
                   <div className="w-3 h-3 rounded-full bg-red-500/70" />
                   <div className="w-3 h-3 rounded-full bg-yellow-500/70" />
                   <div className="w-3 h-3 rounded-full bg-green-500/70" />
-                  <span className="ml-2 text-xs text-cyber-muted font-mono">echoforge.ai/studio</span>
+                  <span className="ml-2 text-xs text-cyber-muted font-mono">virafold.ai/studio</span>
                   <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full bg-success/15 text-success">
                     {t("hero.tryLive")}
                   </span>

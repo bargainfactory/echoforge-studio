@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
         "line_items[0][price_data][currency]": "usd",
         "line_items[0][price_data][unit_amount]": String(Math.round(amount * 100)),
         "line_items[0][price_data][recurring][interval]": "month",
-        "line_items[0][price_data][product_data][name]": `EchoForge ${priceId}`,
+        "line_items[0][price_data][product_data][name]": `Virafold ${priceId}`,
         "metadata[priceId]": priceId,
         "subscription_data[metadata][priceId]": priceId,
         client_reference_id: priceId,

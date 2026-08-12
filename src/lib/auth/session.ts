@@ -60,7 +60,7 @@ function getSecret(): string {
   console.warn(
     "[auth] SESSION_SECRET is not set — using an insecure development key. Set SESSION_SECRET before deploying."
   );
-  return "echoforge-dev-insecure-session-key";
+  return "virafold-dev-insecure-session-key";
 }
 
 async function hmacKey(): Promise<CryptoKey> {

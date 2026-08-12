@@ -50,7 +50,7 @@ export default function ResetPage() {
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-neon-purple to-electric-blue flex items-center justify-center">
               <Zap className="w-5 h-5 text-white" />
             </div>
-            <span className="text-xl font-bold gradient-text">EchoForge</span>
+            <span className="text-xl font-bold gradient-text">Virafold</span>
           </Link>
           <h1 className="text-2xl font-bold text-foreground">Set a new password</h1>
         </div>

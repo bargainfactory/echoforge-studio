@@ -9,11 +9,11 @@ import Footer from "@/components/footer";
 const sections = [
   {
     title: "Acceptance of Terms",
-    content: "By accessing or using EchoForge Studio's services, you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use our services.",
+    content: "By accessing or using Virafold's services, you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use our services.",
   },
   {
     title: "Service Description",
-    content: "EchoForge Studio provides AI-powered content repurposing services, including but not limited to: video/audio transcription, short-form content generation, carousel design, newsletter creation, and automated publishing. Services are provided on a subscription or one-off basis as described in our pricing.",
+    content: "Virafold provides AI-powered content repurposing services, including but not limited to: video/audio transcription, short-form content generation, carousel design, newsletter creation, and automated publishing. Services are provided on a subscription or one-off basis as described in our pricing.",
   },
   {
     title: "User Accounts",
@@ -21,7 +21,7 @@ const sections = [
   },
   {
     title: "Content Ownership",
-    content: "You retain full ownership of all content you upload to EchoForge Studio. You grant us a limited license to process your content solely for the purpose of providing our repurposing services. Generated assets are owned by you upon delivery. We claim no ownership over your original or repurposed content.",
+    content: "You retain full ownership of all content you upload to Virafold. You grant us a limited license to process your content solely for the purpose of providing our repurposing services. Generated assets are owned by you upon delivery. We claim no ownership over your original or repurposed content.",
   },
   {
     title: "Acceptable Use",
@@ -37,7 +37,7 @@ const sections = [
   },
   {
     title: "Limitation of Liability",
-    content: "EchoForge Studio's total liability for any claim arising from use of our services is limited to the amount you paid us in the 12 months preceding the claim. We are not liable for indirect, incidental, or consequential damages.",
+    content: "Virafold's total liability for any claim arising from use of our services is limited to the amount you paid us in the 12 months preceding the claim. We are not liable for indirect, incidental, or consequential damages.",
   },
   {
     title: "Termination",
@@ -78,7 +78,7 @@ export default function TermsPage() {
             <p className="text-sm text-cyber-muted">
               Questions about these terms? Contact us at{" "}
               <Link href="/contact" className="text-neon-purple hover:underline">
-                legal@echoforge.ai
+                legal@virafold.ai
               </Link>
             </p>
           </div>

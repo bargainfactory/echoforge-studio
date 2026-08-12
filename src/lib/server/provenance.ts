@@ -14,7 +14,7 @@
 
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 
-const CLAIM_GENERATOR = "EchoForge Studio/0.1.0";
+const CLAIM_GENERATOR = "Virafold/0.1.0";
 
 function provenanceKey(): string {
   const key = process.env.PROVENANCE_KEY || process.env.SESSION_SECRET;
@@ -24,7 +24,7 @@ function provenanceKey(): string {
       "[provenance] PROVENANCE_KEY is not set — using an insecure development key. Set PROVENANCE_KEY (or SESSION_SECRET) before deploying."
     );
   }
-  return "echoforge-dev-insecure-provenance-key";
+  return "virafold-dev-insecure-provenance-key";
 }
 
 export function sha256(text: string): string {

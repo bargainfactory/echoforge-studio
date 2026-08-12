@@ -94,7 +94,7 @@ export default function DashboardTeaser() {
               <div className="w-3 h-3 rounded-full bg-yellow-500/70" />
               <div className="w-3 h-3 rounded-full bg-green-500/70" />
               <span className="ml-3 text-xs text-cyber-muted font-mono">
-                dashboard.echoforge.ai
+                dashboard.virafold.ai
               </span>
             </div>
 

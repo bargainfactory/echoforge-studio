@@ -48,7 +48,7 @@ export default function Footer() {
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-neon-purple to-electric-blue flex items-center justify-center">
                 <Zap className="w-4 h-4 text-white" />
               </div>
-              <span className="text-lg font-bold gradient-text">EchoForge</span>
+              <span className="text-lg font-bold gradient-text">Virafold</span>
             </Link>
             <p className="text-sm text-cyber-muted mb-6 max-w-xs">
               {t("footer.tagline")}

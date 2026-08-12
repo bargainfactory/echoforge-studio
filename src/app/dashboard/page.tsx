@@ -316,7 +316,7 @@ export default function Dashboard() {
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-neon-purple to-electric-blue flex items-center justify-center">
               <Zap className="w-4 h-4 text-white" />
             </div>
-            <span className="text-lg font-bold gradient-text">EchoForge</span>
+            <span className="text-lg font-bold gradient-text">Virafold</span>
           </Link>
         </div>
 
@@ -917,7 +917,7 @@ function OverviewTab({
           <h2 className="font-semibold text-foreground">{t("dash.recentAssets")}</h2>
           {assets.length > 0 && (
             <button
-              onClick={() => downloadBlob("echoforge-assets.csv", "text/csv", assetsToCsv(assets))}
+              onClick={() => downloadBlob("virafold-assets.csv", "text/csv", assetsToCsv(assets))}
               className="text-xs text-neon-purple hover:underline flex items-center gap-1.5"
             >
               <Download className="w-3.5 h-3.5" /> {t("dash.exportCsv")}
@@ -2617,7 +2617,7 @@ function BusinessTab() {
                     [e.month, e.stream, String(e.amount), e.note].map(esc).join(",")
                   ),
                 ].join("\n");
-                downloadBlob("echoforge-revenue.csv", "text/csv", csv);
+                downloadBlob("virafold-revenue.csv", "text/csv", csv);
               }}
               className="text-xs text-neon-purple hover:underline flex items-center gap-1.5"
             >

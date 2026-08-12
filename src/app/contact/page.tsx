@@ -154,7 +154,7 @@ export default function ContactPage() {
 
             <div className="space-y-4">
               {[
-                { icon: Mail, labelKey: "contact.emailLabel", value: "hello@echoforge.ai" },
+                { icon: Mail, labelKey: "contact.emailLabel", value: "hello@virafold.ai" },
                 { icon: MapPin, labelKey: "contact.location", value: "San Francisco, CA" },
                 { icon: Clock, labelKey: "contact.responseTime", valueKey: "contact.within24h" },
               ].map((item) => (

@@ -51,7 +51,7 @@ export default function BlogPostPage({ params }: { params: Promise<{ slug: strin
               EF
             </div>
             <div>
-              <p className="text-sm font-medium text-foreground">EchoForge Team</p>
+              <p className="text-sm font-medium text-foreground">Virafold Team</p>
               <p className="text-xs text-cyber-muted">Content Strategy</p>
             </div>
             <button className="ml-auto flex items-center gap-2 px-3 py-1.5 rounded-lg bg-cyber-card border border-cyber-border text-sm text-cyber-muted hover:text-foreground hover:border-neon-purple/30 transition-colors">

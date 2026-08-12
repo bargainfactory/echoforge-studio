@@ -28,7 +28,7 @@ function toLocalStamp(d: Date): string {
 
 declare global {
   // Survives Next.js dev-mode module reloads so only one interval ever runs.
-  var __echoforgeSchedulerStarted: boolean | undefined;
+  var __virafoldSchedulerStarted: boolean | undefined;
 }
 
 export function publishDuePosts(): number {
@@ -74,8 +74,8 @@ export function publishDuePosts(): number {
 }
 
 export function startScheduler(): void {
-  if (globalThis.__echoforgeSchedulerStarted) return;
-  globalThis.__echoforgeSchedulerStarted = true;
+  if (globalThis.__virafoldSchedulerStarted) return;
+  globalThis.__virafoldSchedulerStarted = true;
   const timer = setInterval(() => {
     try {
       publishDuePosts();

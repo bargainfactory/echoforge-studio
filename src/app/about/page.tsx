@@ -45,7 +45,7 @@ export default function AboutPage() {
 
           <div className="space-y-8 text-foreground/80 leading-relaxed mb-16">
             <p>
-              EchoForge Studio was founded in 2024 with a simple belief: the best content creators shouldn&apos;t be limited by their willingness to be on camera. In a world where faceless content regularly outperforms personality-driven channels, we built the AI infrastructure to make this accessible to everyone.
+              Virafold was founded in 2024 with a simple belief: the best content creators shouldn&apos;t be limited by their willingness to be on camera. In a world where faceless content regularly outperforms personality-driven channels, we built the AI infrastructure to make this accessible to everyone.
             </p>
             <p>
               Our AI-powered pipeline takes a single long-form recording — a podcast, video, or course — and transforms it into 30+ optimized assets for every major platform. YouTube Shorts, TikToks, LinkedIn carousels, email newsletters, Twitter threads — all formatted, captioned, and ready to publish.

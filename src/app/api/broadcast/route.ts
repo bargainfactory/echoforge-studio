@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
   }
 
   const senderName = getCreatorPageByEmail(user.email)?.displayName || user.name;
-  const html = `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;line-height:1.6;white-space:pre-wrap">${escapeHtml(asset.content)}</div><p style="font-family:sans-serif;color:#888;font-size:12px">Sent by ${escapeHtml(senderName)} via EchoForge</p>`;
+  const html = `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;line-height:1.6;white-space:pre-wrap">${escapeHtml(asset.content)}</div><p style="font-family:sans-serif;color:#888;font-size:12px">Sent by ${escapeHtml(senderName)} via Virafold</p>`;
 
   if (!emailConfigured()) {
     // Demo mode: report reach honestly instead of pretending to send.

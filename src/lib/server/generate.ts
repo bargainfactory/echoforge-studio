@@ -234,7 +234,7 @@ ${tweets.length + 2}/ ${close}`,
   return applyVoice(assets, voice);
 }
 
-const LLM_SYSTEM = `You are EchoForge's content-repurposing engine. Given a title and a transcript/script of long-form content, produce a set of ready-to-post short-form assets derived from the ACTUAL content (never generic filler).
+const LLM_SYSTEM = `You are Virafold's content-repurposing engine. Given a title and a transcript/script of long-form content, produce a set of ready-to-post short-form assets derived from the ACTUAL content (never generic filler).
 Produce 8-10 assets spanning: several short-form video clips (each with a hook line, body, on-screen caption idea, and 2-3 hashtags), one LinkedIn carousel (numbered slides), one email newsletter edition, and one X/Twitter thread. Use the "type" field to label each (e.g. "YouTube Short", "TikTok Clip", "Instagram Reel", "LinkedIn Carousel", "Newsletter", "X Thread"). "content" is the full ready-to-post text. "name" is a short human label.`;
 
 const LLM_SCHEMA = {
@@ -258,7 +258,7 @@ const LLM_SCHEMA = {
   },
 } as const;
 
-const REGEN_SYSTEM = `You are EchoForge's content-repurposing engine. Regenerate ONE existing short-form asset from the source transcript/script. Keep the same asset type and general format, but produce a fresh, improved version derived from the ACTUAL source content (never generic filler). If revision feedback is provided, applying it takes priority. "content" is the full ready-to-post text. "name" is a short human label.`;
+const REGEN_SYSTEM = `You are Virafold's content-repurposing engine. Regenerate ONE existing short-form asset from the source transcript/script. Keep the same asset type and general format, but produce a fresh, improved version derived from the ACTUAL source content (never generic filler). If revision feedback is provided, applying it takes priority. "content" is the full ready-to-post text. "name" is a short human label.`;
 
 const REGEN_SCHEMA = {
   type: "object",
@@ -416,7 +416,7 @@ export async function generateAssets(
  * the best same-type candidate is returned (feedback cannot be honored there —
  * the UI labels that mode accordingly).
  */
-const SCRIPT_SYSTEM = `You are EchoForge's long-form script writer. Given a content idea (title + optional notes), write a complete, ready-to-record long-form video/podcast script: a strong cold-open hook, a short intro, 4-6 clearly structured sections with concrete substance (specific examples, numbers, actionable steps — never generic filler), a recap, and a closing call to action. Write in a natural spoken voice, plain text with paragraph breaks, no markdown headers. Respond as {"script": "..."}.`;
+const SCRIPT_SYSTEM = `You are Virafold's long-form script writer. Given a content idea (title + optional notes), write a complete, ready-to-record long-form video/podcast script: a strong cold-open hook, a short intro, 4-6 clearly structured sections with concrete substance (specific examples, numbers, actionable steps — never generic filler), a recap, and a closing call to action. Write in a natural spoken voice, plain text with paragraph breaks, no markdown headers. Respond as {"script": "..."}.`;
 
 const SCRIPT_SCHEMA = {
   type: "object",

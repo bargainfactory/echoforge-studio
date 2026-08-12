@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
 
     const result = await sendEmail({
       to: email,
-      subject: "Reset your EchoForge password",
+      subject: "Reset your Virafold password",
       html: `<p>Reset your password using the link below (valid for 1 hour):</p>
              <p><a href="${resetUrl}">${resetUrl}</a></p>
              <p>If you didn't request this, you can ignore this email.</p>`,

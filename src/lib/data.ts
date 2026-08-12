@@ -87,7 +87,7 @@ export const blogPosts: BlogPost[] = [
       "Once you've picked your niche, you need a content engine. This is where AI repurposing comes in. Instead of creating every piece of content from scratch, you start with one long-form piece — a podcast episode, a deep-dive video, or a course module — and let AI break it down into dozens of short-form assets.",
       "Your content stack should include: YouTube Shorts (for discovery), long-form videos (for watch time and ad revenue), community posts (for engagement), and an email list (for ownership). Each piece of content feeds into the next, creating a flywheel effect.",
       "For monetization, don't rely solely on AdSense. Layer in affiliate marketing (especially for software and tools), digital products (templates, guides, courses), and sponsorships. A faceless channel with 50K subscribers can easily generate $10K/mo from these combined sources.",
-      "The key to scaling is systems. Use tools like EchoForge to automate your content pipeline. Upload once, get 30+ assets. Schedule them across platforms. Track what works. Double down on winners. This is how faceless creators are building six-figure businesses in 2025.",
+      "The key to scaling is systems. Use tools like Virafold to automate your content pipeline. Upload once, get 30+ assets. Schedule them across platforms. Track what works. Double down on winners. This is how faceless creators are building six-figure businesses in 2025.",
     ],
   },
   {
@@ -152,14 +152,14 @@ export const blogPosts: BlogPost[] = [
     slug: "case-study-500k-followers-90-days",
     title: "Case Study: 0 to 500K Followers in 90 Days",
     excerpt:
-      "How wellness coach Priya Patel used EchoForge to build a massive TikTok following without showing her face.",
+      "How wellness coach Priya Patel used Virafold to build a massive TikTok following without showing her face.",
     category: "Case Studies",
     readTime: "7 min read",
     date: "Mar 28, 2025",
     gradient: "from-pink-500 to-rose-500",
     featured: false,
     content: [
-      "When Priya Patel came to EchoForge, she had a small wellness coaching practice with 47 Instagram followers. She was camera-shy and had tried posting face-to-camera reels — none broke 200 views.",
+      "When Priya Patel came to Virafold, she had a small wellness coaching practice with 47 Instagram followers. She was camera-shy and had tried posting face-to-camera reels — none broke 200 views.",
       "We started by repurposing her existing 20-hour meditation and wellness course. The AI identified 156 clip-worthy moments covering topics from morning routines to stress management techniques.",
       "Each clip was enhanced with calming B-roll footage, animated text overlays, and ambient background music. The faceless format actually enhanced the meditative quality of the content — viewers could focus on the message rather than the messenger.",
       "The posting strategy was aggressive: 4-5 TikToks per day, each targeting different wellness sub-topics. Within the first week, a clip about '3 breathing techniques for anxiety' hit 2.3 million views.",
@@ -179,7 +179,7 @@ export const blogPosts: BlogPost[] = [
     featured: false,
     content: [
       "The faceless creator toolkit has evolved dramatically in 2025. Here are the 7 AI tools that every serious faceless creator should have in their stack.",
-      "1. EchoForge Studio — for content repurposing. Turn one long-form video into 30+ assets automatically. This is the backbone of any faceless content operation.",
+      "1. Virafold — for content repurposing. Turn one long-form video into 30+ assets automatically. This is the backbone of any faceless content operation.",
       "2. ElevenLabs — for AI voice generation. Create natural-sounding voiceovers in any style without recording yourself. Their voice cloning feature means you can create a consistent brand voice.",
       "3. Midjourney/DALL-E — for thumbnail and visual generation. Create eye-catching thumbnails and visual assets that drive clicks without needing photography skills.",
       "4. Descript — for script writing and editing. Write scripts with AI assistance and edit audio/video by editing text. Perfect for creators who think in words rather than timelines.",

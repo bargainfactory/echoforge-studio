@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "EchoForge Studio — AI Content Repurposing for Faceless Creators",
+  title: "Virafold — AI Content Repurposing for Faceless Creators",
   description:
     "Turn one long-form video into 30+ short-form assets, carousels, newsletters, and TikToks. AI-powered, faceless-first content engine for creators, podcasters, and course sellers.",
   keywords: [

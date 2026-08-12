@@ -197,7 +197,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const { user: u } = await res.json();
       track("signup_complete");
       await refresh();
-      addToast(`Welcome to EchoForge, ${u.name}!`);
+      addToast(`Welcome to Virafold, ${u.name}!`);
       return true;
     },
     [refresh, addToast]
