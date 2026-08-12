@@ -2,7 +2,7 @@
 
 **One idea, folded into everything.** Virafold is a creator business OS for faceless creators: it turns one long-form input (a transcript, script, or uploaded media) into a full set of ready-to-post assets — short-form clip scripts, LinkedIn carousels, newsletters, X threads — then schedules them, grows an owned audience, and tracks the money.
 
-Live at [virafold.com](https://virafold.com).
+Live at [virafold.ai](https://virafold.ai) (virafold.com and virafold.app redirect there).
 
 ## What's inside
 
