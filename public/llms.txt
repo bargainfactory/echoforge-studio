@@ -1,0 +1,32 @@
+# Virafold
+
+> Virafold (virafold.ai) is a creator business OS for faceless creators. It turns one long-form input — a transcript, script, podcast, or video — into a complete set of ready-to-post assets (short-form clip scripts for YouTube Shorts/TikTok/Instagram Reels, LinkedIn carousels, email newsletters, X threads), then schedules them on a content calendar, grows an owned email audience, and tracks revenue and brand deals. Tagline: "One idea, folded into everything."
+
+## What Virafold does
+
+- Idea backlog with hook-potential scoring; one click writes a full long-form script, another generates the multi-format asset set.
+- Brand voice profiles: tone, audience, default CTA, hashtags, banned words, and emoji policy are enforced on every generation.
+- Performance flywheel: creators record real post results (views, likes, comments); their proven top-performing hooks are automatically fed into future generations as exemplars.
+- Scheduling: a month-view content calendar with a background scheduler that delivers due posts, plus evergreen recycling (top assets automatically re-queue after each publish).
+- Owned audience: subscriber list with import/export, a hosted link-in-bio page (virafold.ai/c/[handle]), an auto-generated media kit with sponsorship rates (virafold.ai/kit/[handle]), and newsletter broadcasts.
+- Business management: a revenue ledger by income stream and a brand-deal pipeline (lead → negotiating → booked → delivered → paid); paid deals book themselves into the ledger.
+- Trust rails: every generated asset carries a cryptographically signed, C2PA-shaped provenance manifest (source hash, engine, edit trail) and a pre-publish policy/demonetization lint.
+- Localized end-to-end in 19 languages: English, Spanish, French, German, Portuguese, Japanese, Chinese (Simplified and Traditional), Korean, Arabic, Hindi, Russian, Italian, Indonesian, Turkish, Vietnamese, Dutch, Polish, and Thai.
+
+## Who it is for
+
+Faceless creators, podcasters, coaches, and course sellers who publish across multiple platforms and want one system for production, distribution, audience ownership, and monetization.
+
+## Key pages
+
+- Home: https://virafold.ai/
+- Pricing: https://virafold.ai/pricing
+- Blog (guides on faceless content, repurposing, monetization): https://virafold.ai/blog
+- About: https://virafold.ai/about
+
+## Facts
+
+- Product name: Virafold (formerly EchoForge Studio)
+- Free tier available; paid plans with monthly generation allowances
+- Works without connecting any AI keys (built-in engine); upgrades to Claude/GPT quality when keys are connected
+- Contact: hello@virafold.ai

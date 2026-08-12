@@ -15,10 +15,14 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const TITLE = "Virafold — AI Content Repurposing for Faceless Creators";
+const DESCRIPTION =
+  "Turn one long-form video into 30+ short-form assets, carousels, newsletters, and TikToks. AI-powered, faceless-first content engine for creators, podcasters, and course sellers.";
+
 export const metadata: Metadata = {
-  title: "Virafold — AI Content Repurposing for Faceless Creators",
-  description:
-    "Turn one long-form video into 30+ short-form assets, carousels, newsletters, and TikToks. AI-powered, faceless-first content engine for creators, podcasters, and course sellers.",
+  metadataBase: new URL("https://virafold.ai"),
+  title: TITLE,
+  description: DESCRIPTION,
   keywords: [
     "AI content repurposing",
     "faceless YouTube",
@@ -26,6 +30,20 @@ export const metadata: Metadata = {
     "TikTok content",
     "podcast repurposing",
   ],
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    url: "https://virafold.ai",
+    siteName: "Virafold",
+    title: TITLE,
+    description: DESCRIPTION,
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: TITLE,
+    description: DESCRIPTION,
+  },
 };
 
 export default function RootLayout({

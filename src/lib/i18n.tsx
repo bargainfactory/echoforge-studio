@@ -8,6 +8,7 @@ import {
   useEffect,
   type ReactNode,
 } from "react";
+import { en } from "./translations/en";
 
 export type Locale =
   | "en"
@@ -118,8 +119,15 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 
   const t = useCallback(
     (key: string, params?: Record<string, string | number>): string => {
-      if (!translations) return key;
-      let value = translations[locale]?.[key] || translations.en[key] || key;
+      // English ships statically so server-side rendering (and the first client
+      // paint) emits real copy instead of raw keys — crawlers and LLM bots that
+      // never execute JS see the actual content. The other 18 locales still
+      // lazy-load and take over once hydrated.
+      let value =
+        translations?.[locale]?.[key] ||
+        translations?.en?.[key] ||
+        en[key] ||
+        key;
       if (params) {
         Object.entries(params).forEach(([k, v]) => {
           value = value.replace(`{${k}}`, String(v));
