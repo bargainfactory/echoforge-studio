@@ -713,4 +713,18 @@ export const fr: Record<string, string> = {
   "adt.toIdeas": "Envoyer vers Idées",
   "adt.sentIdeas": "{count} réécritures ajoutées à votre backlog d'idées",
   "adt.seeded": "Audit enregistré — vos succès guident désormais chaque nouvelle génération.",
+
+  // Public audit teaser
+  "padt.badge": "Outil gratuit",
+  "padt.title": "Votre chaîne est-elle virale ?",
+  "padt.sub": "Collez votre chaîne YouTube et recevez votre note de viralité en quelques secondes — accroches, régularité, timing, et ce que vos succès ont en commun. Sans inscription.",
+  "padt.ph": "@votrechaine ou URL de la chaîne",
+  "padt.run": "Auditer ma chaîne",
+  "padt.running": "Audit en cours…",
+  "padt.err": "Impossible d'auditer cette chaîne — vérifiez l'identifiant et réessayez.",
+  "padt.errBusy": "Trop d'audits depuis votre réseau — réessayez dans un moment.",
+  "padt.errUnavailable": "Les audits se préparent — revenez bientôt.",
+  "padt.unlockTitle": "Débloquez le rapport complet avec coach",
+  "padt.unlockDesc": "Inscrivez-vous gratuitement : réécritures IA de vos accroches les plus faibles, plan d'action sur 30 jours, et vos succès guident automatiquement chaque contenu que Virafold crée pour vous.",
+  "padt.unlockCta": "Obtenir le rapport complet",
 };

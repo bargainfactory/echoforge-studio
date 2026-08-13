@@ -713,4 +713,18 @@ export const de: Record<string, string> = {
   "adt.toIdeas": "Neufassungen zu Ideen senden",
   "adt.sentIdeas": "{count} Neufassungen zum Ideen-Backlog hinzugefügt",
   "adt.seeded": "Audit gespeichert — deine Gewinner steuern ab jetzt jede neue Generierung automatisch.",
+
+  // Public audit teaser
+  "padt.badge": "Gratis-Tool",
+  "padt.title": "Wie viral ist dein Kanal?",
+  "padt.sub": "Füge deinen YouTube-Kanal ein und erhalte in Sekunden deine Viralitäts-Note — Hooks, Konstanz, Timing und was deine Gewinner gemeinsam haben. Ohne Anmeldung.",
+  "padt.ph": "@deinkanal oder Kanal-URL",
+  "padt.run": "Meinen Kanal prüfen",
+  "padt.running": "Audit läuft…",
+  "padt.err": "Kanal konnte nicht geprüft werden — Handle prüfen und erneut versuchen.",
+  "padt.errBusy": "Zu viele Audits aus deinem Netzwerk — versuch es gleich nochmal.",
+  "padt.errUnavailable": "Audits starten gerade — schau gleich wieder vorbei.",
+  "padt.unlockTitle": "Schalte den vollständigen Coach-Report frei",
+  "padt.unlockDesc": "Kostenlos registrieren: KI-Neufassungen deiner schwächsten Hooks, ein 30-Tage-Plan, und deine Gewinner steuern automatisch jedes Asset, das Virafold für dich erstellt.",
+  "padt.unlockCta": "Vollständigen Report holen",
 };

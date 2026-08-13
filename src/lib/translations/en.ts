@@ -713,4 +713,18 @@ export const en: Record<string, string> = {
   "adt.toIdeas": "Send rewrites to Ideas",
   "adt.sentIdeas": "{count} rewrites added to your Ideas backlog",
   "adt.seeded": "Audit saved — your winners now steer every new generation automatically.",
+
+  // Public audit teaser
+  "padt.badge": "Free tool",
+  "padt.title": "How viral is your channel?",
+  "padt.sub": "Paste your YouTube channel and get your virality grade in seconds — hooks, consistency, timing, and what your winners have in common. No signup.",
+  "padt.ph": "@yourchannel or channel URL",
+  "padt.run": "Audit my channel",
+  "padt.running": "Auditing…",
+  "padt.err": "Couldn't audit that channel — check the handle and try again.",
+  "padt.errBusy": "Too many audits from your network — try again in a bit.",
+  "padt.errUnavailable": "Audits are warming up — try again soon.",
+  "padt.unlockTitle": "Unlock the full coached report",
+  "padt.unlockDesc": "Sign up free: AI rewrites of your weakest hooks, a 30-day action plan, and your winners automatically steer every asset Virafold makes for you.",
+  "padt.unlockCta": "Get the full report",
 };

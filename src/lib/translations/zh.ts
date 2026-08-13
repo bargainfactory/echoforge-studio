@@ -680,4 +680,18 @@ export const zh: Record<string, string> = {
   "adt.toIdeas": "把改写发送到灵感",
   "adt.sentIdeas": "已将 {count} 条改写加入灵感清单",
   "adt.seeded": "诊断已保存——你的爆款将自动引导之后的每次生成。",
+
+  // Public audit teaser
+  "padt.badge": "免费工具",
+  "padt.title": "你的频道有多能爆?",
+  "padt.sub": "粘贴你的 YouTube 频道,几秒内获得爆款指数——钩子、更新频率、发布时机,以及你的爆款有什么共同点。无需注册。",
+  "padt.ph": "@你的频道 或频道链接",
+  "padt.run": "诊断我的频道",
+  "padt.running": "诊断中…",
+  "padt.err": "无法诊断该频道——请检查频道名后重试。",
+  "padt.errBusy": "你的网络诊断次数过多——稍后再试。",
+  "padt.errUnavailable": "诊断功能准备中——请稍后再来。",
+  "padt.unlockTitle": "解锁完整教练报告",
+  "padt.unlockDesc": "免费注册即得:AI 改写你最弱的钩子、30 天行动计划,你的爆款还会自动引导 Virafold 为你生成的每个内容。",
+  "padt.unlockCta": "获取完整报告",
 };

@@ -713,4 +713,18 @@ export const ja: Record<string, string> = {
   "adt.toIdeas": "書き直しをアイデアへ送る",
   "adt.sentIdeas": "{count}件の書き直しをアイデアに追加しました",
   "adt.seeded": "監査を保存しました。勝ちコンテンツが以後の生成を自動で導きます。",
+
+  // Public audit teaser
+  "padt.badge": "無料ツール",
+  "padt.title": "あなたのチャンネル、どれだけバズる?",
+  "padt.sub": "YouTubeチャンネルを貼り付けるだけで、数秒でバイラリティスコアが分かります。フック、継続性、タイミング、勝ちパターンの共通点まで。登録不要。",
+  "padt.ph": "@チャンネル名 または チャンネルURL",
+  "padt.run": "チャンネルを診断",
+  "padt.running": "診断中…",
+  "padt.err": "チャンネルを診断できませんでした。ハンドルを確認して再試行してください。",
+  "padt.errBusy": "このネットワークからの診断が多すぎます。少し待ってから再試行してください。",
+  "padt.errUnavailable": "診断機能を準備中です。しばらくしてからお試しください。",
+  "padt.unlockTitle": "コーチ付きフルレポートを解放",
+  "padt.unlockDesc": "無料登録で:弱いフックのAI書き直し、30日プラン、そして勝ちコンテンツがVirafoldの生成すべてを自動で導きます。",
+  "padt.unlockCta": "フルレポートを入手",
 };

@@ -680,4 +680,18 @@ export const id: Record<string, string> = {
   "adt.toIdeas": "Kirim tulisan ulang ke Ide",
   "adt.sentIdeas": "{count} tulisan ulang ditambahkan ke backlog Ide",
   "adt.seeded": "Audit disimpan — konten sukses Anda kini otomatis memandu setiap generasi baru.",
+
+  // Public audit teaser
+  "padt.badge": "Alat gratis",
+  "padt.title": "Seberapa viral channel Anda?",
+  "padt.sub": "Tempel channel YouTube Anda dan dapatkan skor viralitas dalam hitungan detik — hook, konsistensi, waktu, dan kesamaan konten sukses Anda. Tanpa daftar.",
+  "padt.ph": "@channelanda atau URL channel",
+  "padt.run": "Audit channel saya",
+  "padt.running": "Mengaudit…",
+  "padt.err": "Tidak bisa mengaudit channel itu — periksa handle lalu coba lagi.",
+  "padt.errBusy": "Terlalu banyak audit dari jaringan Anda — coba lagi nanti.",
+  "padt.errUnavailable": "Audit sedang disiapkan — kembali sebentar lagi.",
+  "padt.unlockTitle": "Buka laporan lengkap dengan pelatih",
+  "padt.unlockDesc": "Daftar gratis: penulisan ulang AI untuk hook terlemah Anda, rencana 30 hari, dan konten sukses Anda otomatis memandu setiap aset yang dibuat Virafold.",
+  "padt.unlockCta": "Dapatkan laporan lengkap",
 };

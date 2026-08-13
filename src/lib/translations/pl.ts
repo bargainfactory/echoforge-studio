@@ -680,4 +680,18 @@ export const pl: Record<string, string> = {
   "adt.toIdeas": "Wyślij przepisane do Pomysłów",
   "adt.sentIdeas": "Dodano {count} przepisanych haków do backlogu pomysłów",
   "adt.seeded": "Audyt zapisany — twoje hity automatycznie sterują teraz każdą nową generacją.",
+
+  // Public audit teaser
+  "padt.badge": "Darmowe narzędzie",
+  "padt.title": "Jak viralowy jest twój kanał?",
+  "padt.sub": "Wklej swój kanał YouTube i w kilka sekund poznaj ocenę viralowości — haki, regularność, timing i co łączy twoje hity. Bez rejestracji.",
+  "padt.ph": "@twojkanal lub URL kanału",
+  "padt.run": "Zaudytuj mój kanał",
+  "padt.running": "Audyt w toku…",
+  "padt.err": "Nie udało się zaudytować kanału — sprawdź nazwę i spróbuj ponownie.",
+  "padt.errBusy": "Zbyt wiele audytów z twojej sieci — spróbuj za chwilę.",
+  "padt.errUnavailable": "Audyty się rozgrzewają — wróć wkrótce.",
+  "padt.unlockTitle": "Odblokuj pełny raport z trenerem",
+  "padt.unlockDesc": "Zarejestruj się za darmo: przepisane przez AI najsłabsze haki, plan na 30 dni, a twoje hity automatycznie sterują każdym materiałem, który Virafold dla ciebie tworzy.",
+  "padt.unlockCta": "Odbierz pełny raport",
 };

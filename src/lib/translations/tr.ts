@@ -680,4 +680,18 @@ export const tr: Record<string, string> = {
   "adt.toIdeas": "Yeniden yazımları Fikirlere gönder",
   "adt.sentIdeas": "{count} yeniden yazım Fikir listenize eklendi",
   "adt.seeded": "Denetim kaydedildi — kazananlarınız artık her yeni üretimi otomatik yönlendiriyor.",
+
+  // Public audit teaser
+  "padt.badge": "Ücretsiz araç",
+  "padt.title": "Kanalınız ne kadar viral?",
+  "padt.sub": "YouTube kanalınızı yapıştırın, saniyeler içinde viral notunuzu alın — kancalar, süreklilik, zamanlama ve kazananlarınızın ortak noktası. Kayıt yok.",
+  "padt.ph": "@kanaliniz veya kanal URL'si",
+  "padt.run": "Kanalımı denetle",
+  "padt.running": "Denetleniyor…",
+  "padt.err": "Bu kanal denetlenemedi — kullanıcı adını kontrol edip tekrar deneyin.",
+  "padt.errBusy": "Ağınızdan çok fazla denetim geldi — birazdan tekrar deneyin.",
+  "padt.errUnavailable": "Denetimler hazırlanıyor — yakında tekrar deneyin.",
+  "padt.unlockTitle": "Koçlu tam raporun kilidini açın",
+  "padt.unlockDesc": "Ücretsiz kaydolun: en zayıf kancalarınızın yapay zekâ ile yeniden yazımı, 30 günlük plan ve kazananlarınız Virafold'un sizin için ürettiği her varlığı otomatik yönlendirir.",
+  "padt.unlockCta": "Tam raporu al",
 };

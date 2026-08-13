@@ -680,4 +680,18 @@ export const zhTW: Record<string, string> = {
   "adt.toIdeas": "把改寫送到靈感",
   "adt.sentIdeas": "已將 {count} 則改寫加入靈感清單",
   "adt.seeded": "健檢已儲存——你的爆紅內容將自動引導之後的每次生成。",
+
+  // Public audit teaser
+  "padt.badge": "免費工具",
+  "padt.title": "你的頻道有多會爆?",
+  "padt.sub": "貼上你的 YouTube 頻道,幾秒內取得爆紅指數——鉤子、更新頻率、發佈時機,以及你的爆紅內容有何共通點。免註冊。",
+  "padt.ph": "@你的頻道 或頻道網址",
+  "padt.run": "健檢我的頻道",
+  "padt.running": "健檢中…",
+  "padt.err": "無法健檢該頻道——請確認帳號名稱後再試。",
+  "padt.errBusy": "你的網路健檢次數過多——稍後再試。",
+  "padt.errUnavailable": "健檢功能準備中——請稍後再來。",
+  "padt.unlockTitle": "解鎖含教練的完整報告",
+  "padt.unlockDesc": "免費註冊即享:AI 改寫你最弱的鉤子、30 天行動計畫,你的爆紅內容還會自動引導 Virafold 為你生成的每個內容。",
+  "padt.unlockCta": "取得完整報告",
 };

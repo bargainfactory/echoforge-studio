@@ -680,4 +680,18 @@ export const vi: Record<string, string> = {
   "adt.toIdeas": "Gửi bản viết lại vào Ý tưởng",
   "adt.sentIdeas": "Đã thêm {count} bản viết lại vào Ý tưởng",
   "adt.seeded": "Đã lưu kiểm định — bài thắng của bạn giờ tự động dẫn dắt mọi lần tạo mới.",
+
+  // Public audit teaser
+  "padt.badge": "Công cụ miễn phí",
+  "padt.title": "Kênh của bạn viral đến đâu?",
+  "padt.sub": "Dán kênh YouTube của bạn và nhận điểm viral trong vài giây — hook, độ đều đặn, thời điểm và điểm chung của các bài thắng. Không cần đăng ký.",
+  "padt.ph": "@kenhcuaban hoặc URL kênh",
+  "padt.run": "Kiểm định kênh của tôi",
+  "padt.running": "Đang kiểm định…",
+  "padt.err": "Không thể kiểm định kênh đó — kiểm tra handle rồi thử lại.",
+  "padt.errBusy": "Quá nhiều lượt kiểm định từ mạng của bạn — thử lại sau chút nữa.",
+  "padt.errUnavailable": "Tính năng kiểm định đang khởi động — quay lại sau nhé.",
+  "padt.unlockTitle": "Mở khóa báo cáo đầy đủ có huấn luyện viên",
+  "padt.unlockDesc": "Đăng ký miễn phí: AI viết lại các hook yếu nhất, kế hoạch 30 ngày, và bài thắng của bạn tự động dẫn dắt mọi nội dung Virafold tạo cho bạn.",
+  "padt.unlockCta": "Nhận báo cáo đầy đủ",
 };

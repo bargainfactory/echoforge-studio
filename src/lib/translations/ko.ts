@@ -713,4 +713,18 @@ export const ko: Record<string, string> = {
   "adt.toIdeas": "다시 쓴 훅을 아이디어로 보내기",
   "adt.sentIdeas": "{count}개의 다시 쓴 훅을 아이디어에 추가했습니다",
   "adt.seeded": "진단 저장됨 — 이제 대박 콘텐츠가 모든 새 생성을 자동으로 이끕니다.",
+
+  // Public audit teaser
+  "padt.badge": "무료 도구",
+  "padt.title": "내 채널은 얼마나 바이럴할까?",
+  "padt.sub": "YouTube 채널을 붙여넣으면 몇 초 만에 바이럴 점수가 나옵니다 — 훅, 꾸준함, 타이밍, 그리고 대박 콘텐츠의 공통점까지. 가입 불필요.",
+  "padt.ph": "@채널명 또는 채널 URL",
+  "padt.run": "내 채널 진단",
+  "padt.running": "진단 중…",
+  "padt.err": "채널을 진단할 수 없습니다. 핸들을 확인하고 다시 시도하세요.",
+  "padt.errBusy": "네트워크에서 진단 요청이 너무 많습니다. 잠시 후 다시 시도하세요.",
+  "padt.errUnavailable": "진단 기능 준비 중입니다. 곧 다시 시도해 주세요.",
+  "padt.unlockTitle": "코치가 포함된 전체 리포트 잠금 해제",
+  "padt.unlockDesc": "무료 가입 시: 약한 훅의 AI 재작성, 30일 실행 계획, 그리고 대박 콘텐츠가 Virafold의 모든 생성물을 자동으로 이끕니다.",
+  "padt.unlockCta": "전체 리포트 받기",
 };

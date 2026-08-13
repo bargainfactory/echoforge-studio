@@ -680,4 +680,18 @@ export const nl: Record<string, string> = {
   "adt.toIdeas": "Herschrijvingen naar Ideeën sturen",
   "adt.sentIdeas": "{count} herschrijvingen toegevoegd aan je ideeën-backlog",
   "adt.seeded": "Audit opgeslagen — je winnaars sturen nu automatisch elke nieuwe generatie.",
+
+  // Public audit teaser
+  "padt.badge": "Gratis tool",
+  "padt.title": "Hoe viraal is jouw kanaal?",
+  "padt.sub": "Plak je YouTube-kanaal en krijg binnen seconden je viraliteitsscore — hooks, consistentie, timing en wat je winnaars gemeen hebben. Zonder registratie.",
+  "padt.ph": "@jouwkanaal of kanaal-URL",
+  "padt.run": "Audit mijn kanaal",
+  "padt.running": "Bezig met auditen…",
+  "padt.err": "Kon dat kanaal niet auditen — controleer de handle en probeer opnieuw.",
+  "padt.errBusy": "Te veel audits vanaf jouw netwerk — probeer het zo weer.",
+  "padt.errUnavailable": "Audits worden voorbereid — kom snel terug.",
+  "padt.unlockTitle": "Ontgrendel het volledige coach-rapport",
+  "padt.unlockDesc": "Registreer gratis: AI-herschrijvingen van je zwakste hooks, een 30-dagenplan, en je winnaars sturen automatisch elk asset dat Virafold voor je maakt.",
+  "padt.unlockCta": "Volledig rapport ophalen",
 };
