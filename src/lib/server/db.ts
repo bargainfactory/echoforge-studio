@@ -129,6 +129,15 @@ function getDb(): DatabaseSync {
       rates        TEXT,
       enabled      INTEGER NOT NULL DEFAULT 1
     );
+    CREATE TABLE IF NOT EXISTS audits (
+      id         TEXT PRIMARY KEY,
+      user_email TEXT NOT NULL REFERENCES users(email) ON DELETE CASCADE,
+      source     TEXT NOT NULL,
+      label      TEXT,
+      grade      INTEGER NOT NULL,
+      report     TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
     CREATE TABLE IF NOT EXISTS platform_accounts (
       user_email    TEXT NOT NULL REFERENCES users(email) ON DELETE CASCADE,
       platform      TEXT NOT NULL,
@@ -466,6 +475,36 @@ export function upsertCreatorPage(email: string, page: CreatorPage): boolean {
       page.enabled ? 1 : 0
     );
   return true;
+}
+
+// --- Social audits ---
+
+export function insertAuditReport(
+  email: string,
+  source: string,
+  label: string,
+  grade: number,
+  reportJson: string
+): string {
+  const id = `aud-${crypto.randomUUID()}`;
+  getDb()
+    .prepare(
+      `INSERT INTO audits (id, user_email, source, label, grade, report, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`
+    )
+    .run(id, email.toLowerCase(), source, label, grade, reportJson, new Date().toISOString());
+  return id;
+}
+
+export function latestAuditReport(
+  email: string
+): { id: string; report: string } | null {
+  const row = getDb()
+    .prepare(
+      "SELECT id, report FROM audits WHERE user_email = ? ORDER BY created_at DESC LIMIT 1"
+    )
+    .get(email.toLowerCase()) as { id: string; report: string } | undefined;
+  return row ?? null;
 }
 
 // --- Connected platform accounts (creator OAuth tokens) ---

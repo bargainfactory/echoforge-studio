@@ -276,7 +276,7 @@ const REGEN_SCHEMA = {
  * (env or the integrations store), else OpenAI when that key is present, else
  * returns null so the deterministic engine runs. Any error falls through.
  */
-async function llmComplete(
+export async function llmComplete(
   system: string,
   prompt: string,
   schema: Record<string, unknown>

@@ -13,6 +13,7 @@ import {
   setProvenance,
   topPerformers,
 } from "@/lib/server/db";
+import { auditExemplars } from "@/lib/server/audit";
 import { generateAssets } from "@/lib/server/generate";
 import { PLAN_MONTHLY_PROJECTS } from "@/lib/server/pricing";
 import { createManifest, signManifest } from "@/lib/server/provenance";
@@ -167,9 +168,13 @@ export async function POST(req: NextRequest) {
   }
 
   // Real generation from the actual input content, in the user's language,
-  // steered by the account's brand-voice profile and their proven winners.
+  // steered by the account's brand-voice profile and their proven winners —
+  // both recorded post results and historical winners from their social audit.
   const voice = getBrandVoice(user.email);
-  const exemplars = topPerformers(user.email, 5).map((p) => p.assetName);
+  const exemplars = [
+    ...topPerformers(user.email, 5).map((p) => p.assetName),
+    ...auditExemplars(user.email),
+  ].slice(0, 6);
   const { assets: generated, engine } = await generateAssets(
     title,
     transcript,

@@ -43,6 +43,17 @@ export const INTEGRATIONS: IntegrationDef[] = [
     ],
   },
   {
+    name: "audit",
+    label: "Social audits (YouTube Data)",
+    description:
+      "Powers channel audits: fetches any public YouTube channel's recent videos and stats. CSV-import audits work without this.",
+    docsHint:
+      "Create a free API key in Google Cloud Console with the YouTube Data API v3 enabled.",
+    fields: [
+      { key: "youtubeApiKey", label: "YouTube Data API key", envVar: "YOUTUBE_API_KEY", secret: true, placeholder: "AIza...", required: true },
+    ],
+  },
+  {
     name: "transcription",
     label: "Transcription (Deepgram / Whisper)",
     description:

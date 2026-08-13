@@ -48,6 +48,7 @@ import {
   ExternalLink,
   DollarSign,
   Mic2,
+  Gauge,
 } from "lucide-react";
 import type { Project, Asset } from "@/lib/data";
 import IntegrationsPanel from "@/components/integrations-panel";
@@ -60,6 +61,7 @@ type Tab =
   | "Upload"
   | "Schedule"
   | "Analytics"
+  | "Audit"
   | "Audience"
   | "Business"
   | "Notifications"
@@ -72,6 +74,7 @@ const sidebarItems: { icon: typeof LayoutDashboard; label: Tab; tKey: string }[]
   { icon: Upload, label: "Upload", tKey: "dash.upload" },
   { icon: Calendar, label: "Schedule", tKey: "dash.schedule" },
   { icon: BarChart3, label: "Analytics", tKey: "dash.analytics" },
+  { icon: Gauge, label: "Audit", tKey: "dash.audit" },
   { icon: Users, label: "Audience", tKey: "dash.audience" },
   { icon: DollarSign, label: "Business", tKey: "dash.business" },
   { icon: Bell, label: "Notifications", tKey: "dash.notifications" },
@@ -426,6 +429,7 @@ export default function Dashboard() {
           {activeTab === "Ideas" && <IdeasTab />}
           {activeTab === "Schedule" && <ScheduleTab />}
           {activeTab === "Analytics" && <AnalyticsTab />}
+          {activeTab === "Audit" && <AuditTab />}
           {activeTab === "Audience" && <AudienceTab />}
           {activeTab === "Business" && <BusinessTab />}
           {activeTab === "Notifications" && (
@@ -2490,6 +2494,306 @@ function AudienceTab() {
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+// --- Audit Tab (social audit + virality coach) ---
+interface AuditReportUi {
+  source: string;
+  label: string;
+  createdAt: string;
+  posts: number;
+  totalViews: number;
+  avgViews: number;
+  engagementRate: number;
+  grade: number;
+  sections: { key: string; score: number; note: string }[];
+  findings: string[];
+  top: { title: string; views: number; likes: number; comments: number; hint: string }[];
+  bottom: { title: string; views: number; likes: number; comments: number; hint: string }[];
+  bestDay: string | null;
+  llm: {
+    engine: string;
+    insights: string[];
+    rewrites: { original: string; improved: string }[];
+    plan: string[];
+  } | null;
+}
+
+function AuditTab() {
+  const { addToast } = useApp();
+  const { t, locale } = useTranslation();
+  const [report, setReport] = useState<AuditReportUi | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [running, setRunning] = useState(false);
+  const [src, setSrc] = useState<"youtube" | "csv">("youtube");
+  const [handle, setHandle] = useState("");
+  const [csv, setCsv] = useState("");
+  const [sendingIdeas, setSendingIdeas] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/audit", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => active && d?.report && setReport(d.report))
+      .catch(() => {})
+      .finally(() => active && setLoading(false));
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const run = useCallback(async () => {
+    setRunning(true);
+    const body =
+      src === "youtube" ? { source: "youtube", handle } : { source: "csv", text: csv };
+    const res = await fetch("/api/audit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    setRunning(false);
+    const d = await res.json().catch(() => null);
+    if (res.ok && d?.report) {
+      setReport(d.report);
+      addToast(t("adt.seeded"));
+    } else {
+      const err = d?.error;
+      addToast(
+        err === "no_key"
+          ? t("adt.noKey")
+          : err === "not_found"
+            ? t("adt.notFound")
+            : err === "unparseable" || err === "too_few"
+              ? t("adt.badCsv")
+              : t("adt.failed"),
+        "error"
+      );
+    }
+  }, [src, handle, csv, addToast, t]);
+
+  const sendRewrites = useCallback(async () => {
+    if (!report?.llm?.rewrites.length) return;
+    setSendingIdeas(true);
+    let count = 0;
+    for (const r of report.llm.rewrites) {
+      const res = await fetch("/api/ideas", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: r.improved, notes: `Rewrite of: ${r.original}` }),
+      }).catch(() => null);
+      if (res?.ok) count++;
+    }
+    setSendingIdeas(false);
+    addToast(t("adt.sentIdeas", { count }));
+  }, [report, addToast, t]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <div className="w-8 h-8 rounded-full border-2 border-cyber-border border-t-neon-purple animate-spin" />
+      </div>
+    );
+  }
+
+  const gradeColor =
+    (report?.grade ?? 0) >= 70
+      ? "text-success"
+      : (report?.grade ?? 0) >= 45
+        ? "text-warning"
+        : "text-red-400";
+
+  const postRow = (p: AuditReportUi["top"][number], i: number) => (
+    <div key={`${p.title}-${i}`} className="p-3 rounded-lg bg-cyber-dark">
+      <p className="text-sm text-foreground line-clamp-2">{p.title}</p>
+      <p className="text-xs text-cyber-muted mt-1">
+        {p.views.toLocaleString(locale)} {t("sched.views").toLowerCase()} ·{" "}
+        {(p.likes + p.comments).toLocaleString(locale)} {t("dash.engagements").toLowerCase()} ·{" "}
+        {p.hint}
+      </p>
+    </div>
+  );
+
+  return (
+    <div className="space-y-6">
+      <p className="text-sm text-cyber-muted">{t("adt.intro")}</p>
+
+      {/* Runner */}
+      <div className="bg-cyber-card border border-cyber-border rounded-xl p-5 space-y-4">
+        <div className="flex rounded-lg border border-cyber-border overflow-hidden w-fit">
+          {(
+            [
+              ["youtube", t("adt.srcYouTube")],
+              ["csv", t("adt.srcCsv")],
+            ] as const
+          ).map(([key, lab]) => (
+            <button
+              key={key}
+              onClick={() => setSrc(key)}
+              className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                src === key
+                  ? "bg-neon-purple/15 text-neon-purple"
+                  : "text-cyber-muted hover:text-foreground"
+              }`}
+            >
+              {lab}
+            </button>
+          ))}
+        </div>
+        {src === "youtube" ? (
+          <input
+            type="text"
+            value={handle}
+            onChange={(e) => setHandle(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handle.trim() && run()}
+            placeholder={t("adt.handlePh")}
+            className="w-full px-3 py-2.5 bg-cyber-dark border border-cyber-border rounded-xl text-sm text-foreground placeholder:text-cyber-muted focus:outline-none focus:border-neon-purple/50"
+          />
+        ) : (
+          <textarea
+            value={csv}
+            onChange={(e) => setCsv(e.target.value)}
+            rows={5}
+            placeholder={t("adt.csvPh")}
+            className="w-full px-3 py-2.5 bg-cyber-dark border border-cyber-border rounded-xl text-xs font-mono text-foreground placeholder:text-cyber-muted focus:outline-none focus:border-neon-purple/50 resize-y"
+          />
+        )}
+        <button
+          onClick={run}
+          disabled={running || (src === "youtube" ? !handle.trim() : !csv.trim())}
+          className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-neon-purple to-electric-blue text-white text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2"
+        >
+          {running ? <Loader2 className="w-4 h-4 animate-spin" /> : <Gauge className="w-4 h-4" />}
+          {running ? t("adt.running") : t("adt.run")}
+        </button>
+      </div>
+
+      {report && (
+        <>
+          {/* Grade hero */}
+          <div className="bg-cyber-card border border-cyber-border rounded-xl p-6 flex flex-wrap items-center gap-6">
+            <div className="text-center">
+              <p className={`text-5xl font-bold ${gradeColor}`}>{report.grade}</p>
+              <p className="text-xs text-cyber-muted mt-1">{t("adt.grade")}</p>
+            </div>
+            <div className="flex-1 min-w-[200px]">
+              <p className="text-sm font-semibold text-foreground">{report.label}</p>
+              <p className="text-xs text-cyber-muted mt-1">
+                {report.posts} {t("adt.posts")} · {report.avgViews.toLocaleString(locale)}{" "}
+                {t("adt.avgViews")} · {report.engagementRate}% {t("adt.engagement")}
+              </p>
+              <p className="text-[11px] text-cyber-muted mt-1">
+                {new Date(report.createdAt).toLocaleString(locale)}
+              </p>
+            </div>
+            <div className="w-full sm:w-64 space-y-2">
+              {report.sections.map((s) => (
+                <div key={s.key} className="flex items-center gap-2">
+                  <span className="text-[11px] text-cyber-muted w-24 shrink-0">
+                    {t(`adt.sec.${s.key}`)}
+                  </span>
+                  <div className="flex-1 h-1.5 bg-cyber-border rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full ${
+                        s.score >= 70 ? "bg-success" : s.score >= 45 ? "bg-warning" : "bg-red-400"
+                      }`}
+                      style={{ width: `${s.score}%` }}
+                    />
+                  </div>
+                  <span className="text-[11px] text-cyber-muted w-8 text-right">{s.score}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Findings */}
+          {report.findings.length > 0 && (
+            <div className="bg-cyber-card border border-cyber-border rounded-xl p-6">
+              <h3 className="font-semibold text-foreground mb-3">{t("adt.findings")}</h3>
+              <ul className="space-y-2">
+                {report.findings.map((f, i) => (
+                  <li key={i} className="text-sm text-cyber-muted flex gap-2">
+                    <span className="text-neon-purple shrink-0">→</span> {f}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Winners / weakest */}
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="bg-cyber-card border border-cyber-border rounded-xl p-5">
+              <h3 className="font-semibold text-success mb-3">{t("adt.top")}</h3>
+              <div className="space-y-2">{report.top.map(postRow)}</div>
+            </div>
+            <div className="bg-cyber-card border border-cyber-border rounded-xl p-5">
+              <h3 className="font-semibold text-red-400 mb-3">{t("adt.bottom")}</h3>
+              <div className="space-y-2">{report.bottom.map(postRow)}</div>
+            </div>
+          </div>
+
+          {/* Coach */}
+          {report.llm && (
+            <div className="bg-cyber-card border border-neon-purple/30 rounded-xl p-6 space-y-5">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-neon-purple" />
+                <h3 className="font-semibold text-foreground">{t("adt.insights")}</h3>
+              </div>
+              <ul className="space-y-2">
+                {report.llm.insights.map((s, i) => (
+                  <li key={i} className="text-sm text-foreground/90 flex gap-2">
+                    <span className="text-neon-purple shrink-0">•</span> {s}
+                  </li>
+                ))}
+              </ul>
+
+              {report.llm.rewrites.length > 0 && (
+                <div>
+                  <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                    <h4 className="text-sm font-semibold text-foreground">{t("adt.rewrites")}</h4>
+                    <button
+                      onClick={sendRewrites}
+                      disabled={sendingIdeas}
+                      className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-neon-purple to-electric-blue text-white text-xs font-medium hover:opacity-90 disabled:opacity-50 flex items-center gap-1.5"
+                    >
+                      {sendingIdeas ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Lightbulb className="w-3.5 h-3.5" />
+                      )}
+                      {t("adt.toIdeas")}
+                    </button>
+                  </div>
+                  <div className="space-y-2">
+                    {report.llm.rewrites.map((r, i) => (
+                      <div key={i} className="p-3 rounded-lg bg-cyber-dark text-sm">
+                        <p className="text-cyber-muted line-through decoration-red-400/50">
+                          {r.original}
+                        </p>
+                        <p className="text-foreground mt-1">{r.improved}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {report.llm.plan.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-semibold text-foreground mb-2">{t("adt.plan")}</h4>
+                  <ol className="space-y-1.5">
+                    {report.llm.plan.map((s, i) => (
+                      <li key={i} className="text-sm text-cyber-muted flex gap-2">
+                        <span className="text-neon-purple font-bold shrink-0">{i + 1}.</span> {s}
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              )}
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }
