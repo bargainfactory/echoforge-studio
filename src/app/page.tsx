@@ -1,6 +1,7 @@
 import Navbar from "@/components/navbar";
 import Hero from "@/components/hero";
 import AuditTeaser from "@/components/audit-teaser";
+import TryGenerator from "@/components/try-generator";
 import HowItWorks from "@/components/how-it-works";
 import Portfolio from "@/components/portfolio";
 import Services from "@/components/services";
@@ -60,6 +61,7 @@ export default function Home() {
       <main>
         <Hero />
         <AuditTeaser />
+        <TryGenerator />
         <HowItWorks />
         <Portfolio />
         <Services />
