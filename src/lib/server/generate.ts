@@ -285,6 +285,7 @@ async function llmComplete(
   // cycle at module load.
   const { resolveField } = await import("./integrations");
   const anthropicKey = resolveField("llm", "anthropicApiKey");
+  const xaiKey = resolveField("llm", "xaiApiKey");
   const openaiKey = resolveField("llm", "openaiApiKey");
 
   if (anthropicKey) {
@@ -307,6 +308,31 @@ async function llmComplete(
       .map((b) => (b as { text: string }).text)
       .join("");
     return { text, engine: "anthropic:claude-opus-4-8" };
+  }
+
+  if (xaiKey) {
+    // xAI's API is OpenAI-compatible; Grok handles the same JSON contract.
+    const resp = await fetch("https://api.x.ai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${xaiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "grok-4",
+        response_format: { type: "json_object" },
+        messages: [
+          { role: "system", content: system + " Respond with a single JSON object." },
+          { role: "user", content: prompt },
+        ],
+      }),
+    });
+    if (resp.ok) {
+      const data = await resp.json();
+      const text = data?.choices?.[0]?.message?.content;
+      if (text) return { text, engine: "xai:grok-4" };
+    }
+    // fall through to OpenAI on any xAI failure
   }
 
   if (openaiKey) {

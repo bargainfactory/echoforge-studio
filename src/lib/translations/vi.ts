@@ -638,4 +638,14 @@ export const vi: Record<string, string> = {
   "trust.p2d": "Mỗi nội dung được rà soát các yếu tố gây tắt kiếm tiền và vi phạm chính sách — bạn thấy rủi ro trước thuật toán.",
   "trust.p3t": "Giọng của bạn, được bảo đảm",
   "trust.p3d": "Từ cấm, giọng điệu và CTA được áp dụng máy móc trong mọi lần tạo — không phải gợi ý, mà là bảo đảm.",
+
+  // Connected accounts
+  "conn.title": "Tài khoản đã kết nối",
+  "conn.desc": "Kết nối nền tảng của bạn để bài đăng theo lịch được gửi thật. X và LinkedIn đăng văn bản ngay hôm nay; nền tảng video sẽ đến cùng pipeline dựng video.",
+  "conn.connect": "Kết nối",
+  "conn.disconnect": "Ngắt kết nối",
+  "conn.connected": "Đã kết nối",
+  "conn.notConfigured": "Đang chờ thông tin ứng dụng từ nhà điều hành",
+  "conn.disconnected": "Đã ngắt kết nối tài khoản",
+  "sched.toastDeliveryFailed": "Đã đăng cục bộ nhưng gửi tới tài khoản đã kết nối thất bại",
 };

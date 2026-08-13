@@ -671,4 +671,14 @@ export const en: Record<string, string> = {
   "trust.p2d": "Every asset is linted against demonetization and platform-policy triggers, so you see risk before the algorithm does.",
   "trust.p3t": "Your voice, enforced",
   "trust.p3d": "Banned words, tone and CTAs are enforced mechanically on every generation — not suggested, guaranteed.",
+
+  // Connected accounts
+  "conn.title": "Connected accounts",
+  "conn.desc": "Connect your platforms so scheduled posts deliver for real. X and LinkedIn post text today; video platforms arrive with the rendering pipeline.",
+  "conn.connect": "Connect",
+  "conn.disconnect": "Disconnect",
+  "conn.connected": "Connected",
+  "conn.notConfigured": "Awaiting operator app credentials",
+  "conn.disconnected": "Account disconnected",
+  "sched.toastDeliveryFailed": "Published locally, but delivery to your connected account failed",
 };

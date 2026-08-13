@@ -16,6 +16,7 @@ import {
   listAllScheduledPending,
   setScheduledStatus,
 } from "./db";
+import { deliverPost } from "./connect";
 
 const TICK_MS = 60 * 1000;
 // Evergreen assets are re-queued this long after each automatic publish.
@@ -31,17 +32,31 @@ declare global {
   var __virafoldSchedulerStarted: boolean | undefined;
 }
 
-export function publishDuePosts(): number {
+export async function publishDuePosts(): Promise<number> {
   const now = Date.now();
   let published = 0;
   for (const post of listAllScheduledPending()) {
     const due = new Date(post.scheduledAt).getTime();
     if (Number.isNaN(due) || due > now) continue;
+
+    // Real delivery when the creator has connected this platform; demo-mode
+    // publish (status only) otherwise — same contract as the manual button.
+    const asset = getAsset(post.userEmail, post.assetId);
+    let deliveryNote = "";
+    if (asset?.content) {
+      const result = await deliverPost(post.userEmail, post.platform, asset.content);
+      if (result) {
+        deliveryNote = result.ok
+          ? ` Delivered to your connected account (${result.detail}).`
+          : ` Delivery to your connected account failed (${result.detail}) — marked published locally.`;
+      }
+    }
+
     setScheduledStatus(post.userEmail, post.id, "published");
     insertNotification(post.userEmail, {
       id: `n-${crypto.randomUUID()}`,
       title: "Scheduled Post Published",
-      message: `"${post.assetName}" went out to ${post.platform} as scheduled.`,
+      message: `"${post.assetName}" went out to ${post.platform} as scheduled.${deliveryNote}`,
       time: "Just now",
       read: false,
       type: "success",
@@ -49,7 +64,6 @@ export function publishDuePosts(): number {
     published++;
 
     // Evergreen recycling: top content goes back in the queue automatically.
-    const asset = getAsset(post.userEmail, post.assetId);
     if (asset?.evergreen) {
       const next = new Date(now + RECYCLE_DAYS * 24 * 60 * 60 * 1000);
       createScheduledPost(post.userEmail, {
@@ -77,11 +91,9 @@ export function startScheduler(): void {
   if (globalThis.__virafoldSchedulerStarted) return;
   globalThis.__virafoldSchedulerStarted = true;
   const timer = setInterval(() => {
-    try {
-      publishDuePosts();
-    } catch {
+    publishDuePosts().catch(() => {
       /* a bad tick must never kill the interval */
-    }
+    });
   }, TICK_MS);
   // Never hold the process open (build workers, scripts, graceful shutdown).
   timer.unref?.();

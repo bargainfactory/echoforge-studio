@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/server/auth";
 import {
+  getAsset,
+  getScheduledPost,
   setScheduledStatus,
   listScheduledPosts,
   updateScheduledPost,
 } from "@/lib/server/db";
 import { isConfigured } from "@/lib/server/integrations";
+import { deliverPost } from "@/lib/server/connect";
 
 export const dynamic = "force-dynamic";
 
@@ -64,12 +67,23 @@ export async function POST(
   const action = req.nextUrl.searchParams.get("action");
   const status = action === "cancel" ? "canceled" : "published";
 
+  // Real delivery on publish when the creator has connected this platform.
+  let delivery: { ok: boolean; detail: string } | null = null;
+  if (status === "published") {
+    const pending = getScheduledPost(user.email, id);
+    const asset = pending ? getAsset(user.email, pending.assetId) : null;
+    if (pending && asset?.content) {
+      delivery = await deliverPost(user.email, pending.platform, asset.content);
+    }
+  }
+
   const post = setScheduledStatus(user.email, id, status);
   if (!post) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   return NextResponse.json({
     post,
     connected: isConfigured("publishing"),
+    delivery,
     posts: listScheduledPosts(user.email),
   });
 }

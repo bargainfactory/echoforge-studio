@@ -638,4 +638,14 @@ export const id: Record<string, string> = {
   "trust.p2d": "Setiap aset diperiksa terhadap pemicu demonetisasi dan kebijakan platform — Anda melihat risiko sebelum algoritmanya.",
   "trust.p3t": "Suara Anda, dijamin",
   "trust.p3d": "Kata terlarang, nada, dan CTA diterapkan secara mekanis di setiap generasi — bukan saran, tapi jaminan.",
+
+  // Connected accounts
+  "conn.title": "Akun terhubung",
+  "conn.desc": "Hubungkan platform Anda agar post terjadwal benar-benar terkirim. X dan LinkedIn memposting teks hari ini; platform video hadir bersama pipeline rendering.",
+  "conn.connect": "Hubungkan",
+  "conn.disconnect": "Putuskan",
+  "conn.connected": "Terhubung",
+  "conn.notConfigured": "Menunggu kredensial aplikasi operator",
+  "conn.disconnected": "Akun diputuskan",
+  "sched.toastDeliveryFailed": "Dipublikasikan secara lokal, tetapi pengiriman ke akun terhubung gagal",
 };

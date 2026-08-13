@@ -1265,13 +1265,15 @@ function ScheduleTab() {
         const d = await res.json();
         setPosts(d.posts);
         setSelected(null);
-        addToast(
-          action === "cancel"
-            ? t("sched.toastCanceled")
-            : d.connected
-              ? t("sched.toastPublished")
-              : t("sched.toastPublishedDemo")
-        );
+        if (action === "cancel") {
+          addToast(t("sched.toastCanceled"));
+        } else if (d.delivery?.ok) {
+          addToast(t("sched.toastPublished"));
+        } else if (d.delivery && !d.delivery.ok) {
+          addToast(t("sched.toastDeliveryFailed"), "error");
+        } else {
+          addToast(t("sched.toastPublishedDemo"));
+        }
       }
     },
     [addToast, t]
@@ -1698,6 +1700,98 @@ function ScheduleTab() {
           </motion.div>
         )}
       </AnimatePresence>
+    </div>
+  );
+}
+
+// --- Connected accounts (creator platform OAuth) ---
+const CONN_LABELS: Record<string, string> = {
+  x: "X (Twitter)",
+  linkedin: "LinkedIn",
+};
+
+interface ConnRow {
+  platform: string;
+  configured: boolean;
+  connected: boolean;
+  handle: string | null;
+}
+
+function ConnectedAccountsCard() {
+  const { addToast } = useApp();
+  const { t } = useTranslation();
+  const [rows, setRows] = useState<ConnRow[] | null>(null);
+
+  const load = useCallback(() => {
+    fetch("/api/connect", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => d && setRows(d.platforms))
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const disconnect = useCallback(
+    async (platform: string) => {
+      const res = await fetch(`/api/connect/${platform}/disconnect`, { method: "POST" });
+      if (res.ok) {
+        addToast(t("conn.disconnected"), "info");
+        load();
+      }
+    },
+    [addToast, t, load]
+  );
+
+  if (!rows) return null;
+
+  return (
+    <div className="bg-cyber-card border border-cyber-border rounded-xl p-6">
+      <div className="flex items-center gap-2 mb-1">
+        <Send className="w-4 h-4 text-neon-purple" />
+        <h3 className="font-semibold text-foreground">{t("conn.title")}</h3>
+      </div>
+      <p className="text-xs text-cyber-muted mb-4">{t("conn.desc")}</p>
+      <div className="space-y-3">
+        {rows.map((r) => (
+          <div
+            key={r.platform}
+            className="flex flex-wrap items-center gap-3 p-3 rounded-xl bg-cyber-dark border border-cyber-border"
+          >
+            <div className="flex-1 min-w-[140px]">
+              <p className="text-sm font-medium text-foreground">
+                {CONN_LABELS[r.platform] ?? r.platform}
+              </p>
+              {r.connected && r.handle && (
+                <p className="text-xs text-cyber-muted">{r.handle}</p>
+              )}
+            </div>
+            {r.connected ? (
+              <>
+                <span className="text-xs px-2 py-0.5 rounded-full text-success bg-success/10">
+                  {t("conn.connected")}
+                </span>
+                <button
+                  onClick={() => disconnect(r.platform)}
+                  className="px-3 py-1.5 text-xs rounded-lg bg-cyber-card border border-cyber-border text-cyber-muted hover:text-red-400 transition-colors"
+                >
+                  {t("conn.disconnect")}
+                </button>
+              </>
+            ) : r.configured ? (
+              <a
+                href={`/api/connect/${r.platform}/start`}
+                className="px-4 py-1.5 text-xs font-medium rounded-lg bg-gradient-to-r from-neon-purple to-electric-blue text-white hover:opacity-90"
+              >
+                {t("conn.connect")}
+              </a>
+            ) : (
+              <span className="text-xs text-cyber-muted">{t("conn.notConfigured")}</span>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -3155,6 +3249,8 @@ function SettingsTab({
       </div>
 
       <BrandVoicePanel />
+
+      <ConnectedAccountsCard />
 
       <IntegrationsPanel />
 

@@ -638,4 +638,14 @@ export const nl: Record<string, string> = {
   "trust.p2d": "Elk asset wordt gecontroleerd op demonetisatie- en platformbeleidstriggers — jij ziet het risico eerder dan het algoritme.",
   "trust.p3t": "Jouw stem, gegarandeerd",
   "trust.p3d": "Verboden woorden, toon en CTA's worden bij elke generatie mechanisch afgedwongen — geen suggestie, maar garantie.",
+
+  // Connected accounts
+  "conn.title": "Gekoppelde accounts",
+  "conn.desc": "Koppel je platforms zodat ingeplande posts echt worden bezorgd. X en LinkedIn posten vandaag tekst; videoplatforms komen met de rendering-pipeline.",
+  "conn.connect": "Koppelen",
+  "conn.disconnect": "Ontkoppelen",
+  "conn.connected": "Gekoppeld",
+  "conn.notConfigured": "Wacht op app-inloggegevens van de beheerder",
+  "conn.disconnected": "Account ontkoppeld",
+  "sched.toastDeliveryFailed": "Lokaal gepubliceerd, maar bezorging bij je gekoppelde account is mislukt",
 };

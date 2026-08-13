@@ -32,12 +32,13 @@ export interface IntegrationDef {
 export const INTEGRATIONS: IntegrationDef[] = [
   {
     name: "llm",
-    label: "AI generation (Claude / OpenAI)",
+    label: "AI generation (Claude / Grok / OpenAI)",
     description:
-      "Upgrades asset generation from the built-in engine to Claude/GPT-quality output.",
-    docsHint: "Paste an Anthropic API key (recommended) or an OpenAI key.",
+      "Upgrades asset generation from the built-in engine to frontier-model output. Priority: Anthropic, then xAI, then OpenAI.",
+    docsHint: "Paste an Anthropic API key (recommended), an xAI (Grok) key, or an OpenAI key.",
     fields: [
       { key: "anthropicApiKey", label: "Anthropic API key", envVar: "ANTHROPIC_API_KEY", secret: true, placeholder: "sk-ant-..." },
+      { key: "xaiApiKey", label: "xAI (Grok) API key", envVar: "XAI_API_KEY", secret: true, placeholder: "xai-..." },
       { key: "openaiApiKey", label: "OpenAI API key", envVar: "OPENAI_API_KEY", secret: true, placeholder: "sk-..." },
     ],
   },
@@ -85,14 +86,18 @@ export const INTEGRATIONS: IntegrationDef[] = [
   },
   {
     name: "publishing",
-    label: "Publish & schedule (TikTok / YouTube / LinkedIn)",
+    label: "Publish & schedule (X / LinkedIn / TikTok / YouTube)",
     description:
-      "Connect platform apps to publish and schedule approved assets directly.",
-    docsHint: "Add the platform app credentials you want to enable.",
+      "Operator app credentials that let creators connect their own accounts and publish for real. X and LinkedIn deliver text posts today; TikTok/YouTube slots are reserved for the video pipeline.",
+    docsHint:
+      "Register developer apps (developer.x.com, developer.linkedin.com) with redirect URIs https://virafold.ai/api/connect/x/callback and /api/connect/linkedin/callback, then paste the credentials.",
     fields: [
+      { key: "xClientId", label: "X (Twitter) client ID", envVar: "X_CLIENT_ID" },
+      { key: "xClientSecret", label: "X (Twitter) client secret", envVar: "X_CLIENT_SECRET", secret: true },
+      { key: "linkedinClientId", label: "LinkedIn client ID", envVar: "LINKEDIN_CLIENT_ID" },
+      { key: "linkedinClientSecret", label: "LinkedIn client secret", envVar: "LINKEDIN_CLIENT_SECRET", secret: true },
       { key: "tiktokClientKey", label: "TikTok client key", envVar: "TIKTOK_CLIENT_KEY", secret: true },
       { key: "youtubeClientId", label: "YouTube client ID", envVar: "YOUTUBE_CLIENT_ID", secret: true },
-      { key: "linkedinClientId", label: "LinkedIn client ID", envVar: "LINKEDIN_CLIENT_ID", secret: true },
     ],
   },
 ];

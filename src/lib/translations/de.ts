@@ -671,4 +671,14 @@ export const de: Record<string, string> = {
   "trust.p2d": "Jedes Asset wird gegen Demonetarisierungs- und Plattformrichtlinien-Trigger geprüft — du siehst das Risiko vor dem Algorithmus.",
   "trust.p3t": "Deine Stimme, garantiert",
   "trust.p3d": "Verbotene Wörter, Ton und CTAs werden bei jeder Generierung mechanisch durchgesetzt — nicht vorgeschlagen, garantiert.",
+
+  // Connected accounts
+  "conn.title": "Verbundene Konten",
+  "conn.desc": "Verbinde deine Plattformen, damit geplante Posts wirklich zugestellt werden. X und LinkedIn posten heute Text; Videoplattformen kommen mit der Rendering-Pipeline.",
+  "conn.connect": "Verbinden",
+  "conn.disconnect": "Trennen",
+  "conn.connected": "Verbunden",
+  "conn.notConfigured": "Warten auf App-Zugangsdaten des Betreibers",
+  "conn.disconnected": "Konto getrennt",
+  "sched.toastDeliveryFailed": "Lokal veröffentlicht, aber die Zustellung an dein verbundenes Konto ist fehlgeschlagen",
 };

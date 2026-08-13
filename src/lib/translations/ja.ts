@@ -671,4 +671,14 @@ export const ja: Record<string, string> = {
   "trust.p2d": "すべてのアセットを収益化停止やプラットフォームポリシーのトリガーと照合。アルゴリズムより先にリスクが見えます。",
   "trust.p3t": "あなたの声を、確実に",
   "trust.p3d": "禁止ワード、トーン、CTAはすべての生成で機械的に適用されます。提案ではなく、保証です。",
+
+  // Connected accounts
+  "conn.title": "連携アカウント",
+  "conn.desc": "プラットフォームを連携すると、予約投稿が実際に配信されます。現在XとLinkedInがテキスト投稿に対応。動画プラットフォームはレンダリング機能とともに追加予定です。",
+  "conn.connect": "連携する",
+  "conn.disconnect": "解除",
+  "conn.connected": "連携済み",
+  "conn.notConfigured": "運営者のアプリ認証情報待ち",
+  "conn.disconnected": "アカウントの連携を解除しました",
+  "sched.toastDeliveryFailed": "ローカルでは公開済みですが、連携アカウントへの配信に失敗しました",
 };

@@ -671,4 +671,14 @@ export const fr: Record<string, string> = {
   "trust.p2d": "Chaque contenu est analysé contre les déclencheurs de démonétisation et de politique de plateforme — vous voyez le risque avant l'algorithme.",
   "trust.p3t": "Votre voix, garantie",
   "trust.p3d": "Mots interdits, ton et CTA sont appliqués mécaniquement à chaque génération — pas une suggestion, une garantie.",
+
+  // Connected accounts
+  "conn.title": "Comptes connectés",
+  "conn.desc": "Connectez vos plateformes pour que les posts programmés soient réellement publiés. X et LinkedIn publient du texte dès aujourd'hui ; les plateformes vidéo arriveront avec le pipeline de rendu.",
+  "conn.connect": "Connecter",
+  "conn.disconnect": "Déconnecter",
+  "conn.connected": "Connecté",
+  "conn.notConfigured": "En attente des identifiants d'application",
+  "conn.disconnected": "Compte déconnecté",
+  "sched.toastDeliveryFailed": "Publié localement, mais l'envoi vers votre compte connecté a échoué",
 };

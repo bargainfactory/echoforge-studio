@@ -671,4 +671,14 @@ export const ko: Record<string, string> = {
   "trust.p2d": "모든 에셋을 수익화 제한·플랫폼 정책 트리거와 대조합니다 — 알고리즘보다 먼저 위험을 봅니다.",
   "trust.p3t": "당신의 보이스, 보장",
   "trust.p3d": "금지 단어, 톤, CTA가 모든 생성에서 기계적으로 적용됩니다 — 제안이 아니라 보장입니다.",
+
+  // Connected accounts
+  "conn.title": "연결된 계정",
+  "conn.desc": "플랫폼을 연결하면 예약 포스트가 실제로 게시됩니다. X와 LinkedIn은 현재 텍스트 게시를 지원하며, 영상 플랫폼은 렌더링 파이프라인과 함께 제공됩니다.",
+  "conn.connect": "연결",
+  "conn.disconnect": "연결 해제",
+  "conn.connected": "연결됨",
+  "conn.notConfigured": "운영자 앱 자격 증명 대기 중",
+  "conn.disconnected": "계정 연결이 해제되었습니다",
+  "sched.toastDeliveryFailed": "로컬에는 게시되었지만 연결된 계정으로 전송하지 못했습니다",
 };

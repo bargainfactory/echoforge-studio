@@ -638,4 +638,14 @@ export const zhTW: Record<string, string> = {
   "trust.p2d": "每個內容都會對照取消營利與平台政策觸發詞檢查——你比演算法更早看到風險。",
   "trust.p3t": "你的聲音,強制生效",
   "trust.p3d": "禁用詞、語氣與 CTA 在每次生成中機械化執行——不是建議,是保證。",
+
+  // Connected accounts
+  "conn.title": "已連接帳號",
+  "conn.desc": "連接你的平台帳號,排程貼文即可真實發佈。X 和 LinkedIn 現已支援文字發佈;影片平台將隨渲染管線推出。",
+  "conn.connect": "連接",
+  "conn.disconnect": "中斷連接",
+  "conn.connected": "已連接",
+  "conn.notConfigured": "等待營運方設定應用憑證",
+  "conn.disconnected": "帳號已中斷連接",
+  "sched.toastDeliveryFailed": "已在本地標記發佈,但傳送到已連接帳號失敗",
 };

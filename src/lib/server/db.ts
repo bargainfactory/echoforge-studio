@@ -129,6 +129,17 @@ function getDb(): DatabaseSync {
       rates        TEXT,
       enabled      INTEGER NOT NULL DEFAULT 1
     );
+    CREATE TABLE IF NOT EXISTS platform_accounts (
+      user_email    TEXT NOT NULL REFERENCES users(email) ON DELETE CASCADE,
+      platform      TEXT NOT NULL,
+      access_token  TEXT NOT NULL,
+      refresh_token TEXT,
+      expires_at    INTEGER,
+      external_id   TEXT,
+      handle        TEXT,
+      created_at    TEXT NOT NULL,
+      PRIMARY KEY (user_email, platform)
+    );
     CREATE TABLE IF NOT EXISTS post_metrics (
       post_id    TEXT PRIMARY KEY,
       user_email TEXT NOT NULL REFERENCES users(email) ON DELETE CASCADE,
@@ -455,6 +466,84 @@ export function upsertCreatorPage(email: string, page: CreatorPage): boolean {
       page.enabled ? 1 : 0
     );
   return true;
+}
+
+// --- Connected platform accounts (creator OAuth tokens) ---
+
+export interface PlatformAccount {
+  platform: string;
+  accessToken: string;
+  refreshToken: string | null;
+  expiresAt: number | null;
+  externalId: string | null;
+  handle: string | null;
+  createdAt: string;
+}
+
+export function getPlatformAccount(
+  email: string,
+  platform: string
+): PlatformAccount | null {
+  const row = getDb()
+    .prepare(
+      "SELECT * FROM platform_accounts WHERE user_email = ? AND platform = ?"
+    )
+    .get(email.toLowerCase(), platform) as Record<string, unknown> | undefined;
+  if (!row) return null;
+  return {
+    platform: row.platform as string,
+    accessToken: row.access_token as string,
+    refreshToken: (row.refresh_token as string) ?? null,
+    expiresAt: (row.expires_at as number) ?? null,
+    externalId: (row.external_id as string) ?? null,
+    handle: (row.handle as string) ?? null,
+    createdAt: row.created_at as string,
+  };
+}
+
+export function listPlatformAccounts(
+  email: string
+): { platform: string; handle: string | null; createdAt: string }[] {
+  return getDb()
+    .prepare(
+      `SELECT platform, handle, created_at AS createdAt
+       FROM platform_accounts WHERE user_email = ? ORDER BY platform`
+    )
+    .all(email.toLowerCase()) as unknown as {
+    platform: string;
+    handle: string | null;
+    createdAt: string;
+  }[];
+}
+
+export function upsertPlatformAccount(
+  email: string,
+  acct: Omit<PlatformAccount, "createdAt">
+): void {
+  getDb()
+    .prepare(
+      `INSERT OR REPLACE INTO platform_accounts
+       (user_email, platform, access_token, refresh_token, expires_at, external_id, handle, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+    )
+    .run(
+      email.toLowerCase(),
+      acct.platform,
+      acct.accessToken,
+      acct.refreshToken,
+      acct.expiresAt,
+      acct.externalId,
+      acct.handle,
+      new Date().toISOString()
+    );
+}
+
+export function deletePlatformAccount(email: string, platform: string): void {
+  getDb()
+    .prepare(
+      "DELETE FROM platform_accounts WHERE user_email = ? AND platform = ?"
+    )
+    .run(email.toLowerCase(), platform);
 }
 
 // --- Post metrics (the performance flywheel's raw material) ---

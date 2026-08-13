@@ -638,4 +638,14 @@ export const zh: Record<string, string> = {
   "trust.p2d": "每个内容都会对照取消变现与平台政策触发词进行检查——你比算法更早看到风险。",
   "trust.p3t": "你的声音,强制生效",
   "trust.p3d": "禁用词、语气与 CTA 在每次生成中机械化执行——不是建议,是保证。",
+
+  // Connected accounts
+  "conn.title": "已连接账号",
+  "conn.desc": "连接你的平台账号,排期帖子即可真实发布。X 和 LinkedIn 现已支持文字发布;视频平台将随渲染管线上线。",
+  "conn.connect": "连接",
+  "conn.disconnect": "断开",
+  "conn.connected": "已连接",
+  "conn.notConfigured": "等待运营方配置应用凭据",
+  "conn.disconnected": "账号已断开",
+  "sched.toastDeliveryFailed": "已在本地标记发布,但投递到已连接账号失败",
 };

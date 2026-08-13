@@ -638,4 +638,14 @@ export const pl: Record<string, string> = {
   "trust.p2d": "Każdy materiał jest sprawdzany pod kątem demonetyzacji i zasad platform — ryzyko widzisz przed algorytmem.",
   "trust.p3t": "Twój głos, gwarantowany",
   "trust.p3d": "Zakazane słowa, ton i CTA są egzekwowane mechanicznie przy każdej generacji — to nie sugestia, to gwarancja.",
+
+  // Connected accounts
+  "conn.title": "Połączone konta",
+  "conn.desc": "Połącz swoje platformy, aby zaplanowane posty naprawdę się publikowały. X i LinkedIn publikują dziś tekst; platformy wideo pojawią się wraz z pipeline'em renderowania.",
+  "conn.connect": "Połącz",
+  "conn.disconnect": "Rozłącz",
+  "conn.connected": "Połączono",
+  "conn.notConfigured": "Oczekiwanie na dane aplikacji operatora",
+  "conn.disconnected": "Konto rozłączone",
+  "sched.toastDeliveryFailed": "Opublikowano lokalnie, ale dostarczenie na połączone konto nie powiodło się",
 };

@@ -638,4 +638,14 @@ export const tr: Record<string, string> = {
   "trust.p2d": "Her varlık, gelir kısıtlama ve platform politikası tetikleyicilerine karşı denetlenir — riski algoritmadan önce görürsünüz.",
   "trust.p3t": "Sesiniz, garanti",
   "trust.p3d": "Yasaklı kelimeler, ton ve CTA'lar her üretimde mekanik olarak uygulanır — öneri değil, garanti.",
+
+  // Connected accounts
+  "conn.title": "Bağlı hesaplar",
+  "conn.desc": "Planlanan gönderilerin gerçekten yayınlanması için platformlarınızı bağlayın. X ve LinkedIn bugün metin paylaşıyor; video platformları render hattıyla gelecek.",
+  "conn.connect": "Bağla",
+  "conn.disconnect": "Bağlantıyı kes",
+  "conn.connected": "Bağlı",
+  "conn.notConfigured": "Operatör uygulama kimlik bilgileri bekleniyor",
+  "conn.disconnected": "Hesap bağlantısı kesildi",
+  "sched.toastDeliveryFailed": "Yerelde yayınlandı ancak bağlı hesabınıza teslim edilemedi",
 };
