@@ -289,50 +289,59 @@ export async function llmComplete(
   const openaiKey = resolveField("llm", "openaiApiKey");
 
   if (anthropicKey) {
-    const { default: Anthropic } = await import("@anthropic-ai/sdk");
-    const client = new Anthropic({ apiKey: anthropicKey });
-    // Stream so adaptive thinking + the structured JSON output share a generous
-    // token budget without risking an HTTP timeout or a mid-object truncation
-    // that would silently drop us to the deterministic engine.
-    const stream = client.messages.stream({
-      model: "claude-opus-4-8",
-      max_tokens: 32000,
-      thinking: { type: "adaptive" },
-      system,
-      output_config: { format: { type: "json_schema", schema } },
-      messages: [{ role: "user", content: prompt }],
-    });
-    const res = await stream.finalMessage();
-    const text = res.content
-      .filter((b) => b.type === "text")
-      .map((b) => (b as { text: string }).text)
-      .join("");
-    return { text, engine: "anthropic:claude-opus-4-8" };
+    // Each provider gets its own try/catch so a bad or exhausted key falls
+    // through to the next provider instead of aborting the whole chain.
+    try {
+      const { default: Anthropic } = await import("@anthropic-ai/sdk");
+      const client = new Anthropic({ apiKey: anthropicKey });
+      // Stream so adaptive thinking + the structured JSON output share a
+      // generous token budget without risking an HTTP timeout or a mid-object
+      // truncation that would silently drop us to the deterministic engine.
+      const stream = client.messages.stream({
+        model: "claude-opus-4-8",
+        max_tokens: 32000,
+        thinking: { type: "adaptive" },
+        system,
+        output_config: { format: { type: "json_schema", schema } },
+        messages: [{ role: "user", content: prompt }],
+      });
+      const res = await stream.finalMessage();
+      const text = res.content
+        .filter((b) => b.type === "text")
+        .map((b) => (b as { text: string }).text)
+        .join("");
+      if (text) return { text, engine: "anthropic:claude-opus-4-8" };
+    } catch {
+      /* fall through to the next provider */
+    }
   }
 
   if (xaiKey) {
     // xAI's API is OpenAI-compatible; Grok handles the same JSON contract.
-    const resp = await fetch("https://api.x.ai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${xaiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "grok-4",
-        response_format: { type: "json_object" },
-        messages: [
-          { role: "system", content: system + " Respond with a single JSON object." },
-          { role: "user", content: prompt },
-        ],
-      }),
-    });
-    if (resp.ok) {
-      const data = await resp.json();
-      const text = data?.choices?.[0]?.message?.content;
-      if (text) return { text, engine: "xai:grok-4" };
+    try {
+      const resp = await fetch("https://api.x.ai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${xaiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "grok-4",
+          response_format: { type: "json_object" },
+          messages: [
+            { role: "system", content: system + " Respond with a single JSON object." },
+            { role: "user", content: prompt },
+          ],
+        }),
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        const text = data?.choices?.[0]?.message?.content;
+        if (text) return { text, engine: "xai:grok-4" };
+      }
+    } catch {
+      /* fall through to OpenAI on any xAI failure */
     }
-    // fall through to OpenAI on any xAI failure
   }
 
   if (openaiKey) {
