@@ -694,4 +694,8 @@ export const pl: Record<string, string> = {
   "padt.unlockTitle": "Odblokuj pełny raport z trenerem",
   "padt.unlockDesc": "Zarejestruj się za darmo: przepisane przez AI najsłabsze haki, plan na 30 dni, a twoje hity automatycznie sterują każdym materiałem, który Virafold dla ciebie tworzy.",
   "padt.unlockCta": "Odbierz pełny raport",
+  // Try-generator CTA
+  "tryg.title": "Wpisz jeden pomysł. Wyjdź z tygodniem contentu.",
+  "tryg.sub": "Wpisz dowolny temat lub wklej transkrypcję poniżej, kliknij przycisk i patrz, jak Virafold w kilka sekund wykuwa twoje klipy, karuzelę, newsletter i wątek na X — za darmo, bez rejestracji.",
+  "tryg.btn": "Wykuj mój content teraz",
 };

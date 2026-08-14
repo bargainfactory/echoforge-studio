@@ -694,4 +694,8 @@ export const tr: Record<string, string> = {
   "padt.unlockTitle": "Koçlu tam raporun kilidini açın",
   "padt.unlockDesc": "Ücretsiz kaydolun: en zayıf kancalarınızın yapay zekâ ile yeniden yazımı, 30 günlük plan ve kazananlarınız Virafold'un sizin için ürettiği her varlığı otomatik yönlendirir.",
   "padt.unlockCta": "Tam raporu al",
+  // Try-generator CTA
+  "tryg.title": "Bir fikir yazın. Bir haftalık içerikle çıkın.",
+  "tryg.sub": "Aşağıya bir konu yazın veya transkript yapıştırın, düğmeye basın ve Virafold'un kliplerinizi, carousel'inizi, bülteninizi ve X dizinizi saniyeler içinde dövmesini izleyin — ücretsiz, kayıtsız.",
+  "tryg.btn": "İçeriğimi şimdi üret",
 };

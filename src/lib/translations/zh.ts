@@ -694,4 +694,8 @@ export const zh: Record<string, string> = {
   "padt.unlockTitle": "解锁完整教练报告",
   "padt.unlockDesc": "免费注册即得:AI 改写你最弱的钩子、30 天行动计划,你的爆款还会自动引导 Virafold 为你生成的每个内容。",
   "padt.unlockCta": "获取完整报告",
+  // Try-generator CTA
+  "tryg.title": "输入一个想法,带走一周的内容。",
+  "tryg.sub": "在下方输入任意主题或粘贴文字稿,点击按钮,几秒内看 Virafold 为你锻造短视频脚本、轮播图、新闻通讯和 X 帖子串——免费,无需注册。",
+  "tryg.btn": "立即锻造我的内容",
 };

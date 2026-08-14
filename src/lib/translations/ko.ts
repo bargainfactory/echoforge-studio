@@ -727,4 +727,8 @@ export const ko: Record<string, string> = {
   "padt.unlockTitle": "코치가 포함된 전체 리포트 잠금 해제",
   "padt.unlockDesc": "무료 가입 시: 약한 훅의 AI 재작성, 30일 실행 계획, 그리고 대박 콘텐츠가 Virafold의 모든 생성물을 자동으로 이끕니다.",
   "padt.unlockCta": "전체 리포트 받기",
+  // Try-generator CTA
+  "tryg.title": "아이디어 하나 입력. 일주일치 콘텐츠 획득.",
+  "tryg.sub": "아래에 주제를 입력하거나 대본을 붙여넣고 버튼을 누르면, Virafold가 클립·캐러셀·뉴스레터·X 스레드를 몇 초 만에 만들어냅니다 — 무료, 가입 불필요.",
+  "tryg.btn": "지금 콘텐츠 만들기",
 };

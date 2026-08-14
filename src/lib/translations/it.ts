@@ -694,4 +694,8 @@ export const it: Record<string, string> = {
   "padt.unlockTitle": "Sblocca il report completo con coach",
   "padt.unlockDesc": "Registrati gratis: riscritture IA dei tuoi ganci più deboli, piano di 30 giorni e i tuoi successi guidano automaticamente ogni asset che Virafold crea per te.",
   "padt.unlockCta": "Ottieni il report completo",
+  // Try-generator CTA
+  "tryg.title": "Scrivi un'idea. Porta a casa una settimana di contenuti.",
+  "tryg.sub": "Inserisci un tema o incolla una trascrizione qui sotto, premi il pulsante e guarda Virafold forgiare clip, carosello, newsletter e thread X in pochi secondi — gratis, senza registrazione.",
+  "tryg.btn": "Forgia i miei contenuti",
 };

@@ -727,4 +727,8 @@ export const de: Record<string, string> = {
   "padt.unlockTitle": "Schalte den vollständigen Coach-Report frei",
   "padt.unlockDesc": "Kostenlos registrieren: KI-Neufassungen deiner schwächsten Hooks, ein 30-Tage-Plan, und deine Gewinner steuern automatisch jedes Asset, das Virafold für dich erstellt.",
   "padt.unlockCta": "Vollständigen Report holen",
+  // Try-generator CTA
+  "tryg.title": "Eine Idee eintippen. Mit einer Woche Content rausgehen.",
+  "tryg.sub": "Gib unten ein Thema ein oder füge ein Transkript ein, klick den Button und sieh zu, wie Virafold deine Clips, dein Carousel, deinen Newsletter und deinen X-Thread in Sekunden schmiedet — gratis, ohne Anmeldung.",
+  "tryg.btn": "Meinen Content schmieden",
 };

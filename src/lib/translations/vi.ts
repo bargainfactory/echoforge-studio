@@ -694,4 +694,8 @@ export const vi: Record<string, string> = {
   "padt.unlockTitle": "Mở khóa báo cáo đầy đủ có huấn luyện viên",
   "padt.unlockDesc": "Đăng ký miễn phí: AI viết lại các hook yếu nhất, kế hoạch 30 ngày, và bài thắng của bạn tự động dẫn dắt mọi nội dung Virafold tạo cho bạn.",
   "padt.unlockCta": "Nhận báo cáo đầy đủ",
+  // Try-generator CTA
+  "tryg.title": "Gõ một ý tưởng. Mang về một tuần nội dung.",
+  "tryg.sub": "Nhập chủ đề bất kỳ hoặc dán bản ghi bên dưới, bấm nút và xem Virafold rèn clip, carousel, bản tin và thread X của bạn trong vài giây — miễn phí, không cần đăng ký.",
+  "tryg.btn": "Tạo nội dung của tôi ngay",
 };

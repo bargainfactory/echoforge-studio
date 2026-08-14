@@ -86,9 +86,9 @@ export default function TryGenerator() {
           className="text-center mb-10"
         >
           <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-3">
-            {t("hero.tryTitle")}
+            {t("tryg.title")}
           </h2>
-          <p className="text-cyber-muted max-w-xl mx-auto">{t("hero.trySub")}</p>
+          <p className="text-cyber-muted max-w-xl mx-auto">{t("tryg.sub")}</p>
         </motion.div>
 
         <div className="relative">
@@ -125,7 +125,7 @@ export default function TryGenerator() {
                     className="mt-3 w-full py-3 rounded-xl bg-gradient-to-r from-neon-purple to-electric-blue text-white font-medium text-sm hover:opacity-90 transition-opacity disabled:opacity-60 flex items-center justify-center gap-2"
                   >
                     <Sparkles className="w-4 h-4" />
-                    {stage === "loading" ? t("hero.tryLoading") : t("hero.tryBtn")}
+                    {stage === "loading" ? t("hero.tryLoading") : t("tryg.btn")}
                   </button>
                 </motion.div>
               ) : (

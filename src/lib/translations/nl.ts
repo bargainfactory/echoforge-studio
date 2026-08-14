@@ -694,4 +694,8 @@ export const nl: Record<string, string> = {
   "padt.unlockTitle": "Ontgrendel het volledige coach-rapport",
   "padt.unlockDesc": "Registreer gratis: AI-herschrijvingen van je zwakste hooks, een 30-dagenplan, en je winnaars sturen automatisch elk asset dat Virafold voor je maakt.",
   "padt.unlockCta": "Volledig rapport ophalen",
+  // Try-generator CTA
+  "tryg.title": "Typ één idee. Vertrek met een week aan content.",
+  "tryg.sub": "Voer hieronder een onderwerp in of plak een transcript, klik op de knop en zie Virafold binnen seconden je clips, carrousel, nieuwsbrief en X-thread smeden — gratis, zonder registratie.",
+  "tryg.btn": "Smeed mijn content nu",
 };

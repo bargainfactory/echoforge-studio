@@ -727,4 +727,8 @@ export const en: Record<string, string> = {
   "padt.unlockTitle": "Unlock the full coached report",
   "padt.unlockDesc": "Sign up free: AI rewrites of your weakest hooks, a 30-day action plan, and your winners automatically steer every asset Virafold makes for you.",
   "padt.unlockCta": "Get the full report",
+  // Try-generator CTA
+  "tryg.title": "Type one idea. Walk away with a week of content.",
+  "tryg.sub": "Enter any topic or paste a transcript below, hit the button, and watch Virafold forge your clips, carousel, newsletter, and X thread in seconds — free, no signup.",
+  "tryg.btn": "Forge my content now",
 };

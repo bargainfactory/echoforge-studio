@@ -727,4 +727,8 @@ export const ja: Record<string, string> = {
   "padt.unlockTitle": "コーチ付きフルレポートを解放",
   "padt.unlockDesc": "無料登録で:弱いフックのAI書き直し、30日プラン、そして勝ちコンテンツがVirafoldの生成すべてを自動で導きます。",
   "padt.unlockCta": "フルレポートを入手",
+  // Try-generator CTA
+  "tryg.title": "アイデアを1つ入力。1週間分のコンテンツを持ち帰る。",
+  "tryg.sub": "下にトピックを入力するか台本を貼り付けてボタンを押すだけ。クリップ、カルーセル、ニュースレター、Xスレッドを数秒で生成 — 無料・登録不要。",
+  "tryg.btn": "今すぐコンテンツを生成",
 };

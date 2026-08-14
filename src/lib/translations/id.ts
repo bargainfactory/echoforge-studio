@@ -694,4 +694,8 @@ export const id: Record<string, string> = {
   "padt.unlockTitle": "Buka laporan lengkap dengan pelatih",
   "padt.unlockDesc": "Daftar gratis: penulisan ulang AI untuk hook terlemah Anda, rencana 30 hari, dan konten sukses Anda otomatis memandu setiap aset yang dibuat Virafold.",
   "padt.unlockCta": "Dapatkan laporan lengkap",
+  // Try-generator CTA
+  "tryg.title": "Ketik satu ide. Pulang bawa konten seminggu.",
+  "tryg.sub": "Masukkan topik apa pun atau tempel transkrip di bawah, tekan tombolnya, dan lihat Virafold menempa klip, carousel, newsletter, dan thread X Anda dalam hitungan detik — gratis, tanpa daftar.",
+  "tryg.btn": "Tempa konten saya sekarang",
 };
