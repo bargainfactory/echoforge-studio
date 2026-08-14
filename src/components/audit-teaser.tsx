@@ -20,8 +20,9 @@ interface PublicAudit {
 }
 
 /** Landing-page lead magnet: free deterministic channel audit, no account.
- *  The LLM-coached full report is the signup hook. */
-export default function AuditTeaser() {
+ *  The LLM-coached full report is the signup hook. `embedded` renders it
+ *  inside the hero (no section chrome, no duplicate badge). */
+export default function AuditTeaser({ embedded = false }: { embedded?: boolean }) {
   const { t, locale } = useTranslation();
   const [handle, setHandle] = useState("");
   const [running, setRunning] = useState(false);
@@ -59,24 +60,35 @@ export default function AuditTeaser() {
         : "text-red-400";
 
   return (
-    <section className="py-20 px-4 sm:px-6 lg:px-8" id="audit">
+    <section
+      className={embedded ? "w-full pt-6 pb-2" : "py-20 px-4 sm:px-6 lg:px-8"}
+      id="audit"
+    >
       <div className="max-w-4xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center mb-10"
+          className={embedded ? "text-center mb-6" : "text-center mb-10"}
         >
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-neon-purple/10 border border-neon-purple/30 text-neon-purple text-xs font-medium mb-4">
-            <Gauge className="w-3.5 h-3.5" /> {t("padt.badge")}
-          </div>
-          <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-3">
+          {!embedded && (
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-neon-purple/10 border border-neon-purple/30 text-neon-purple text-xs font-medium mb-4">
+              <Gauge className="w-3.5 h-3.5" /> {t("padt.badge")}
+            </div>
+          )}
+          <h2
+            className={
+              embedded
+                ? "text-2xl sm:text-3xl font-bold text-foreground mb-2"
+                : "text-3xl sm:text-4xl font-bold text-foreground mb-3"
+            }
+          >
             {t("padt.title")}
           </h2>
           <p className="text-cyber-muted max-w-xl mx-auto">{t("padt.sub")}</p>
         </motion.div>
 
-        <div className="bg-cyber-card border border-cyber-border rounded-2xl p-6 sm:p-8">
+        <div className="bg-cyber-card border border-cyber-border rounded-2xl p-6 sm:p-8 text-left">
           <div className="flex flex-col sm:flex-row gap-3">
             <input
               type="text"

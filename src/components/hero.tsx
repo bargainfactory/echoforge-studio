@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { Play, Sparkles, Star } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
 import DemoModal from "@/components/demo-modal";
+import AuditTeaser from "@/components/audit-teaser";
 import { track } from "@/lib/track";
 
 export default function Hero() {
@@ -26,11 +27,15 @@ export default function Hero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-neon-purple/10 border border-neon-purple/20 text-neon-purple text-sm mb-6">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-neon-purple/10 border border-neon-purple/20 text-neon-purple text-sm mb-2">
             <Sparkles className="w-3.5 h-3.5" />
             {t("hero.badge")}
           </div>
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-5">
+
+          {/* The audit lead magnet is the hero's centerpiece, directly under the badge. */}
+          <AuditTeaser embedded />
+
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-5 mt-8">
             {t("hero.title1")}{" "}
             <span className="gradient-text">{t("hero.title2")}</span>
             <br />

@@ -60,7 +60,6 @@ export default function Home() {
       <Navbar />
       <main>
         <Hero />
-        <AuditTeaser />
         <TryGenerator />
         <HowItWorks />
         <Portfolio />
