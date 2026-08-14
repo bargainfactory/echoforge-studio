@@ -34,6 +34,8 @@ export interface Asset {
   content?: string;
   /** Evergreen assets are automatically re-queued after each publish. */
   evergreen?: boolean;
+  /** Set when this asset is one variant of an A/B hook test. */
+  abGroup?: string;
 }
 
 export interface Notification {

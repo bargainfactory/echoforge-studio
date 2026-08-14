@@ -42,7 +42,9 @@ const COMPETITORS: Record<string, Competitor> = {
       { feature: "Owned audience: subscribers, link-in-bio, media kit", them: false, us: true },
       { feature: "Revenue ledger + brand-deal pipeline", them: false, us: true },
       { feature: "Signed content provenance (C2PA-shaped)", them: false, us: true },
-      { feature: "Rendered vertical video clips with burned captions", them: true, us: false },
+      { feature: "Rendered vertical clips with burned-in captions", them: true, us: true },
+      { feature: "Clips picked by YOUR channel's own winning data", them: false, us: true },
+      { feature: "A/B hook testing decided by real metrics", them: false, us: true },
       { feature: "19-language product experience", them: false, us: true },
     ],
     verdict:
@@ -61,6 +63,7 @@ const COMPETITORS: Record<string, Competitor> = {
     rows: [
       { feature: "Generates new assets from one idea/transcript", them: false, us: true },
       { feature: "Auto-distribution of existing videos across platforms", them: true, us: false },
+      { feature: "Renders captioned clips and auto-publishes to YouTube/TikTok", them: false, us: true },
       { feature: "Idea backlog + AI script writing", them: false, us: true },
       { feature: "Brand voice profiles", them: false, us: true },
       { feature: "Content calendar + scheduler", them: true, us: true },

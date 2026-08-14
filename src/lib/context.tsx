@@ -46,6 +46,7 @@ interface AppState {
   approveProject: (id: string) => Promise<void>;
   toggleAssetLike: (id: string) => void;
   editAsset: (id: string, updates: { name?: string; content?: string }) => Promise<Asset | null>;
+  addAssets: (assets: Asset[]) => void;
   regenerateAsset: (id: string, feedback?: string) => Promise<Asset | null>;
   markNotificationRead: (id: string) => void;
   markAllNotificationsRead: () => void;
@@ -249,6 +250,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [addToast]
   );
 
+  // Server-created assets (e.g. A/B hook variants) merged into local state.
+  const addAssets = useCallback((newAssets: Asset[]) => {
+    if (newAssets?.length) setAssets((prev) => [...newAssets, ...prev]);
+  }, []);
+
   // Optimistic local update + persisted PATCH (used by the processing sim).
   const updateProject = useCallback((id: string, updates: Partial<Project>) => {
     setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, ...updates } : p)));
@@ -362,6 +368,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         toggleAssetLike,
         toggleAssetEvergreen,
         editAsset,
+        addAssets,
         regenerateAsset,
         markNotificationRead,
         markAllNotificationsRead,

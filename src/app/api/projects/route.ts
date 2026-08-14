@@ -10,8 +10,10 @@ import {
   getFlags,
   insertNotification,
   listProjects,
+  setProjectMedia,
   setProvenance,
   topPerformers,
+  type TranscriptWord,
 } from "@/lib/server/db";
 import { auditExemplars } from "@/lib/server/audit";
 import { generateAssets } from "@/lib/server/generate";
@@ -104,6 +106,8 @@ export async function POST(req: NextRequest) {
   let fileSize: string | undefined;
   let storagePath: string | undefined;
   let transcribedBy: string | undefined;
+  let transcriptWords: TranscriptWord[] | null = null;
+  let durationSec: number | null = null;
 
   if (contentType.includes("multipart/form-data")) {
     const form = await req.formData();
@@ -145,6 +149,10 @@ export async function POST(req: NextRequest) {
         if (tr) {
           transcript = tr.text;
           transcribedBy = tr.provider;
+          // Word timestamps + duration feed Clip Studio's highlight detection
+          // and caption burning.
+          transcriptWords = tr.words;
+          durationSec = tr.durationSec;
         }
       }
     }
@@ -195,6 +203,13 @@ export async function POST(req: NextRequest) {
     },
     generated
   );
+
+  if (transcriptWords || durationSec) {
+    setProjectMedia(user.email, project.id, {
+      words: transcriptWords,
+      durationSec,
+    });
+  }
 
   // Signed provenance manifest per asset: source hash, engine, action trail.
   const sourceText = `${title}\n${transcript}`;

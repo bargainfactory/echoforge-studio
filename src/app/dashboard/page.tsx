@@ -49,15 +49,19 @@ import {
   DollarSign,
   Mic2,
   Gauge,
+  Scissors,
+  FlaskConical,
 } from "lucide-react";
 import type { Project, Asset } from "@/lib/data";
 import IntegrationsPanel from "@/components/integrations-panel";
 import BrandVoicePanel from "@/components/brand-voice-panel";
+import ClipsTab from "@/components/clips-tab";
 
 type Tab =
   | "Overview"
   | "Ideas"
   | "Projects"
+  | "Clips"
   | "Upload"
   | "Schedule"
   | "Analytics"
@@ -71,6 +75,7 @@ const sidebarItems: { icon: typeof LayoutDashboard; label: Tab; tKey: string }[]
   { icon: LayoutDashboard, label: "Overview", tKey: "dash.overview" },
   { icon: Lightbulb, label: "Ideas", tKey: "dash.ideas" },
   { icon: Film, label: "Projects", tKey: "dash.projects" },
+  { icon: Scissors, label: "Clips", tKey: "dash.clips" },
   { icon: Upload, label: "Upload", tKey: "dash.upload" },
   { icon: Calendar, label: "Schedule", tKey: "dash.schedule" },
   { icon: BarChart3, label: "Analytics", tKey: "dash.analytics" },
@@ -143,6 +148,7 @@ export default function Dashboard() {
     toggleAssetEvergreen,
     editAsset,
     regenerateAsset,
+    addAssets,
     markNotificationRead,
     markAllNotificationsRead,
     addToast,
@@ -248,6 +254,27 @@ export default function Dashboard() {
       addToast(t("asset.regenFailed"), "error");
     }
   }, [viewingAsset, regenerating, regenFeedback, regenerateAsset, addToast, t]);
+
+  const [abBusy, setAbBusy] = useState(false);
+  const handleAbTest = useCallback(async () => {
+    if (!viewingAsset || abBusy) return;
+    setAbBusy(true);
+    try {
+      const res = await fetch(`/api/assets/${viewingAsset.id}/ab`, { method: "POST" });
+      const data = await res.json().catch(() => null);
+      if (res.ok && data?.variant) {
+        addAssets([data.variant]);
+        setViewingAsset({ ...viewingAsset, abGroup: data.original?.abGroup });
+        addToast(t("asset.abCreated"));
+      } else {
+        addToast(data?.error || t("asset.abFailed"), "error");
+      }
+    } catch {
+      addToast(t("asset.abFailed"), "error");
+    } finally {
+      setAbBusy(false);
+    }
+  }, [viewingAsset, abBusy, addAssets, addToast, t]);
 
   const handleSchedule = useCallback(async () => {
     if (!viewingAsset || !scheduleAt) return;
@@ -427,6 +454,7 @@ export default function Dashboard() {
             />
           )}
           {activeTab === "Ideas" && <IdeasTab />}
+          {activeTab === "Clips" && <ClipsTab />}
           {activeTab === "Schedule" && <ScheduleTab />}
           {activeTab === "Analytics" && <AnalyticsTab />}
           {activeTab === "Audit" && <AuditTab />}
@@ -772,6 +800,23 @@ export default function Dashboard() {
                     className="text-xs text-cyber-muted hover:text-foreground transition-colors flex items-center gap-1.5"
                   >
                     <Download className="w-3.5 h-3.5" /> {t("asset.srt")}
+                  </button>
+                  <button
+                    onClick={handleAbTest}
+                    disabled={abBusy || Boolean(viewingAsset.abGroup)}
+                    title={t("asset.abHint")}
+                    className={`text-xs transition-colors flex items-center gap-1.5 ${
+                      viewingAsset.abGroup
+                        ? "text-success"
+                        : "text-cyber-muted hover:text-foreground"
+                    } disabled:cursor-default`}
+                  >
+                    <FlaskConical className={`w-3.5 h-3.5 ${abBusy ? "animate-pulse" : ""}`} />
+                    {viewingAsset.abGroup
+                      ? t("asset.abActive")
+                      : abBusy
+                        ? t("asset.abCreating")
+                        : t("asset.ab")}
                   </button>
                   <button
                     onClick={() => {
@@ -1712,6 +1757,8 @@ function ScheduleTab() {
 const CONN_LABELS: Record<string, string> = {
   x: "X (Twitter)",
   linkedin: "LinkedIn",
+  youtube: "YouTube",
+  tiktok: "TikTok",
 };
 
 interface ConnRow {

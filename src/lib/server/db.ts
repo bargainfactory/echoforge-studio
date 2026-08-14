@@ -218,6 +218,23 @@ function getDb(): DatabaseSync {
       created_at   TEXT NOT NULL,
       sort         INTEGER NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS clips (
+      id          TEXT PRIMARY KEY,
+      user_email  TEXT NOT NULL REFERENCES users(email) ON DELETE CASCADE,
+      project_id  TEXT NOT NULL,
+      title       TEXT NOT NULL,
+      start_sec   REAL NOT NULL,
+      end_sec     REAL NOT NULL,
+      score       INTEGER NOT NULL,
+      reason      TEXT NOT NULL,
+      matched     TEXT,
+      status      TEXT NOT NULL,
+      style       TEXT NOT NULL DEFAULT 'bold',
+      output_path TEXT,
+      error       TEXT,
+      created_at  TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_clips_user ON clips(user_email);
     CREATE INDEX IF NOT EXISTS idx_projects_user ON projects(user_email);
     CREATE INDEX IF NOT EXISTS idx_assets_user ON assets(user_email);
     CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_email);
@@ -227,10 +244,16 @@ function getDb(): DatabaseSync {
   for (const stmt of [
     "ALTER TABLE projects ADD COLUMN transcript TEXT",
     "ALTER TABLE projects ADD COLUMN storage_path TEXT",
+    "ALTER TABLE projects ADD COLUMN transcript_words TEXT",
+    "ALTER TABLE projects ADD COLUMN duration_sec REAL",
     "ALTER TABLE assets ADD COLUMN content TEXT",
     "ALTER TABLE assets ADD COLUMN evergreen INTEGER NOT NULL DEFAULT 0",
+    "ALTER TABLE assets ADD COLUMN ab_group TEXT",
     "ALTER TABLE users ADD COLUMN referral_code TEXT",
     "ALTER TABLE users ADD COLUMN referred_by TEXT",
+    "ALTER TABLE users ADD COLUMN last_brief_at TEXT",
+    "ALTER TABLE scheduled_posts ADD COLUMN clip_id TEXT",
+    "ALTER TABLE scheduled_posts ADD COLUMN external_id TEXT",
   ]) {
     try {
       conn.exec(stmt);
@@ -1079,6 +1102,9 @@ export function deleteProject(email: string, id: string): void {
     .prepare("DELETE FROM assets WHERE project_id = ? AND user_email = ?")
     .run(id, email.toLowerCase());
   conn
+    .prepare("DELETE FROM clips WHERE project_id = ? AND user_email = ?")
+    .run(id, email.toLowerCase());
+  conn
     .prepare("DELETE FROM projects WHERE id = ? AND user_email = ?")
     .run(id, email.toLowerCase());
 }
@@ -1096,6 +1122,7 @@ function mapAsset(row: Record<string, unknown>): Asset {
     liked: Boolean(row.liked),
     content: (row.content as string) ?? undefined,
     evergreen: Boolean(row.evergreen),
+    abGroup: (row.ab_group as string | null) ?? undefined,
   };
 }
 
@@ -1589,6 +1616,8 @@ export interface ScheduledPost {
   scheduledAt: string;
   status: "scheduled" | "published" | "canceled";
   createdAt: string;
+  clipId?: string | null;
+  externalId?: string | null;
 }
 
 function mapScheduled(row: Record<string, unknown>): ScheduledPost {
@@ -1600,6 +1629,8 @@ function mapScheduled(row: Record<string, unknown>): ScheduledPost {
     scheduledAt: row.scheduled_at as string,
     status: row.status as ScheduledPost["status"],
     createdAt: row.created_at as string,
+    clipId: (row.clip_id as string | null) ?? null,
+    externalId: (row.external_id as string | null) ?? null,
   };
 }
 
@@ -1618,8 +1649,8 @@ export function createScheduledPost(
   const now = new Date().toISOString();
   getDb()
     .prepare(
-      `INSERT INTO scheduled_posts (id, user_email, asset_id, asset_name, platform, scheduled_at, status, created_at, sort)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO scheduled_posts (id, user_email, asset_id, asset_name, platform, scheduled_at, status, created_at, sort, clip_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .run(
       post.id,
@@ -1630,9 +1661,33 @@ export function createScheduledPost(
       post.scheduledAt,
       post.status,
       now,
-      Date.now()
+      Date.now(),
+      post.clipId ?? null
     );
   return { ...post, createdAt: now };
+}
+
+/** Records the platform-side id (tweet id, YouTube video id) after delivery,
+ *  which is what the metrics poller keys on. */
+export function setScheduledExternalId(
+  email: string,
+  id: string,
+  externalId: string
+): void {
+  getDb()
+    .prepare("UPDATE scheduled_posts SET external_id = ? WHERE id = ? AND user_email = ?")
+    .run(externalId, id, email.toLowerCase());
+}
+
+/** Published posts that have a platform-side id — the metrics poller's worklist. */
+export function listPublishedWithExternalId(): (ScheduledPost & { userEmail: string })[] {
+  return (
+    getDb()
+      .prepare(
+        "SELECT * FROM scheduled_posts WHERE status = 'published' AND external_id IS NOT NULL"
+      )
+      .all() as Record<string, unknown>[]
+  ).map((row) => ({ ...mapScheduled(row), userEmail: row.user_email as string }));
 }
 
 /** Every still-scheduled post across all users — the scheduler tick's worklist. */
@@ -1699,6 +1754,302 @@ export function setScheduledStatus(
  * so the dashboard is not empty on first login. IDs are regenerated per user so
  * accounts never collide, and asset→project links are preserved.
  */
+// --- Clip Studio ---
+
+/** One transcribed word with start/end seconds — the caption-burn unit. */
+export interface TranscriptWord {
+  w: string;
+  s: number;
+  e: number;
+}
+
+export interface Clip {
+  id: string;
+  projectId: string;
+  title: string;
+  startSec: number;
+  endSec: number;
+  score: number;
+  reason: string;
+  matched: string | null;
+  status: "suggested" | "queued" | "rendering" | "ready" | "failed";
+  style: string;
+  outputPath: string | null;
+  error: string | null;
+  createdAt: string;
+}
+
+function mapClip(row: Record<string, unknown>): Clip {
+  return {
+    id: row.id as string,
+    projectId: row.project_id as string,
+    title: row.title as string,
+    startSec: row.start_sec as number,
+    endSec: row.end_sec as number,
+    score: row.score as number,
+    reason: row.reason as string,
+    matched: (row.matched as string | null) ?? null,
+    status: row.status as Clip["status"],
+    style: row.style as string,
+    outputPath: (row.output_path as string | null) ?? null,
+    error: (row.error as string | null) ?? null,
+    createdAt: row.created_at as string,
+  };
+}
+
+export function insertClip(
+  email: string,
+  c: Omit<Clip, "createdAt" | "outputPath" | "error">
+): Clip {
+  const now = new Date().toISOString();
+  getDb()
+    .prepare(
+      `INSERT INTO clips (id, user_email, project_id, title, start_sec, end_sec, score, reason, matched, status, style, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    )
+    .run(
+      c.id,
+      email.toLowerCase(),
+      c.projectId,
+      c.title,
+      c.startSec,
+      c.endSec,
+      c.score,
+      c.reason,
+      c.matched,
+      c.status,
+      c.style,
+      now
+    );
+  return { ...c, outputPath: null, error: null, createdAt: now };
+}
+
+export function listClips(email: string, projectId: string): Clip[] {
+  return (
+    getDb()
+      .prepare(
+        "SELECT * FROM clips WHERE user_email = ? AND project_id = ? ORDER BY score DESC, start_sec ASC"
+      )
+      .all(email.toLowerCase(), projectId) as Record<string, unknown>[]
+  ).map(mapClip);
+}
+
+export function getClip(email: string, id: string): Clip | null {
+  const row = getDb()
+    .prepare("SELECT * FROM clips WHERE id = ? AND user_email = ?")
+    .get(id, email.toLowerCase()) as Record<string, unknown> | undefined;
+  return row ? mapClip(row) : null;
+}
+
+/** Re-detecting highlights replaces prior *suggestions* only — rendered or
+ *  in-flight clips are user work and survive. */
+export function clearSuggestedClips(email: string, projectId: string): void {
+  getDb()
+    .prepare(
+      "DELETE FROM clips WHERE user_email = ? AND project_id = ? AND status = 'suggested'"
+    )
+    .run(email.toLowerCase(), projectId);
+}
+
+export function updateClip(
+  email: string,
+  id: string,
+  patch: { status?: Clip["status"]; style?: string; outputPath?: string | null; error?: string | null }
+): void {
+  const cur = getClip(email, id);
+  if (!cur) return;
+  getDb()
+    .prepare(
+      "UPDATE clips SET status = ?, style = ?, output_path = ?, error = ? WHERE id = ? AND user_email = ?"
+    )
+    .run(
+      patch.status ?? cur.status,
+      patch.style ?? cur.style,
+      patch.outputPath !== undefined ? patch.outputPath : cur.outputPath,
+      patch.error !== undefined ? patch.error : cur.error,
+      id,
+      email.toLowerCase()
+    );
+}
+
+export function deleteClip(email: string, id: string): void {
+  getDb()
+    .prepare("DELETE FROM clips WHERE id = ? AND user_email = ?")
+    .run(id, email.toLowerCase());
+}
+
+/** The render worker's cross-user worklist, oldest first. */
+export function listQueuedClips(): (Clip & { userEmail: string })[] {
+  return (
+    getDb()
+      .prepare("SELECT * FROM clips WHERE status = 'queued' ORDER BY created_at ASC")
+      .all() as Record<string, unknown>[]
+  ).map((row) => ({ ...mapClip(row), userEmail: row.user_email as string }));
+}
+
+/** Recover clips stuck in 'rendering' after a server restart mid-render. */
+export function requeueStuckRenders(): void {
+  getDb().prepare("UPDATE clips SET status = 'queued' WHERE status = 'rendering'").run();
+}
+
+/** Projects that still have a stored source video — Clip Studio's pick list. */
+export function listProjectsWithMedia(email: string): { id: string; title: string }[] {
+  return getDb()
+    .prepare(
+      "SELECT id, title FROM projects WHERE user_email = ? AND storage_path IS NOT NULL ORDER BY sort DESC"
+    )
+    .all(email.toLowerCase()) as unknown as { id: string; title: string }[];
+}
+
+export function listAllClips(email: string): Clip[] {
+  return (
+    getDb()
+      .prepare("SELECT * FROM clips WHERE user_email = ? ORDER BY created_at DESC")
+      .all(email.toLowerCase()) as Record<string, unknown>[]
+  ).map(mapClip);
+}
+
+export interface ProjectMedia {
+  title: string;
+  transcript: string;
+  storagePath: string | null;
+  words: TranscriptWord[] | null;
+  durationSec: number | null;
+}
+
+export function getProjectMedia(email: string, projectId: string): ProjectMedia | null {
+  const row = getDb()
+    .prepare(
+      "SELECT title, transcript, storage_path, transcript_words, duration_sec FROM projects WHERE id = ? AND user_email = ?"
+    )
+    .get(projectId, email.toLowerCase()) as
+    | {
+        title: string;
+        transcript: string | null;
+        storage_path: string | null;
+        transcript_words: string | null;
+        duration_sec: number | null;
+      }
+    | undefined;
+  if (!row) return null;
+  let words: TranscriptWord[] | null = null;
+  if (row.transcript_words) {
+    try {
+      const parsed = JSON.parse(row.transcript_words);
+      if (Array.isArray(parsed)) words = parsed as TranscriptWord[];
+    } catch {
+      /* treat unparseable words as absent */
+    }
+  }
+  return {
+    title: row.title,
+    transcript: row.transcript ?? "",
+    storagePath: row.storage_path,
+    words,
+    durationSec: row.duration_sec,
+  };
+}
+
+export function setProjectMedia(
+  email: string,
+  projectId: string,
+  media: { words?: TranscriptWord[] | null; durationSec?: number | null }
+): void {
+  const conn = getDb();
+  if (media.words !== undefined) {
+    conn
+      .prepare("UPDATE projects SET transcript_words = ? WHERE id = ? AND user_email = ?")
+      .run(media.words ? JSON.stringify(media.words) : null, projectId, email.toLowerCase());
+  }
+  if (media.durationSec !== undefined) {
+    conn
+      .prepare("UPDATE projects SET duration_sec = ? WHERE id = ? AND user_email = ?")
+      .run(media.durationSec, projectId, email.toLowerCase());
+  }
+}
+
+// --- A/B hook variants ---
+
+export function insertAssetRow(
+  email: string,
+  a: {
+    id: string;
+    projectId: string;
+    name: string;
+    type: string;
+    content: string;
+    abGroup?: string | null;
+  }
+): void {
+  getDb()
+    .prepare(
+      `INSERT INTO assets (id, user_email, project_id, name, type, views, status, liked, content, sort, ab_group)
+       VALUES (?, ?, ?, ?, ?, '0', 'ready', 0, ?, ?, ?)`
+    )
+    .run(a.id, email.toLowerCase(), a.projectId, a.name, a.type, a.content, Date.now(), a.abGroup ?? null);
+}
+
+export function setAssetAbGroup(email: string, id: string, abGroup: string | null): void {
+  getDb()
+    .prepare("UPDATE assets SET ab_group = ? WHERE id = ? AND user_email = ?")
+    .run(abGroup, id, email.toLowerCase());
+}
+
+/** Measured views per variant for every undecided A/B group, across users. */
+export function abGroupStats(): {
+  userEmail: string;
+  abGroup: string;
+  assetId: string;
+  assetName: string;
+  views: number;
+  measuredPosts: number;
+}[] {
+  return getDb()
+    .prepare(
+      `SELECT a.user_email AS userEmail, a.ab_group AS abGroup, a.id AS assetId, a.name AS assetName,
+              COALESCE(SUM(pm.views), 0) AS views, COUNT(pm.post_id) AS measuredPosts
+       FROM assets a
+       LEFT JOIN scheduled_posts sp ON sp.asset_id = a.id AND sp.user_email = a.user_email AND sp.status = 'published'
+       LEFT JOIN post_metrics pm ON pm.post_id = sp.id AND pm.user_email = a.user_email
+       WHERE a.ab_group IS NOT NULL AND a.ab_group NOT LIKE '%:decided'
+       GROUP BY a.user_email, a.ab_group, a.id, a.name`
+    )
+    .all() as unknown as {
+    userEmail: string;
+    abGroup: string;
+    assetId: string;
+    assetName: string;
+    views: number;
+    measuredPosts: number;
+  }[];
+}
+
+export function markAbGroupDecided(userEmail: string, abGroup: string): void {
+  getDb()
+    .prepare("UPDATE assets SET ab_group = ? WHERE user_email = ? AND ab_group = ?")
+    .run(`${abGroup}:decided`, userEmail.toLowerCase(), abGroup);
+}
+
+// --- Weekly operator brief ---
+
+/** Users due a weekly brief: active accounts not briefed in the last 6.5 days. */
+export function listUsersDueBrief(): { email: string; name: string }[] {
+  const cutoff = new Date(Date.now() - 6.5 * 24 * 60 * 60 * 1000).toISOString();
+  return getDb()
+    .prepare(
+      `SELECT email, name FROM users
+       WHERE (last_brief_at IS NULL OR last_brief_at < ?)
+         AND EXISTS (SELECT 1 FROM projects p WHERE p.user_email = users.email)`
+    )
+    .all(cutoff) as unknown as { email: string; name: string }[];
+}
+
+export function setLastBriefAt(email: string): void {
+  getDb()
+    .prepare("UPDATE users SET last_brief_at = ? WHERE email = ?")
+    .run(new Date().toISOString(), email.toLowerCase());
+}
+
 export function seedUser(email: string): void {
   const lower = email.toLowerCase();
   const idMap = new Map<string, string>();

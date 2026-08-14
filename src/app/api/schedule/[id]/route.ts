@@ -3,6 +3,7 @@ import { getSessionUser } from "@/lib/server/auth";
 import {
   getAsset,
   getScheduledPost,
+  setScheduledExternalId,
   setScheduledStatus,
   listScheduledPosts,
   updateScheduledPost,
@@ -68,12 +69,16 @@ export async function POST(
   const status = action === "cancel" ? "canceled" : "published";
 
   // Real delivery on publish when the creator has connected this platform.
-  let delivery: { ok: boolean; detail: string } | null = null;
+  let delivery: { ok: boolean; detail: string; externalId?: string } | null = null;
   if (status === "published") {
     const pending = getScheduledPost(user.email, id);
     const asset = pending ? getAsset(user.email, pending.assetId) : null;
     if (pending && asset?.content) {
       delivery = await deliverPost(user.email, pending.platform, asset.content);
+      // Platform-side id → the metrics poller reads performance back later.
+      if (delivery?.externalId) {
+        setScheduledExternalId(user.email, id, delivery.externalId);
+      }
     }
   }
 

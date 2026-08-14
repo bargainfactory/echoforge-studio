@@ -5,8 +5,10 @@
 ## What Virafold does
 
 - Idea backlog with hook-potential scoring; one click writes a full long-form script, another generates the multi-format asset set.
+- Clip Studio: AI finds the most clippable moments in an uploaded video — chosen to match the creator's own proven winners from their audit and post metrics — then renders 1080x1920 vertical clips with burned-in captions (three caption styles) and schedules them straight to YouTube Shorts or TikTok.
+- A/B hook testing: one click clones any asset with an alternate hook; both variants are scheduled and real platform metrics decide the winner, which then steers future generations.
 - Brand voice profiles: tone, audience, default CTA, hashtags, banned words, and emoji policy are enforced on every generation.
-- Performance flywheel: creators record real post results (views, likes, comments); their proven top-performing hooks are automatically fed into future generations as exemplars.
+- Performance flywheel: real post metrics flow back automatically from connected X and YouTube accounts (manual entry also supported); proven top-performing hooks are automatically fed into future generations as exemplars. A weekly operator brief email summarizes what won, what is queued, and revenue.
 - Scheduling: a month-view content calendar with a background scheduler that delivers due posts, plus evergreen recycling (top assets automatically re-queue after each publish).
 - Owned audience: subscriber list with import/export, a hosted link-in-bio page (virafold.ai/c/[handle]), an auto-generated media kit with sponsorship rates (virafold.ai/kit/[handle]), and newsletter broadcasts.
 - Business management: a revenue ledger by income stream and a brand-deal pipeline (lead → negotiating → booked → delivered → paid); paid deals book themselves into the ledger.

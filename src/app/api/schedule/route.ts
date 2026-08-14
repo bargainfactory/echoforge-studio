@@ -33,8 +33,11 @@ export async function POST(req: NextRequest) {
   const assetName = String(b?.assetName ?? "Untitled asset");
   const platform = String(b?.platform ?? "");
   const scheduledAt = String(b?.scheduledAt ?? "");
+  // Rendered clips schedule as video uploads instead of text posts.
+  const clipId = b?.clipId ? String(b.clipId) : null;
 
-  if (!assetId) return NextResponse.json({ error: "Missing asset" }, { status: 400 });
+  if (!assetId && !clipId)
+    return NextResponse.json({ error: "Missing asset" }, { status: 400 });
   if (!PLATFORMS.has(platform))
     return NextResponse.json({ error: "Unknown platform" }, { status: 400 });
   if (!scheduledAt)
@@ -42,11 +45,12 @@ export async function POST(req: NextRequest) {
 
   const post = createScheduledPost(user.email, {
     id: `sch-${crypto.randomUUID()}`,
-    assetId,
+    assetId: assetId || `clip:${clipId}`,
     assetName,
     platform,
     scheduledAt,
     status: "scheduled",
+    clipId,
   });
   return NextResponse.json({ post }, { status: 201 });
 }
