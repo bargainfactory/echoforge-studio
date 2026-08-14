@@ -4,15 +4,28 @@
  * The show-don't-tell hero centerpiece: one recording visually fanning out
  * into a Short, a carousel, a newsletter, and a thread. Pure CSS/SVG mockups —
  * no image assets, so it ships weightless and adapts to the theme.
- * Styled to the approved diagram: pill waveform, vine-like connector curves,
- * four roomy output cards with labels inside.
+ * Faithful to the approved diagram: symmetric purple→blue waveform, curved
+ * connector vines ending in node dots, and four glassy output cards.
  */
 
 import { motion } from "framer-motion";
-import { FileVideo, Play, Mail, MessageSquare, GalleryHorizontalEnd } from "lucide-react";
+import { FileVideo, Play, Mail, Layers, MessageCircle } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
 
-const WAVE = [8, 18, 26, 14, 20, 30, 16, 10, 22, 18, 28, 12, 20, 8, 14];
+// Symmetric audio waveform silhouette (center-out bar heights, px).
+const WAVE = [
+  4, 6, 10, 16, 8, 22, 30, 14, 38, 24, 10, 30, 44, 20, 12, 34, 26, 8, 18, 36,
+  46, 22, 12, 28, 38, 16, 8, 20, 30, 10, 6, 4,
+];
+
+/** Per-bar color blend from neon purple to electric blue, left → right. */
+function barColor(i: number, n: number): string {
+  const t = i / (n - 1);
+  const a = [168, 85, 247]; // #a855f7
+  const b = [59, 130, 246]; // #3b82f6
+  const c = a.map((v, k) => Math.round(v + (b[k] - v) * t));
+  return `rgb(${c[0]}, ${c[1]}, ${c[2]})`;
+}
 
 function fade(delay: number) {
   return {
@@ -31,147 +44,125 @@ export default function TransformationVisual() {
       {/* Source: one recording */}
       <motion.div
         {...fade(0.1)}
-        className="mx-auto w-full max-w-[380px] bg-cyber-card border border-cyber-border rounded-2xl p-5 shadow-lg shadow-neon-purple/5"
+        className="mx-auto w-full max-w-[440px] bg-cyber-card border border-neon-purple/25 rounded-3xl p-6 shadow-[0_0_35px_rgba(168,85,247,0.12)]"
       >
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-11 h-11 rounded-xl bg-neon-purple/20 border border-neon-purple/40 flex items-center justify-center">
-            <FileVideo className="w-5 h-5 text-neon-purple" />
+        <div className="flex items-center gap-4 mb-5">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-neon-purple to-fuchsia-600 shadow-lg shadow-neon-purple/30 flex items-center justify-center">
+            <FileVideo className="w-6 h-6 text-white" />
           </div>
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-foreground truncate">{t("tv.source")}</p>
-            <p className="text-[11px] text-cyber-muted mt-0.5">48:12 · podcast_ep24.mp4</p>
+            <p className="text-lg font-semibold text-foreground truncate">{t("tv.source")}</p>
+            <p className="text-xs text-cyber-muted mt-0.5">48:12 · podcast_ep24.mp4</p>
           </div>
         </div>
-        <div className="flex items-end justify-between gap-1.5 h-11">
+        {/* Mirrored waveform, purple → blue */}
+        <div className="flex items-center justify-between gap-[3px] h-14">
           {WAVE.map((h, i) => (
             <div
               key={i}
-              className="w-3 rounded-full bg-gradient-to-t from-electric-blue/80 to-neon-purple/90"
-              style={{ height: `${Math.max(10, h * 1.4)}px` }}
+              className="flex-1 max-w-[5px] rounded-full"
+              style={{ height: `${h}px`, backgroundColor: barColor(i, WAVE.length) }}
             />
           ))}
         </div>
       </motion.div>
 
-      {/* Vine-like fan-out connectors */}
-      <motion.div {...fade(0.25)} className="flex justify-center -mt-0.5">
+      {/* Connector vines with node dots */}
+      <motion.div {...fade(0.25)} className="flex justify-center -mt-1">
         <svg
           width="100%"
-          height="64"
-          viewBox="0 0 600 64"
+          height="88"
+          viewBox="0 0 600 88"
           fill="none"
           preserveAspectRatio="xMidYMid meet"
-          className="max-w-[600px] opacity-80"
+          className="max-w-[600px]"
         >
-          <path
-            d="M300 2 C 300 26, 160 18, 96 58 C 90 62, 84 60, 82 56"
-            stroke="#a855f7"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-          />
-          <path
-            d="M300 2 C 300 30, 250 26, 230 56 C 227 61, 221 61, 219 57"
-            stroke="#a855f7"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-          />
-          <path
-            d="M300 2 C 300 30, 350 26, 370 56 C 373 61, 379 61, 381 57"
-            stroke="#a855f7"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-          />
-          <path
-            d="M300 2 C 300 26, 440 18, 504 58 C 510 62, 516 60, 518 56"
-            stroke="#a855f7"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-          />
+          <path d="M283 0 C 272 42, 145 30, 80 70" stroke="#9061f9" strokeWidth="2.4" strokeLinecap="round" opacity="0.9" />
+          <path d="M294 0 C 291 46, 236 40, 227 70" stroke="#9061f9" strokeWidth="2.4" strokeLinecap="round" opacity="0.9" />
+          <path d="M306 0 C 309 46, 364 40, 373 70" stroke="#9061f9" strokeWidth="2.4" strokeLinecap="round" opacity="0.9" />
+          <path d="M317 0 C 328 42, 455 30, 520 70" stroke="#9061f9" strokeWidth="2.4" strokeLinecap="round" opacity="0.9" />
+          {[80, 227, 373, 520].map((x) => (
+            <circle key={x} cx={x} cy="74" r="5" fill="#a855f7" opacity="0.95" />
+          ))}
         </svg>
       </motion.div>
 
       {/* Outputs: the month of content */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-1">
-        {/* Short — 9:16 with caption bar */}
-        <motion.div
-          {...fade(0.35)}
-          className="bg-cyber-card border border-cyber-border rounded-2xl p-3 flex flex-col"
-        >
-          <div className="relative flex-1 min-h-[104px] rounded-xl bg-gradient-to-b from-neon-purple/35 to-cyber-dark border border-cyber-border overflow-hidden">
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-8 h-8 rounded-full bg-white/15 backdrop-blur flex items-center justify-center">
-                <Play className="w-3.5 h-3.5 text-white fill-white ml-0.5" />
+        {/* YouTube Short — glowing thumbnail, ring play, progress bar */}
+        <motion.div {...fade(0.35)} className="flex flex-col">
+          <div className="bg-cyber-card border border-cyber-border rounded-3xl p-3 flex-1">
+            <div className="relative h-full min-h-[120px] rounded-2xl overflow-hidden bg-gradient-to-b from-neon-purple/60 via-purple-800/50 to-purple-950/60">
+              <div className="absolute inset-0 opacity-40 bg-[radial-gradient(ellipse_at_top,rgba(216,180,254,0.5),transparent_60%)]" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-12 h-12 rounded-full border-2 border-white/90 flex items-center justify-center">
+                  <Play className="w-4.5 h-4.5 text-white fill-white ml-0.5" />
+                </div>
+              </div>
+              <div className="absolute bottom-3 inset-x-3 h-1.5 rounded-full bg-white/20">
+                <div className="h-full w-2/5 rounded-full bg-neon-purple" />
               </div>
             </div>
-            <div className="absolute bottom-2.5 inset-x-2.5 space-y-1">
-              <div className="mx-auto w-4/5 h-2 rounded-full bg-white/90" />
-              <div className="mx-auto w-1/2 h-1.5 rounded-full bg-white/50" />
-            </div>
           </div>
-          <p className="text-[11px] text-cyber-muted text-center mt-2.5">{t("tv.short")}</p>
+          <p className="text-sm text-foreground/85 text-center mt-3">{t("tv.short")}</p>
         </motion.div>
 
-        {/* Carousel — slides with dots */}
-        <motion.div
-          {...fade(0.45)}
-          className="bg-cyber-card border border-cyber-border rounded-2xl p-3 flex flex-col"
-        >
-          <div className="flex-1 min-h-[104px] rounded-xl bg-cyber-dark border border-cyber-border p-2.5 flex flex-col justify-between">
-            <GalleryHorizontalEnd className="w-4 h-4 text-electric-blue" />
-            <div className="space-y-1.5">
-              <div className="w-full h-1.5 rounded-full bg-foreground/40" />
-              <div className="w-2/3 h-1.5 rounded-full bg-foreground/25" />
+        {/* Carousel — gradient headline bar, layers, dots */}
+        <motion.div {...fade(0.45)} className="flex flex-col">
+          <div className="bg-cyber-card border border-cyber-border rounded-3xl p-4 flex-1 flex flex-col min-h-[132px]">
+            <div className="w-full h-2.5 rounded-full bg-gradient-to-r from-neon-purple to-electric-blue" />
+            <div className="w-3/4 h-2 rounded-full bg-foreground/30 mt-2.5" />
+            <div className="w-1/2 h-2 rounded-full bg-foreground/20 mt-2" />
+            <div className="flex-1 flex items-center justify-center py-2">
+              <Layers className="w-9 h-9 text-electric-blue" />
             </div>
-            <div className="flex justify-center gap-1">
+            <div className="flex justify-center gap-1.5">
               {[0, 1, 2].map((i) => (
                 <div
                   key={i}
-                  className={`w-1.5 h-1.5 rounded-full ${i === 0 ? "bg-electric-blue" : "bg-cyber-muted/40"}`}
+                  className={`w-2 h-2 rounded-full ${i === 0 ? "bg-electric-blue" : "bg-cyber-muted/40"}`}
                 />
               ))}
             </div>
           </div>
-          <p className="text-[11px] text-cyber-muted text-center mt-2.5">{t("tv.carousel")}</p>
+          <p className="text-sm text-foreground/85 text-center mt-3">{t("tv.carousel")}</p>
         </motion.div>
 
-        {/* Newsletter — lines + button */}
-        <motion.div
-          {...fade(0.55)}
-          className="bg-cyber-card border border-cyber-border rounded-2xl p-3 flex flex-col"
-        >
-          <div className="flex-1 min-h-[104px] rounded-xl bg-cyber-dark border border-cyber-border p-2.5 flex flex-col gap-1.5">
-            <Mail className="w-4 h-4 text-neon-purple" />
-            <div className="w-full h-1.5 rounded-full bg-foreground/40" />
-            <div className="w-5/6 h-1.5 rounded-full bg-foreground/25" />
-            <div className="w-full h-1.5 rounded-full bg-foreground/25" />
-            <div className="mt-auto w-3/5 h-3.5 rounded-md bg-gradient-to-r from-neon-purple to-electric-blue" />
+        {/* Newsletter — envelope, copy lines, gradient send bar */}
+        <motion.div {...fade(0.55)} className="flex flex-col">
+          <div className="bg-cyber-card border border-cyber-border rounded-3xl p-4 flex-1 flex flex-col min-h-[132px]">
+            <div className="flex-1 flex items-center justify-center py-1">
+              <Mail className="w-11 h-11 text-neon-purple" strokeWidth={1.7} />
+            </div>
+            <div className="w-full h-2 rounded-full bg-foreground/30" />
+            <div className="w-4/5 h-2 rounded-full bg-foreground/20 mt-2" />
+            <div className="w-3/5 h-2 rounded-full bg-foreground/15 mt-2" />
+            <div className="w-full h-3 rounded-full bg-foreground/15 mt-3 overflow-hidden">
+              <div className="h-full w-3/5 rounded-full bg-gradient-to-r from-neon-purple to-electric-blue" />
+            </div>
           </div>
-          <p className="text-[11px] text-cyber-muted text-center mt-2.5">{t("tv.newsletter")}</p>
+          <p className="text-sm text-foreground/85 text-center mt-3">{t("tv.newsletter")}</p>
         </motion.div>
 
-        {/* Thread — avatar + stacked posts */}
-        <motion.div
-          {...fade(0.65)}
-          className="bg-cyber-card border border-cyber-border rounded-2xl p-3 flex flex-col"
-        >
-          <div className="flex-1 min-h-[104px] rounded-xl bg-cyber-dark border border-cyber-border p-2.5 flex flex-col gap-1.5">
-            <div className="flex items-center gap-1.5">
-              <div className="w-4 h-4 rounded-full bg-gradient-to-br from-neon-purple to-electric-blue" />
-              <div className="w-2/3 h-1.5 rounded-full bg-foreground/40" />
+        {/* X Thread — X badge, post lines, reply bubble */}
+        <motion.div {...fade(0.65)} className="flex flex-col">
+          <div className="bg-cyber-card border border-cyber-border rounded-3xl p-4 flex-1 flex flex-col min-h-[132px]">
+            <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center mb-3">
+              <span className="text-white font-extrabold text-lg leading-none">𝕏</span>
             </div>
-            <div className="w-full h-1.5 rounded-full bg-foreground/25" />
-            <div className="w-4/5 h-1.5 rounded-full bg-foreground/25" />
-            <div className="border-l-2 border-cyber-muted/30 ml-2 pl-2 space-y-1.5 mt-0.5">
-              <div className="w-3/4 h-1.5 rounded-full bg-foreground/20" />
-              <div className="w-2/3 h-1.5 rounded-full bg-foreground/20" />
+            <div className="w-full h-2 rounded-full bg-foreground/30" />
+            <div className="w-5/6 h-2 rounded-full bg-foreground/22 mt-2" />
+            <div className="w-2/3 h-2 rounded-full bg-foreground/18 mt-2" />
+            <div className="flex items-center gap-2 mt-auto pt-3">
+              <MessageCircle className="w-5 h-5 text-neon-purple" strokeWidth={1.8} />
+              <div className="w-1/2 h-2 rounded-full bg-foreground/20" />
             </div>
-            <MessageSquare className="w-3.5 h-3.5 text-cyber-muted mt-auto" />
           </div>
-          <p className="text-[11px] text-cyber-muted text-center mt-2.5">{t("tv.thread")}</p>
+          <p className="text-sm text-foreground/85 text-center mt-3">{t("tv.thread")}</p>
         </motion.div>
       </div>
 
-      <motion.p {...fade(0.75)} className="text-center text-xs text-cyber-muted mt-4">
+      <motion.p {...fade(0.75)} className="text-center text-sm text-cyber-muted mt-5">
         {t("tv.caption")}
       </motion.p>
     </div>
