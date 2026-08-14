@@ -1,7 +1,7 @@
 export const ar: Record<string, string> = {
   // Nav
-  "nav.services": "الخدمات",
-  "nav.portfolio": "أعمالنا",
+  "nav.services": "المنتج",
+  "nav.portfolio": "أمثلة",
   "nav.howItWorks": "كيف يعمل",
   "nav.pricing": "الأسعار",
   "nav.stories": "قصص النجاح",
@@ -75,7 +75,7 @@ export const ar: Record<string, string> = {
   // Pricing
   "pricing.title1": "ابدأ مجاناً.",
   "pricing.title2": "توسّع عند الاستعداد.",
-  "pricing.description": "جرّب Virafold بدون أي مخاطرة — لا حاجة لبطاقة ائتمان. قم بالترقية عندما تكون مستعداً لإزالة العلامة المائية وفتح خط الإنتاج الكامل.",
+  "pricing.description": "رفع واحد — شهر كامل من المحتوى الجاهز للنشر. أنت توافق على كل أصل قبل نشره. ابدأ مجانًا ووسّع عند الحاجة.",
   "pricing.mostPopular": "الأكثر شعبية",
   "pricing.noCard": "لا حاجة لبطاقة",
   "pricing.forever": "للأبد",
@@ -314,7 +314,7 @@ export const ar: Record<string, string> = {
 
   // Language
   "lang.switchLanguage": "اللغة",
-  "pricing.managedNote": "نتولّى العمل نيابةً عنك، وليس تطبيقًا آخر عليك إدارته — تخضع كل مادة لمراجعة بشرية قبل تسليمها، ضمن مدة إنجاز مضمونة.",
+  "pricing.managedNote": "أنشئ وراجع ووافق — ثم ينشر المجدول المدمج نيابة عنك تلقائيًا. تبقى أنت المتحكم في كل أصل.",
   "pricing.liteName": "Lite",
   "pricing.liteDesc": "نقطة انطلاق بلا التزامات لصنّاع المحتوى المستقلين",
   "pricing.clips160": "أكثر من 160 مقطعًا",
@@ -408,7 +408,7 @@ export const ar: Record<string, string> = {
   "pricing.oneoffCourseItems": "دورة كاملة ← أكثر من 100 أصل",
   "finalCta.title1": "جاهز لتحويل فيديو واحد إلى",
   "finalCta.title2": "محتوى شهر كامل؟",
-  "finalCta.sub": "ابدأ مجاناً — بلا بطاقة وبلا مخاطرة. ارفع مرة واحدة وشاهد Virafold يتولّى الباقي، مع مراجعة بشرية قبل أن يُنشر أي شيء.",
+  "finalCta.sub": "ابدأ مجانًا — بلا بطاقة وبلا مخاطرة. ارفع مرة واحدة، وراجع ما ينشئه Virafold، ووافق عليه للنشر.",
   "finalCta.button": "ابدأ صناعة المحتوى",
   "finalCta.secondary": "اطّلع على الأسعار",
   "blog.related": "مقالات ذات صلة",

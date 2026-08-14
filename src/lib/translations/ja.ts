@@ -1,7 +1,7 @@
 export const ja: Record<string, string> = {
   // Nav
-  "nav.services": "サービス",
-  "nav.portfolio": "ポートフォリオ",
+  "nav.services": "プロダクト",
+  "nav.portfolio": "事例",
   "nav.howItWorks": "仕組み",
   "nav.pricing": "料金",
   "nav.stories": "成功事例",
@@ -75,7 +75,7 @@ export const ja: Record<string, string> = {
   // Pricing
   "pricing.title1": "無料で始める。",
   "pricing.title2": "準備ができたらスケールアップ。",
-  "pricing.description": "Virafoldをリスクゼロでお試しください — クレジットカード不要。ウォーターマークを削除してフルパイプラインを解放する準備ができたらアップグレードしてください。",
+  "pricing.description": "1回のアップロードで、1か月分の投稿可能なコンテンツに。公開前にすべてのアセットをあなたが承認します。無料で始めて、必要に応じてスケール。",
   "pricing.mostPopular": "最も人気",
   "pricing.noCard": "カード不要",
   "pricing.forever": "永久",
@@ -314,7 +314,7 @@ export const ja: Record<string, string> = {
 
   // Language
   "lang.switchLanguage": "言語",
-  "pricing.managedNote": "自分で動かすアプリではなく、丸ごとお任せ。すべてのアセットは納品前に人の目でチェックし、確実な納期でお届けします。",
+  "pricing.managedNote": "生成 → 確認 → 承認。あとは内蔵スケジューラーが自動で配信します。すべてのアセットはあなたの管理下に。",
   "pricing.liteName": "Lite",
   "pricing.liteDesc": "個人クリエイターが気軽に始められる入り口",
   "pricing.clips160": "160本以上のクリップ",
@@ -408,7 +408,7 @@ export const ja: Record<string, string> = {
   "pricing.oneoffCourseItems": "講座まるごと → 素材100点以上",
   "finalCta.title1": "1本の動画を",
   "finalCta.title2": "1か月分のコンテンツに変えませんか?",
-  "finalCta.sub": "無料でスタート、カード不要・リスクなし。一度アップロードすれば、あとはVirafoldにお任せ。公開前にはすべて人の目でチェックします。",
+  "finalCta.sub": "無料で始められます — カード不要、リスクなし。一度アップロードして、Virafoldが生成した内容を確認し、承認して公開するだけ。",
   "finalCta.button": "コンテンツ制作を始める",
   "finalCta.secondary": "料金を見る",
   "blog.related": "関連記事",

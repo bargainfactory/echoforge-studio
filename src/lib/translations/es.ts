@@ -1,7 +1,7 @@
 export const es: Record<string, string> = {
   // Nav
-  "nav.services": "Servicios",
-  "nav.portfolio": "Portafolio",
+  "nav.services": "Producto",
+  "nav.portfolio": "Ejemplos",
   "nav.howItWorks": "Cómo Funciona",
   "nav.pricing": "Precios",
   "nav.stories": "Historias",
@@ -75,7 +75,7 @@ export const es: Record<string, string> = {
   // Pricing
   "pricing.title1": "Empieza Gratis.",
   "pricing.title2": "Escala Cuando Estés Listo.",
-  "pricing.description": "Prueba Virafold sin ningún riesgo — no se necesita tarjeta de crédito. Actualiza cuando estés listo para eliminar la marca de agua y desbloquear el pipeline completo.",
+  "pricing.description": "Una subida — un mes de contenido listo para publicar. Tú apruebas cada recurso antes de publicarse. Empieza gratis y escala cuando quieras.",
   "pricing.mostPopular": "Más Popular",
   "pricing.noCard": "Sin Tarjeta Requerida",
   "pricing.forever": "siempre",
@@ -314,7 +314,7 @@ export const es: Record<string, string> = {
 
   // Language
   "lang.switchLanguage": "Idioma",
-  "pricing.managedNote": "Lo hacemos por ti, no es otra app que gestionar: cada recurso pasa por revisión humana antes de entregarse, con un plazo garantizado.",
+  "pricing.managedNote": "Genera, revisa, aprueba — y el programador integrado lo publica por ti en piloto automático. Tú mantienes el control de cada recurso.",
   "pricing.liteName": "Lite",
   "pricing.liteDesc": "Un punto de partida sin compromiso para creadores independientes",
   "pricing.clips160": "Más de 160 clips",
@@ -408,7 +408,7 @@ export const es: Record<string, string> = {
   "pricing.oneoffCourseItems": "Curso completo → más de 100 recursos",
   "finalCta.title1": "¿Listo para convertir un vídeo en",
   "finalCta.title2": "un mes de contenido?",
-  "finalCta.sub": "Empieza gratis, sin tarjeta ni riesgo. Sube tu vídeo una vez y deja que Virafold haga el resto, con revisión humana antes de publicar nada.",
+  "finalCta.sub": "Empieza gratis — sin tarjeta ni riesgo. Sube una vez, revisa lo que Virafold crea y apruébalo para publicar.",
   "finalCta.button": "Empieza a forjar contenido",
   "finalCta.secondary": "Ver precios",
   "blog.related": "Artículos relacionados",

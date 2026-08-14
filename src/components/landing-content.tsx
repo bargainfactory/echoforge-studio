@@ -6,7 +6,6 @@ import Portfolio from "@/components/portfolio";
 import Services from "@/components/services";
 import SuccessStories from "@/components/success-stories";
 import Pricing from "@/components/pricing";
-import DashboardTeaser from "@/components/dashboard-teaser";
 import TrustPillars from "@/components/trust-pillars";
 import FinalCta from "@/components/final-cta";
 import BlogPreview from "@/components/blog-preview";
@@ -58,16 +57,17 @@ export default function LandingContent() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
       <Navbar />
+      {/* Narrative order: promise → how → feel it → see it → what's inside →
+          why trust it → who wins with it → price → close. One CTA per beat. */}
       <main>
         <Hero />
-        <TryGenerator />
         <HowItWorks />
+        <TryGenerator />
         <Portfolio />
         <Services />
-        <SuccessStories />
         <TrustPillars />
+        <SuccessStories />
         <Pricing />
-        <DashboardTeaser />
         <FinalCta />
         <BlogPreview />
       </main>

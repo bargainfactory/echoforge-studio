@@ -1,7 +1,7 @@
 export const en: Record<string, string> = {
   // Nav
-  "nav.services": "Services",
-  "nav.portfolio": "Portfolio",
+  "nav.services": "Product",
+  "nav.portfolio": "Examples",
   "nav.howItWorks": "How It Works",
   "nav.pricing": "Pricing",
   "nav.stories": "Stories",
@@ -15,7 +15,7 @@ export const en: Record<string, string> = {
   "hero.title1": "One Video.",
   "hero.title2": "30+ Assets.",
   "hero.title3": "Zero Face Required.",
-  "hero.description": "One recording in, a month of content out. We turn your podcast or video into 30+ ready-to-post assets — shorts, carousels, newsletters, threads — human-reviewed before they ship.",
+  "hero.description": "One recording in, a month of content out. Virafold turns your podcast or video into 30+ ready-to-post assets — shorts, carousels, newsletters, threads — and you approve everything before it ships.",
   "hero.cta1": "Start Forging Content",
   "hero.cta2": "See How It Works",
   "hero.noCard": "Free plan · no credit card required",
@@ -83,13 +83,13 @@ export const en: Record<string, string> = {
   "hiw.step5Title": "Review & Approve",
   "hiw.step5Desc": "Preview all assets in your dashboard. Request revisions or approve with one click.",
   "hiw.step6Title": "Auto-Publish",
-  "hiw.step6Desc": "Approved content is scheduled and published via Zapier hooks to all platforms.",
+  "hiw.step6Desc": "Approved content is scheduled and delivered to your connected platforms automatically.",
 
   // Pricing
   "pricing.title1": "Start Free.",
   "pricing.title2": "Scale When Ready.",
-  "pricing.description": "One upload in — a month of finished, ready-to-post content out. Done-for-you and human-reviewed. Start free, scale when you're ready.",
-  "pricing.managedNote": "Done-for-you, not another app to run — every asset is human-reviewed before it ships, on a guaranteed turnaround.",
+  "pricing.description": "One upload in — a month of ready-to-post content out. You approve every asset before it ships. Start free, scale when you're ready.",
+  "pricing.managedNote": "Generate, review, approve — then the built-in scheduler ships it for you on autopilot. You stay in control of every asset.",
   "pricing.monthlyLabel": "Monthly",
   "pricing.annualLabel": "Annual",
   "pricing.annualSave": "2 months free",
@@ -335,7 +335,7 @@ export const en: Record<string, string> = {
   "footer.termsOfService": "Terms of Service",
   "footer.rights": "© {year} Virafold. All rights reserved.",
   "footer.poweredBy": "Powered by AI. Built for creators.",
-  "footer.demoDisclaimer": "This is a demonstration site. Metrics, testimonials, case studies, and team members shown throughout are illustrative sample data, not records of actual customers or results.",
+  "footer.demoDisclaimer": "Creator stories, metrics, and case studies shown on this site are illustrative examples, not customer claims.",
 
   // About
   "about.title1": "About",
@@ -408,7 +408,7 @@ export const en: Record<string, string> = {
   "pricing.oneoffCourseItems": "Full course → 100+ assets",
   "finalCta.title1": "Ready to turn one video into",
   "finalCta.title2": "a month of content?",
-  "finalCta.sub": "Start free — no card, no risk. Upload once and watch Virafold do the rest, human-reviewed before anything ships.",
+  "finalCta.sub": "Start free — no card, no risk. Upload once, review what Virafold forges, and approve it to ship.",
   "finalCta.button": "Start Forging Content",
   "finalCta.secondary": "See Pricing",
   "blog.related": "Related Articles",
@@ -665,8 +665,8 @@ export const en: Record<string, string> = {
   // Trust pillars
   "trust.title": "Content platforms can trust",
   "trust.sub": "Every asset Virafold produces carries structural guarantees no clip tool offers.",
-  "trust.p1t": "Signed provenance",
-  "trust.p1d": "Each asset carries a cryptographically signed manifest: source, engine, and full edit trail — C2PA-shaped and ready for platform AI-disclosure rules.",
+  "trust.p1t": "Tamper-proof origin",
+  "trust.p1d": "Every asset carries tamper-proof proof of where it came from — a signed record of the source, engine, and every edit (C2PA-shaped), ready for platform AI-disclosure rules.",
   "trust.p2t": "Policy-checked before publish",
   "trust.p2d": "Every asset is linted against demonetization and platform-policy triggers, so you see risk before the algorithm does.",
   "trust.p3t": "Your voice, enforced",
@@ -759,6 +759,13 @@ export const en: Record<string, string> = {
   "clips.scheduled": "Clip scheduled for {p}",
   "clips.scheduleFailed": "Could not schedule the clip",
   "clips.delete": "Delete clip",
+  // Hero transformation visual
+  "tv.source": "Your recording",
+  "tv.short": "YouTube Short",
+  "tv.carousel": "Carousel",
+  "tv.newsletter": "Newsletter",
+  "tv.thread": "X Thread",
+  "tv.caption": "One upload becomes 30+ platform-ready assets",
   // A/B hook testing
   "asset.ab": "A/B test hook",
   "asset.abHint": "Create a second version with a different hook — schedule both, and real metrics pick the winner.",

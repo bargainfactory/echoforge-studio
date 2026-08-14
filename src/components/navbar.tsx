@@ -13,12 +13,12 @@ export default function Navbar() {
   const pathname = usePathname();
   const { t } = useTranslation();
 
+  // Product-first SaaS nav: five focused links, no agency-speak.
   const links = [
     { href: "/#services", label: t("nav.services") },
-    { href: "/#portfolio", label: t("nav.portfolio") },
     { href: "/#how-it-works", label: t("nav.howItWorks") },
+    { href: "/#portfolio", label: t("nav.portfolio") },
     { href: "/#pricing", label: t("nav.pricing") },
-    { href: "/#success-stories", label: t("nav.stories") },
     { href: "/blog", label: t("nav.blog") },
   ];
 

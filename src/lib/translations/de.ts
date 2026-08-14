@@ -1,7 +1,7 @@
 export const de: Record<string, string> = {
   // Nav
-  "nav.services": "Leistungen",
-  "nav.portfolio": "Portfolio",
+  "nav.services": "Produkt",
+  "nav.portfolio": "Beispiele",
   "nav.howItWorks": "So Funktioniert's",
   "nav.pricing": "Preise",
   "nav.stories": "Erfolgsgeschichten",
@@ -75,7 +75,7 @@ export const de: Record<string, string> = {
   // Pricing
   "pricing.title1": "Kostenlos Starten.",
   "pricing.title2": "Skalieren Wenn Du Bereit Bist.",
-  "pricing.description": "Teste Virafold ohne jedes Risiko — keine Kreditkarte erforderlich. Steige auf, wenn du bereit bist, das Wasserzeichen zu entfernen und die vollständige Pipeline freizuschalten.",
+  "pricing.description": "Ein Upload — ein Monat veröffentlichungsfertiger Content. Du gibst jedes Asset frei, bevor es live geht. Starte kostenlos, skaliere bei Bedarf.",
   "pricing.mostPopular": "Am Beliebtesten",
   "pricing.noCard": "Keine Karte Erforderlich",
   "pricing.forever": "dauerhaft",
@@ -314,7 +314,7 @@ export const de: Record<string, string> = {
 
   // Language
   "lang.switchLanguage": "Sprache",
-  "pricing.managedNote": "Rundum betreut statt noch einer App, die du selbst bedienen musst – jedes Asset wird vor der Auslieferung von Menschen geprüft, mit garantierter Bearbeitungszeit.",
+  "pricing.managedNote": "Generieren, prüfen, freigeben — der integrierte Planer veröffentlicht dann automatisch für dich. Du behältst die Kontrolle über jedes Asset.",
   "pricing.liteName": "Lite",
   "pricing.liteDesc": "Ein unverbindlicher Einstieg für Solo-Creator",
   "pricing.clips160": "160+ Clips",
@@ -408,7 +408,7 @@ export const de: Record<string, string> = {
   "pricing.oneoffCourseItems": "Kompletter Kurs → über 100 Assets",
   "finalCta.title1": "Bereit, ein Video in",
   "finalCta.title2": "einen Monat Content zu verwandeln?",
-  "finalCta.sub": "Kostenlos starten, ohne Karte, ohne Risiko. Einmal hochladen und Virafold den Rest erledigen lassen, mit menschlicher Prüfung, bevor irgendetwas online geht.",
+  "finalCta.sub": "Starte kostenlos — ohne Karte, ohne Risiko. Einmal hochladen, prüfen, was Virafold erstellt, und zur Veröffentlichung freigeben.",
   "finalCta.button": "Content schmieden",
   "finalCta.secondary": "Preise ansehen",
   "blog.related": "Ähnliche Artikel",

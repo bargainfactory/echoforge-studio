@@ -1,7 +1,7 @@
 export const fr: Record<string, string> = {
   // Nav
-  "nav.services": "Services",
-  "nav.portfolio": "Portfolio",
+  "nav.services": "Produit",
+  "nav.portfolio": "Exemples",
   "nav.howItWorks": "Comment Ça Marche",
   "nav.pricing": "Tarifs",
   "nav.stories": "Témoignages",
@@ -75,7 +75,7 @@ export const fr: Record<string, string> = {
   // Pricing
   "pricing.title1": "Commencez Gratuitement.",
   "pricing.title2": "Montez en Gamme Quand Vous Êtes Prêt.",
-  "pricing.description": "Essayez Virafold sans aucun risque — aucune carte bancaire requise. Passez à la version supérieure quand vous êtes prêt à supprimer le filigrane et débloquer le pipeline complet.",
+  "pricing.description": "Un seul envoi — un mois de contenu prêt à publier. Vous approuvez chaque asset avant sa publication. Commencez gratuitement, évoluez à votre rythme.",
   "pricing.mostPopular": "Le Plus Populaire",
   "pricing.noCard": "Sans Carte Requise",
   "pricing.forever": "pour toujours",
@@ -314,7 +314,7 @@ export const fr: Record<string, string> = {
 
   // Language
   "lang.switchLanguage": "Langue",
-  "pricing.managedNote": "Un service clé en main, pas une appli de plus à gérer : chaque asset est vérifié par un humain avant sa livraison, dans un délai garanti.",
+  "pricing.managedNote": "Générez, relisez, approuvez — puis le planificateur intégré publie pour vous en pilote automatique. Vous gardez le contrôle de chaque asset.",
   "pricing.liteName": "Lite",
   "pricing.liteDesc": "Un point d'entrée sans engagement pour les créateurs indépendants",
   "pricing.clips160": "Plus de 160 clips",
@@ -408,7 +408,7 @@ export const fr: Record<string, string> = {
   "pricing.oneoffCourseItems": "Cours complet → plus de 100 éléments",
   "finalCta.title1": "Prêt à transformer une seule vidéo en",
   "finalCta.title2": "un mois de contenu ?",
-  "finalCta.sub": "Commencez gratuitement, sans carte ni risque. Importez une fois et laissez Virafold faire le reste, avec une relecture humaine avant toute publication.",
+  "finalCta.sub": "Commencez gratuitement — sans carte, sans risque. Importez une fois, relisez ce que Virafold génère et approuvez la publication.",
   "finalCta.button": "Commencer à forger du contenu",
   "finalCta.secondary": "Voir les tarifs",
   "blog.related": "Articles similaires",

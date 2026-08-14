@@ -1,7 +1,7 @@
 export const ko: Record<string, string> = {
   // Nav
-  "nav.services": "서비스",
-  "nav.portfolio": "포트폴리오",
+  "nav.services": "제품",
+  "nav.portfolio": "예시",
   "nav.howItWorks": "이용 방법",
   "nav.pricing": "요금제",
   "nav.stories": "성공 사례",
@@ -75,7 +75,7 @@ export const ko: Record<string, string> = {
   // Pricing
   "pricing.title1": "무료로 시작.",
   "pricing.title2": "준비되면 확장.",
-  "pricing.description": "위험 부담 없이 Virafold를 체험해보세요 — 신용카드 불필요. 워터마크 제거 및 전체 파이프라인 잠금 해제 준비가 되면 업그레이드하세요.",
+  "pricing.description": "한 번의 업로드로 한 달치 게시 가능한 콘텐츠를. 게시 전 모든 에셋을 직접 승인하세요. 무료로 시작하고 필요할 때 확장하세요.",
   "pricing.mostPopular": "가장 인기",
   "pricing.noCard": "카드 불필요",
   "pricing.forever": "영구",
@@ -314,7 +314,7 @@ export const ko: Record<string, string> = {
 
   // Language
   "lang.switchLanguage": "언어",
-  "pricing.managedNote": "직접 운영해야 하는 또 하나의 앱이 아니라, 전 과정을 대신해 드립니다. 모든 결과물은 납품 전 사람이 직접 검수하며, 납기를 보장합니다.",
+  "pricing.managedNote": "생성하고, 검토하고, 승인하면 — 내장 스케줄러가 자동으로 게시합니다. 모든 에셋의 통제권은 당신에게 있습니다.",
   "pricing.liteName": "Lite",
   "pricing.liteDesc": "1인 크리에이터를 위한 부담 없는 시작 플랜",
   "pricing.clips160": "160개 이상의 클립",
@@ -408,7 +408,7 @@ export const ko: Record<string, string> = {
   "pricing.oneoffCourseItems": "전체 강의 → 에셋 100개 이상",
   "finalCta.title1": "영상 하나를",
   "finalCta.title2": "한 달치 콘텐츠로 바꿀 준비 되셨나요?",
-  "finalCta.sub": "무료로 시작하세요 — 카드도, 리스크도 없습니다. 한 번만 업로드하면 Virafold가 나머지를 알아서 처리하고, 무엇이든 나가기 전에 사람이 직접 검토합니다.",
+  "finalCta.sub": "무료로 시작하세요 — 카드 불필요, 리스크 제로. 한 번 업로드하고 Virafold가 만든 콘텐츠를 검토한 뒤 승인해 게시하세요.",
   "finalCta.button": "콘텐츠 제작 시작하기",
   "finalCta.secondary": "요금제 보기",
   "blog.related": "관련 아티클",
