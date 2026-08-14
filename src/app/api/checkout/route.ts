@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { publicOrigin } from "@/lib/server/base-url";
 import { getSessionUser } from "@/lib/server/auth";
 import { getPricingConfig } from "@/lib/server/db";
 import { resolveField, isConfigured } from "@/lib/server/integrations";
@@ -62,8 +63,8 @@ export async function POST(req: NextRequest) {
         "metadata[priceId]": priceId,
         "subscription_data[metadata][priceId]": priceId,
         client_reference_id: priceId,
-        success_url: `${req.nextUrl.origin}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${req.nextUrl.origin}/pricing`,
+        success_url: `${publicOrigin(req)}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${publicOrigin(req)}/pricing`,
       };
       if (sessionUser) params.customer_email = sessionUser.email;
       const resp = await fetch("https://api.stripe.com/v1/checkout/sessions", {
@@ -85,7 +86,7 @@ export async function POST(req: NextRequest) {
   }
 
   return NextResponse.json({
-    url: `${req.nextUrl.origin}/dashboard?demo_checkout=${encodeURIComponent(priceId)}`,
+    url: `${publicOrigin(req)}/dashboard?demo_checkout=${encodeURIComponent(priceId)}`,
     message: "Demo mode — connect Stripe in Settings → Integrations to accept real payments.",
   });
 }

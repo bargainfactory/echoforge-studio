@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { publicOrigin } from "@/lib/server/base-url";
 import { getSessionUser } from "@/lib/server/auth";
 import { getReferralInfo } from "@/lib/server/db";
 
@@ -11,6 +12,6 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     code,
     count,
-    link: `${req.nextUrl.origin}/?ref=${code}`,
+    link: `${publicOrigin(req)}/?ref=${code}`,
   });
 }

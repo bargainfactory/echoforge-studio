@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { publicOrigin } from "@/lib/server/base-url";
 import { resolveField } from "@/lib/server/integrations";
 import { findUser, createUser, seedUser, consumePendingPlan } from "@/lib/server/db";
 import {
@@ -12,7 +13,7 @@ import {
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
-  const origin = req.nextUrl.origin;
+  const origin = publicOrigin(req);
   const fail = (reason: string) =>
     NextResponse.redirect(new URL(`/login?error=${reason}`, origin));
 

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { publicOrigin } from "@/lib/server/base-url";
 import { resolveField, isConfigured } from "@/lib/server/integrations";
 
 export const dynamic = "force-dynamic";
@@ -6,7 +7,7 @@ export const dynamic = "force-dynamic";
 /** Kick off Google OAuth. If the Google key isn't connected, bounce back to
  *  /login with a clear message instead of failing. */
 export async function GET(req: NextRequest) {
-  const origin = req.nextUrl.origin;
+  const origin = publicOrigin(req);
   if (!isConfigured("google-oauth")) {
     return NextResponse.redirect(new URL("/login?error=google_unavailable", origin));
   }

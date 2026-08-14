@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { publicOrigin } from "@/lib/server/base-url";
 import { runAudit } from "@/lib/server/audit";
 import { fetchYouTube } from "@/lib/server/audit-sources";
 import { insertEvent, insertPublicAudit } from "@/lib/server/db";
@@ -62,6 +63,6 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({
     report: publicReport,
-    shareUrl: `${req.nextUrl.origin}/a/${shareId}`,
+    shareUrl: `${publicOrigin(req)}/a/${shareId}`,
   });
 }

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { publicOrigin } from "@/lib/server/base-url";
 import { findUser, createResetToken } from "@/lib/server/db";
 import { sendEmail, emailConfigured } from "@/lib/server/email";
 
@@ -23,7 +24,7 @@ export async function POST(req: NextRequest) {
   if (user) {
     const token = crypto.randomUUID().replace(/-/g, "");
     createResetToken(token, email, Date.now() + TOKEN_TTL_MS);
-    const resetUrl = `${req.nextUrl.origin}/reset?token=${token}`;
+    const resetUrl = `${publicOrigin(req)}/reset?token=${token}`;
 
     const result = await sendEmail({
       to: email,
