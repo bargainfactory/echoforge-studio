@@ -698,4 +698,8 @@ export const zh: Record<string, string> = {
   "tryg.title": "输入一个想法,带走一周的内容。",
   "tryg.sub": "在下方输入任意主题或粘贴文字稿,点击按钮,几秒内看 Virafold 为你锻造短视频脚本、轮播图、新闻通讯和 X 帖子串——免费,无需注册。",
   "tryg.btn": "立即锻造我的内容",
+  // Share cards
+  "share.copy": "复制我的成绩卡链接",
+  "share.copied": "链接已复制——分享你的分数!",
+  "share.cta": "觉得你能超过这个分数吗?",
 };

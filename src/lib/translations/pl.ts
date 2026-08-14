@@ -698,4 +698,8 @@ export const pl: Record<string, string> = {
   "tryg.title": "Wpisz jeden pomysł. Wyjdź z tygodniem contentu.",
   "tryg.sub": "Wpisz dowolny temat lub wklej transkrypcję poniżej, kliknij przycisk i patrz, jak Virafold w kilka sekund wykuwa twoje klipy, karuzelę, newsletter i wątek na X — za darmo, bez rejestracji.",
   "tryg.btn": "Wykuj mój content teraz",
+  // Share cards
+  "share.copy": "Skopiuj link do mojej karty wyników",
+  "share.copied": "Link skopiowany — podziel się oceną!",
+  "share.cta": "Myślisz, że pobijesz ten wynik?",
 };

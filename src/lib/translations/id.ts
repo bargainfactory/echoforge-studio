@@ -698,4 +698,8 @@ export const id: Record<string, string> = {
   "tryg.title": "Ketik satu ide. Pulang bawa konten seminggu.",
   "tryg.sub": "Masukkan topik apa pun atau tempel transkrip di bawah, tekan tombolnya, dan lihat Virafold menempa klip, carousel, newsletter, dan thread X Anda dalam hitungan detik — gratis, tanpa daftar.",
   "tryg.btn": "Tempa konten saya sekarang",
+  // Share cards
+  "share.copy": "Salin tautan kartu skor saya",
+  "share.copied": "Tautan disalin — bagikan nilai Anda!",
+  "share.cta": "Yakin bisa mengalahkan nilai ini?",
 };

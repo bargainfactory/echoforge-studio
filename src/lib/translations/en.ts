@@ -731,4 +731,8 @@ export const en: Record<string, string> = {
   "tryg.title": "Type one idea. Walk away with a week of content.",
   "tryg.sub": "Enter any topic or paste a transcript below, hit the button, and watch Virafold forge your clips, carousel, newsletter, and X thread in seconds — free, no signup.",
   "tryg.btn": "Forge my content now",
+  // Share cards
+  "share.copy": "Copy my score card link",
+  "share.copied": "Link copied — share your grade!",
+  "share.cta": "Think you can beat this grade?",
 };

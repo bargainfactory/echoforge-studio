@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { runAudit } from "@/lib/server/audit";
 import { fetchYouTube } from "@/lib/server/audit-sources";
-import { insertEvent } from "@/lib/server/db";
+import { insertEvent, insertPublicAudit } from "@/lib/server/db";
 import { rateLimit, clientIp } from "@/lib/server/rate-limit";
 
 export const dynamic = "force-dynamic";
@@ -44,17 +44,24 @@ export async function POST(req: NextRequest) {
   insertEvent("audit_public", "/", handle.slice(0, 100));
 
   // Trimmed public shape: enough to prove value, not the whole coached report.
+  const publicReport = {
+    label: report.label,
+    grade: report.grade,
+    posts: report.posts,
+    avgViews: report.avgViews,
+    engagementRate: report.engagementRate,
+    sections: report.sections,
+    findings: report.findings.slice(0, 4),
+    top: report.top.slice(0, 3),
+    bottom: report.bottom.slice(0, 3),
+  };
+
+  // Every result gets a permanent shareable score card — the viral loop.
+  const shareId = crypto.randomUUID().replace(/-/g, "").slice(0, 10);
+  insertPublicAudit(shareId, report.label, report.grade, JSON.stringify(publicReport));
+
   return NextResponse.json({
-    report: {
-      label: report.label,
-      grade: report.grade,
-      posts: report.posts,
-      avgViews: report.avgViews,
-      engagementRate: report.engagementRate,
-      sections: report.sections,
-      findings: report.findings.slice(0, 4),
-      top: report.top.slice(0, 3),
-      bottom: report.bottom.slice(0, 3),
-    },
+    report: publicReport,
+    shareUrl: `${req.nextUrl.origin}/a/${shareId}`,
   });
 }

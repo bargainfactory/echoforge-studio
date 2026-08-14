@@ -731,4 +731,8 @@ export const de: Record<string, string> = {
   "tryg.title": "Eine Idee eintippen. Mit einer Woche Content rausgehen.",
   "tryg.sub": "Gib unten ein Thema ein oder füge ein Transkript ein, klick den Button und sieh zu, wie Virafold deine Clips, dein Carousel, deinen Newsletter und deinen X-Thread in Sekunden schmiedet — gratis, ohne Anmeldung.",
   "tryg.btn": "Meinen Content schmieden",
+  // Share cards
+  "share.copy": "Link zu meiner Scorecard kopieren",
+  "share.copied": "Link kopiert — teile deine Note!",
+  "share.cta": "Glaubst du, du schlägst diese Note?",
 };

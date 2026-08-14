@@ -731,4 +731,8 @@ export const ko: Record<string, string> = {
   "tryg.title": "아이디어 하나 입력. 일주일치 콘텐츠 획득.",
   "tryg.sub": "아래에 주제를 입력하거나 대본을 붙여넣고 버튼을 누르면, Virafold가 클립·캐러셀·뉴스레터·X 스레드를 몇 초 만에 만들어냅니다 — 무료, 가입 불필요.",
   "tryg.btn": "지금 콘텐츠 만들기",
+  // Share cards
+  "share.copy": "내 점수 카드 링크 복사",
+  "share.copied": "링크 복사됨 — 점수를 공유하세요!",
+  "share.cta": "이 점수를 이길 수 있을 것 같나요?",
 };

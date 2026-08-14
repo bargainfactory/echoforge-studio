@@ -698,4 +698,8 @@ export const tr: Record<string, string> = {
   "tryg.title": "Bir fikir yazın. Bir haftalık içerikle çıkın.",
   "tryg.sub": "Aşağıya bir konu yazın veya transkript yapıştırın, düğmeye basın ve Virafold'un kliplerinizi, carousel'inizi, bülteninizi ve X dizinizi saniyeler içinde dövmesini izleyin — ücretsiz, kayıtsız.",
   "tryg.btn": "İçeriğimi şimdi üret",
+  // Share cards
+  "share.copy": "Skor kartımın bağlantısını kopyala",
+  "share.copied": "Bağlantı kopyalandı — notunu paylaş!",
+  "share.cta": "Bu notu geçebilir misin?",
 };

@@ -698,4 +698,8 @@ export const vi: Record<string, string> = {
   "tryg.title": "Gõ một ý tưởng. Mang về một tuần nội dung.",
   "tryg.sub": "Nhập chủ đề bất kỳ hoặc dán bản ghi bên dưới, bấm nút và xem Virafold rèn clip, carousel, bản tin và thread X của bạn trong vài giây — miễn phí, không cần đăng ký.",
   "tryg.btn": "Tạo nội dung của tôi ngay",
+  // Share cards
+  "share.copy": "Sao chép liên kết thẻ điểm của tôi",
+  "share.copied": "Đã sao chép — chia sẻ điểm của bạn!",
+  "share.cta": "Bạn nghĩ mình có thể vượt điểm này?",
 };

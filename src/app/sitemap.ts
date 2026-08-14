@@ -1,11 +1,24 @@
 import type { MetadataRoute } from "next";
 import { blogPosts } from "@/lib/data";
+import { locales } from "@/lib/locales";
 
 const BASE = "https://virafold.ai";
 
 export default function sitemap(): MetadataRoute.Sitemap {
+  const localizedLandings: MetadataRoute.Sitemap = locales
+    .filter((l) => l.code !== "en")
+    .map((l) => ({
+      url: `${BASE}/${l.code}`,
+      changeFrequency: "weekly",
+      priority: 0.9,
+    }));
+
   const pages: MetadataRoute.Sitemap = [
     { url: `${BASE}/`, changeFrequency: "weekly", priority: 1 },
+    { url: `${BASE}/audit`, changeFrequency: "monthly", priority: 0.9 },
+    { url: `${BASE}/alternatives/opusclip`, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${BASE}/alternatives/repurpose-io`, changeFrequency: "monthly", priority: 0.7 },
+    ...localizedLandings,
     { url: `${BASE}/pricing`, changeFrequency: "monthly", priority: 0.9 },
     { url: `${BASE}/blog`, changeFrequency: "weekly", priority: 0.8 },
     { url: `${BASE}/about`, changeFrequency: "monthly", priority: 0.5 },

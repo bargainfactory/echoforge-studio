@@ -698,4 +698,8 @@ export const nl: Record<string, string> = {
   "tryg.title": "Typ één idee. Vertrek met een week aan content.",
   "tryg.sub": "Voer hieronder een onderwerp in of plak een transcript, klik op de knop en zie Virafold binnen seconden je clips, carrousel, nieuwsbrief en X-thread smeden — gratis, zonder registratie.",
   "tryg.btn": "Smeed mijn content nu",
+  // Share cards
+  "share.copy": "Kopieer de link van mijn scorekaart",
+  "share.copied": "Link gekopieerd — deel je score!",
+  "share.cta": "Denk je dat je deze score kunt verslaan?",
 };

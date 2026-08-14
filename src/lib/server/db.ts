@@ -129,6 +129,13 @@ function getDb(): DatabaseSync {
       rates        TEXT,
       enabled      INTEGER NOT NULL DEFAULT 1
     );
+    CREATE TABLE IF NOT EXISTS public_audits (
+      id         TEXT PRIMARY KEY,
+      label      TEXT NOT NULL,
+      grade      INTEGER NOT NULL,
+      report     TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
     CREATE TABLE IF NOT EXISTS audits (
       id         TEXT PRIMARY KEY,
       user_email TEXT NOT NULL REFERENCES users(email) ON DELETE CASCADE,
@@ -475,6 +482,34 @@ export function upsertCreatorPage(email: string, page: CreatorPage): boolean {
       page.enabled ? 1 : 0
     );
   return true;
+}
+
+// --- Public shareable audits (the viral score cards) ---
+
+export function insertPublicAudit(
+  id: string,
+  label: string,
+  grade: number,
+  reportJson: string
+): void {
+  getDb()
+    .prepare(
+      "INSERT INTO public_audits (id, label, grade, report, created_at) VALUES (?, ?, ?, ?, ?)"
+    )
+    .run(id, label, grade, reportJson, new Date().toISOString());
+}
+
+export function getPublicAudit(
+  id: string
+): { label: string; grade: number; report: string; createdAt: string } | null {
+  const row = getDb()
+    .prepare(
+      "SELECT label, grade, report, created_at AS createdAt FROM public_audits WHERE id = ?"
+    )
+    .get(id) as
+    | { label: string; grade: number; report: string; createdAt: string }
+    | undefined;
+  return row ?? null;
 }
 
 // --- Social audits ---

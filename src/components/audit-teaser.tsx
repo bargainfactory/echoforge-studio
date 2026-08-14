@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Gauge, Loader2, Sparkles, ArrowRight } from "lucide-react";
+import { Gauge, Loader2, Sparkles, ArrowRight, Link2, Check } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
 import { track } from "@/lib/track";
 
@@ -28,6 +28,8 @@ export default function AuditTeaser({ embedded = false }: { embedded?: boolean }
   const [running, setRunning] = useState(false);
   const [report, setReport] = useState<PublicAudit | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const run = async () => {
     if (!handle.trim() || running) return;
@@ -43,6 +45,8 @@ export default function AuditTeaser({ embedded = false }: { embedded?: boolean }
     const d = await res?.json().catch(() => null);
     if (res?.ok && d?.report) {
       setReport(d.report);
+      setShareUrl(d.shareUrl ?? null);
+      setCopied(false);
     } else if (res?.status === 429) {
       setError(t("padt.errBusy"));
     } else if (res?.status === 503) {
@@ -179,6 +183,27 @@ export default function AuditTeaser({ embedded = false }: { embedded?: boolean }
                   ))}
                 </div>
               </div>
+
+              {/* Shareable score card — the viral loop */}
+              {shareUrl && (
+                <button
+                  onClick={() => {
+                    navigator.clipboard?.writeText(shareUrl);
+                    setCopied(true);
+                  }}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-cyber-dark border border-cyber-border text-sm text-foreground hover:border-neon-purple/50 transition-colors"
+                >
+                  {copied ? (
+                    <>
+                      <Check className="w-4 h-4 text-success" /> {t("share.copied")}
+                    </>
+                  ) : (
+                    <>
+                      <Link2 className="w-4 h-4 text-neon-purple" /> {t("share.copy")}
+                    </>
+                  )}
+                </button>
+              )}
 
               {/* The conversion hook */}
               <div className="bg-gradient-to-r from-neon-purple/10 to-electric-blue/10 border border-neon-purple/30 rounded-xl p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4">

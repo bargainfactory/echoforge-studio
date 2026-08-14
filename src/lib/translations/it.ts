@@ -698,4 +698,8 @@ export const it: Record<string, string> = {
   "tryg.title": "Scrivi un'idea. Porta a casa una settimana di contenuti.",
   "tryg.sub": "Inserisci un tema o incolla una trascrizione qui sotto, premi il pulsante e guarda Virafold forgiare clip, carosello, newsletter e thread X in pochi secondi — gratis, senza registrazione.",
   "tryg.btn": "Forgia i miei contenuti",
+  // Share cards
+  "share.copy": "Copia il link della mia scheda",
+  "share.copied": "Link copiato — condividi il tuo voto!",
+  "share.cta": "Pensi di poter battere questo voto?",
 };
