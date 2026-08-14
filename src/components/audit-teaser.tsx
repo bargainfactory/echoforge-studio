@@ -92,7 +92,10 @@ export default function AuditTeaser({ embedded = false }: { embedded?: boolean }
           <p className="text-cyber-muted max-w-xl mx-auto">{t("padt.sub")}</p>
         </motion.div>
 
-        <div className="bg-cyber-card border border-cyber-border rounded-2xl p-6 sm:p-8 text-left">
+        {/* Gradient-glow frame so the audit — the page's instant-proof moment —
+            visibly pops against the dark hero. */}
+        <div className="rounded-2xl bg-gradient-to-r from-neon-purple via-fuchsia-500 to-electric-blue p-[1.5px] shadow-[0_0_45px_rgba(168,85,247,0.30)]">
+        <div className="bg-cyber-card rounded-2xl p-6 sm:p-8 text-left">
           <div className="flex flex-col sm:flex-row gap-3">
             <input
               type="text"
@@ -100,12 +103,12 @@ export default function AuditTeaser({ embedded = false }: { embedded?: boolean }
               onChange={(e) => setHandle(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && run()}
               placeholder={t("padt.ph")}
-              className="flex-1 px-4 py-3 bg-cyber-dark border border-cyber-border rounded-xl text-sm text-foreground placeholder:text-cyber-muted focus:outline-none focus:border-neon-purple/50"
+              className="flex-1 px-4 py-3 bg-cyber-dark border border-neon-purple/40 rounded-xl text-sm text-foreground placeholder:text-cyber-muted focus:outline-none focus:border-neon-purple focus:shadow-[0_0_20px_rgba(168,85,247,0.35)] transition-shadow"
             />
             <button
               onClick={run}
               disabled={running || !handle.trim()}
-              className="px-6 py-3 rounded-xl bg-gradient-to-r from-neon-purple to-electric-blue text-white font-medium text-sm hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2 shrink-0"
+              className="px-6 py-3 rounded-xl bg-gradient-to-r from-fuchsia-500 via-neon-purple to-electric-blue text-white font-semibold text-sm shadow-lg shadow-neon-purple/40 hover:shadow-neon-purple/60 hover:brightness-110 transition-all disabled:opacity-50 disabled:shadow-none flex items-center justify-center gap-2 shrink-0"
             >
               {running ? <Loader2 className="w-4 h-4 animate-spin" /> : <Gauge className="w-4 h-4" />}
               {running ? t("padt.running") : t("padt.run")}
@@ -222,6 +225,7 @@ export default function AuditTeaser({ embedded = false }: { embedded?: boolean }
               </div>
             </motion.div>
           )}
+        </div>
         </div>
       </div>
     </section>
