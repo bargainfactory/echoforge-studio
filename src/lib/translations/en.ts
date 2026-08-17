@@ -759,6 +759,9 @@ export const en: Record<string, string> = {
   "clips.scheduled": "Clip scheduled for {p}",
   "clips.scheduleFailed": "Could not schedule the clip",
   "clips.delete": "Delete clip",
+  // Project asset previews
+  "proj.preview": "Preview",
+  "proj.noAssetsYet": "No assets yet — generation is still running.",
   // Hero transformation visual
   "tv.source": "Your recording",
   "tv.short": "YouTube Short",

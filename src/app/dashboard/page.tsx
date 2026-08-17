@@ -440,8 +440,10 @@ export default function Dashboard() {
           {activeTab === "Projects" && (
             <ProjectsTab
               projects={projects}
+              assets={assets}
               onApprove={approveProject}
               onRemove={removeProject}
+              onView={setViewingAsset}
             />
           )}
           {activeTab === "Upload" && (
@@ -1005,15 +1007,22 @@ function OverviewTab({
 // --- Projects Tab ---
 function ProjectsTab({
   projects,
+  assets,
   onApprove,
   onRemove,
+  onView,
 }: {
   projects: Project[];
+  assets: Asset[];
   onApprove: (id: string) => void;
   onRemove: (id: string) => void;
+  onView: (asset: Asset) => void;
 }) {
   const { t } = useTranslation();
   const [filter, setFilter] = useState<string>("all");
+  // The newest project starts expanded so fresh generations are immediately
+  // previewable without an extra click.
+  const [openId, setOpenId] = useState<string | null>(projects[0]?.id ?? null);
   const filtered = filter === "all" ? projects : projects.filter((p) => p.status === filter);
 
   const statusConfig: Record<string, { label: string; color: string }> = {
@@ -1053,48 +1062,94 @@ function ProjectsTab({
         <div className="space-y-3">
           {filtered.map((project) => {
             const config = statusConfig[project.status] || statusConfig.processing;
+            const projAssets = assets.filter((a) => a.projectId === project.id);
+            const open = openId === project.id;
             return (
-              <div key={project.id} className="bg-cyber-card border border-cyber-border rounded-xl p-5 flex items-start gap-4">
-                <div className="w-12 h-12 rounded-xl bg-cyber-dark border border-cyber-border flex items-center justify-center shrink-0">
-                  <FileVideo className="w-5 h-5 text-cyber-muted" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-foreground">{project.title}</p>
-                  <div className="flex flex-wrap items-center gap-3 mt-1">
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${config.color}`}>{config.label}</span>
-                    {project.fileName && <span className="text-xs text-cyber-muted">{project.fileName}</span>}
-                    {project.fileSize && <span className="text-xs text-cyber-muted">{project.fileSize}</span>}
+              <div key={project.id} className="bg-cyber-card border border-cyber-border rounded-xl p-5">
+                <div
+                  className="flex items-start gap-4 cursor-pointer"
+                  onClick={() => setOpenId(open ? null : project.id)}
+                >
+                  <div className="w-12 h-12 rounded-xl bg-cyber-dark border border-cyber-border flex items-center justify-center shrink-0">
+                    <FileVideo className="w-5 h-5 text-cyber-muted" />
                   </div>
-                  <div className="mt-3">
-                    <div className="flex items-center justify-between text-xs text-cyber-muted mb-1">
-                      <span>{project.assetsReady}/{project.assetsTotal} assets</span>
-                      <span>{project.eta}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-foreground">{project.title}</p>
+                    <div className="flex flex-wrap items-center gap-3 mt-1">
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${config.color}`}>{config.label}</span>
+                      {project.fileName && <span className="text-xs text-cyber-muted">{project.fileName}</span>}
+                      {project.fileSize && <span className="text-xs text-cyber-muted">{project.fileSize}</span>}
                     </div>
-                    <div className="h-1.5 bg-cyber-border rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all ${project.status === "published" ? "bg-success" : "bg-gradient-to-r from-neon-purple to-electric-blue"}`}
-                        style={{ width: `${project.progress}%` }}
-                      />
+                    <div className="mt-3">
+                      <div className="flex items-center justify-between text-xs text-cyber-muted mb-1">
+                        <span>{project.assetsReady}/{project.assetsTotal} assets</span>
+                        <span>{project.eta}</span>
+                      </div>
+                      <div className="h-1.5 bg-cyber-border rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all ${project.status === "published" ? "bg-success" : "bg-gradient-to-r from-neon-purple to-electric-blue"}`}
+                          style={{ width: `${project.progress}%` }}
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  {project.status === "review" && (
+                  <div className="flex items-center gap-2 shrink-0">
+                    {project.status === "review" && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onApprove(project.id);
+                        }}
+                        className="px-3 py-1.5 text-xs font-medium rounded-lg bg-gradient-to-r from-neon-purple to-electric-blue text-white hover:opacity-90"
+                      >
+                        {t("dashTeaser.approve")}
+                      </button>
+                    )}
                     <button
-                      onClick={() => onApprove(project.id)}
-                      className="px-3 py-1.5 text-xs font-medium rounded-lg bg-gradient-to-r from-neon-purple to-electric-blue text-white hover:opacity-90"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onRemove(project.id);
+                      }}
+                      className="p-1.5 text-cyber-muted hover:text-red-400 transition-colors rounded-lg hover:bg-red-400/10"
+                      title={t("dash.removeProject")}
                     >
-                      {t("dashTeaser.approve")}
+                      <Trash2 className="w-4 h-4" />
                     </button>
-                  )}
-                  <button
-                    onClick={() => onRemove(project.id)}
-                    className="p-1.5 text-cyber-muted hover:text-red-400 transition-colors rounded-lg hover:bg-red-400/10"
-                    title={t("dash.removeProject")}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                    <ChevronRight
+                      className={`w-4 h-4 text-cyber-muted transition-transform ${open ? "rotate-90" : ""}`}
+                    />
+                  </div>
                 </div>
+
+                {/* Asset previews: what this generation actually produced */}
+                {open && (
+                  <div className="mt-4 pt-4 border-t border-cyber-border/60">
+                    {projAssets.length === 0 ? (
+                      <p className="text-xs text-cyber-muted">{t("proj.noAssetsYet")}</p>
+                    ) : (
+                      <div className="grid sm:grid-cols-2 gap-2.5">
+                        {projAssets.map((asset) => (
+                          <button
+                            key={asset.id}
+                            onClick={() => onView(asset)}
+                            className="text-left bg-cyber-dark border border-cyber-border rounded-lg p-3 hover:border-neon-purple/50 transition-colors group"
+                          >
+                            <div className="flex items-center justify-between gap-2 mb-1">
+                              <span className="text-[11px] font-medium text-neon-purple">{asset.type}</span>
+                              <span className="flex items-center gap-1 text-[11px] text-cyber-muted group-hover:text-foreground transition-colors">
+                                <Eye className="w-3 h-3" /> {t("proj.preview")}
+                              </span>
+                            </div>
+                            <p className="text-sm text-foreground font-medium line-clamp-1">{asset.name}</p>
+                            {asset.content && (
+                              <p className="text-xs text-cyber-muted mt-1 line-clamp-2">{asset.content}</p>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             );
           })}
