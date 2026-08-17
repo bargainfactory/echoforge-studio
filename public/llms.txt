@@ -17,11 +17,15 @@
 
 ## Who it is for
 
-Faceless creators, podcasters, coaches, and course sellers who publish across multiple platforms and want one system for production, distribution, audience ownership, and monetization.
+Faceless creators are the flagship segment, and the same system serves podcasters (diarized interview clipping), coaches and consultants, course creators, and agencies — creator-type presets configure the workspace per segment, and caption position + crop focus options make clips work for on-camera and talking-head formats too.
 
 ## Key pages
 
 - Free YouTube channel audit (no signup, instant virality grade): https://virafold.ai/#audit
+- For podcasters: https://virafold.ai/for/podcasters
+- For coaches and consultants: https://virafold.ai/for/coaches
+- For course creators: https://virafold.ai/for/course-creators
+- For agencies: https://virafold.ai/for/agencies
 - Home: https://virafold.ai/
 - Pricing: https://virafold.ai/pricing
 - Blog (guides on faceless content, repurposing, monetization): https://virafold.ai/blog

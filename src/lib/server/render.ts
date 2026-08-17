@@ -42,37 +42,57 @@ function assEscape(text: string): string {
   return text.replace(/[{}\\]/g, "").replace(/\s+/g, " ").trim();
 }
 
+export const CAPTION_POSITIONS = ["top", "middle", "bottom"] as const;
+export type CaptionPosition = (typeof CAPTION_POSITIONS)[number];
+
+export const CROP_FOCUSES = ["left", "center", "right"] as const;
+export type CropFocus = (typeof CROP_FOCUSES)[number];
+
 // &HAABBGGRR — libass color order. DejaVu Sans ships with the server's ffmpeg
-// (fontconfig falls back sensibly where it doesn't exist).
-const STYLE_LINES: Record<CaptionStyle, { style: string; wordsPerChunk: number; upper: boolean }> = {
+// (fontconfig falls back sensibly where it doesn't exist). MarginV/Alignment
+// are composed per caption position — talking-head clips want captions off
+// the speaker's face.
+const STYLE_BASE: Record<
+  CaptionStyle,
+  { face: string; bottomMarginV: number; wordsPerChunk: number; upper: boolean }
+> = {
   bold: {
-    style:
-      "Style: Default,DejaVu Sans,96,&H00FFFFFF,&H00FFFFFF,&H00000000,&H80000000,1,0,0,0,100,100,0,0,1,7,0,2,60,60,640,1",
+    face: "DejaVu Sans,96,&H00FFFFFF,&H00FFFFFF,&H00000000,&H80000000,1,0,0,0,100,100,0,0,1,7,0",
+    bottomMarginV: 640,
     wordsPerChunk: 3,
     upper: true,
   },
   neon: {
-    style:
-      "Style: Default,DejaVu Sans,88,&H00FFFFFF,&H00FFFFFF,&H00F755A8,&H80000000,1,0,0,0,100,100,0,0,1,5,2,2,60,60,640,1",
+    face: "DejaVu Sans,88,&H00FFFFFF,&H00FFFFFF,&H00F755A8,&H80000000,1,0,0,0,100,100,0,0,1,5,2",
+    bottomMarginV: 640,
     wordsPerChunk: 3,
     upper: false,
   },
   clean: {
-    style:
-      "Style: Default,DejaVu Sans,64,&H00FFFFFF,&H00FFFFFF,&H00000000,&H80000000,0,0,0,0,100,100,0,0,1,3,0,2,80,80,260,1",
+    face: "DejaVu Sans,64,&H00FFFFFF,&H00FFFFFF,&H00000000,&H80000000,0,0,0,0,100,100,0,0,1,3,0",
+    bottomMarginV: 260,
     wordsPerChunk: 4,
     upper: false,
   },
 };
+
+function styleLine(style: CaptionStyle, position: CaptionPosition): string {
+  const base = STYLE_BASE[style] ?? STYLE_BASE.bold;
+  // ASS numpad alignment: 8 = top-center, 5 = middle-center, 2 = bottom-center.
+  const [align, marginV] =
+    position === "top" ? [8, 140] : position === "middle" ? [5, 0] : [2, base.bottomMarginV];
+  return `Style: Default,${base.face},${align},60,60,${marginV},1`;
+}
 
 /** Build the .ass subtitle document for one clip window. */
 export function buildAss(
   words: TranscriptWord[],
   clipStart: number,
   clipEnd: number,
-  style: CaptionStyle
+  style: CaptionStyle,
+  position: CaptionPosition = "bottom"
 ): string {
-  const cfg = STYLE_LINES[style] ?? STYLE_LINES.bold;
+  const cfg = STYLE_BASE[style] ?? STYLE_BASE.bold;
   const inRange = words.filter((w) => w.e > clipStart && w.s < clipEnd);
 
   const events: string[] = [];
@@ -91,6 +111,8 @@ export function buildAss(
     chunk = [];
   };
   for (const w of inRange) {
+    // A speaker change (diarized interviews) always starts a fresh caption.
+    if (chunk.length && w.sp !== undefined && w.sp !== chunk[chunk.length - 1].sp) flush();
     chunk.push(w);
     const dur = chunk[chunk.length - 1].e - chunk[0].s;
     if (chunk.length >= cfg.wordsPerChunk || dur >= 2.2) flush();
@@ -107,7 +129,7 @@ export function buildAss(
     "",
     "[V4+ Styles]",
     "Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding",
-    cfg.style,
+    styleLine(style, position),
     "",
     "[Events]",
     "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text",
@@ -176,11 +198,21 @@ async function renderOne(clip: Clip & { userEmail: string }): Promise<void> {
   const outAbs = path.join(RENDERS_DIR, `${clip.id}.mp4`);
 
   try {
-    const ass = buildAss(words, clip.startSec, clip.endSec, clip.style as CaptionStyle);
+    const ass = buildAss(
+      words,
+      clip.startSec,
+      clip.endSec,
+      clip.style as CaptionStyle,
+      clip.position as CaptionPosition
+    );
     fs.writeFileSync(path.join(jobDir, "subs.ass"), ass, "utf8");
 
-    const vf =
-      "crop='min(iw,ih*9/16)':'min(ih,iw*16/9)',scale=1080:1920,ass=subs.ass";
+    // Crop focus: where the subject sits in the source frame — left, center,
+    // or right slice of the 9:16 cut (the pragmatic talking-head fix until
+    // true face tracking).
+    const cropX =
+      clip.focus === "left" ? "0" : clip.focus === "right" ? "iw-ow" : "(iw-ow)/2";
+    const vf = `crop='min(iw,ih*9/16)':'min(ih,iw*16/9)':${cropX}:'(ih-oh)/2',scale=1080:1920,ass=subs.ass`;
     const args = [
       "-y",
       "-ss",

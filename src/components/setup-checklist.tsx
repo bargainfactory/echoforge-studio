@@ -8,12 +8,104 @@
  */
 
 import { useEffect, useState } from "react";
-import { Check, ChevronRight, X } from "lucide-react";
+import { Check, ChevronRight, Loader2, X } from "lucide-react";
+import { useApp } from "@/lib/context";
 import { useTranslation } from "@/lib/i18n";
 import { useConnections } from "@/lib/use-connections";
 import type { Project } from "@/lib/data";
 
 const DISMISS_KEY = "vf_checklist_dismissed";
+
+const HYPE_BAN =
+  "game-changer, revolutionary, unleash, skyrocket, secret, hack, guaranteed, overnight";
+
+// One click configures a working brand voice for the chosen creator type —
+// the "set your brand voice" step goes from a writing exercise to a choice.
+const CREATOR_TYPES: {
+  key: string;
+  label: string;
+  emoji: string;
+  voice: {
+    tone: string;
+    audience: string;
+    cta: string;
+    hashtags: string;
+    bannedWords: string;
+    signature: string;
+    emojis: boolean;
+  };
+}[] = [
+  {
+    key: "faceless",
+    label: "Faceless creator",
+    emoji: "🎭",
+    voice: {
+      tone: "Confident, direct, creator-to-creator. Short punchy sentences. Specific numbers over adjectives. Zero hype-speak.",
+      audience: "Viewers who follow for the content, not the person — hooks and value carry every post.",
+      cta: "Follow for more — a new breakdown like this every week.",
+      hashtags: "#facelesscreator #contentrepurposing #creatoreconomy #contentcreator",
+      bannedWords: HYPE_BAN,
+      signature: "",
+      emojis: true,
+    },
+  },
+  {
+    key: "podcaster",
+    label: "Podcaster",
+    emoji: "🎙️",
+    voice: {
+      tone: "Warm and conversational, like the best moments of a good interview. Natural phrasing, real quotes, no corporate polish.",
+      audience: "Podcast listeners who want the sharpest takeaways and exchanges from every episode.",
+      cta: "Full episode is live now — link in bio.",
+      hashtags: "#podcast #podcastclips #interview #newepisode",
+      bannedWords: HYPE_BAN,
+      signature: "",
+      emojis: true,
+    },
+  },
+  {
+    key: "coach",
+    label: "Coach / consultant",
+    emoji: "🎯",
+    voice: {
+      tone: "Clear, structured, teacher energy. Explains the why behind every claim. Calm authority without hype.",
+      audience: "Clients and prospects looking for actionable advice they can apply today.",
+      cta: "Join the free newsletter — one actionable playbook every Monday. Link in bio.",
+      hashtags: "#coaching #business #entrepreneur #growthmindset",
+      bannedWords: HYPE_BAN,
+      signature: "",
+      emojis: false,
+    },
+  },
+  {
+    key: "course",
+    label: "Course creator",
+    emoji: "📚",
+    voice: {
+      tone: "Educational and generous — teach one complete concept per post so every asset proves the teaching, not just promises it.",
+      audience: "Students and self-learners evaluating whether your teaching style fits them.",
+      cta: "The full course goes deeper — link in bio.",
+      hashtags: "#onlinecourse #elearning #learnsomethingnew #education",
+      bannedWords: HYPE_BAN,
+      signature: "",
+      emojis: true,
+    },
+  },
+  {
+    key: "agency",
+    label: "Agency / team",
+    emoji: "🏢",
+    voice: {
+      tone: "Sparse and polished — every word earns its place. Understated confidence, no exclamation points.",
+      audience: "Brands and creators evaluating a professional content partner.",
+      cta: "Book a call — link in bio.",
+      hashtags: "#contentmarketing #socialmediamarketing #agency #b2b",
+      bannedWords: HYPE_BAN + ", synergy, leverage, circle back, best-in-class, cutting-edge",
+      signature: "",
+      emojis: false,
+    },
+  },
+];
 
 interface Step {
   key: string;
@@ -30,10 +122,35 @@ export default function SetupChecklist({
   onNavigate: (tab: string) => void;
 }) {
   const { t } = useTranslation();
+  const { addToast } = useApp();
   const connections = useConnections();
   const [voiceSet, setVoiceSet] = useState<boolean | null>(null);
   const [scheduled, setScheduled] = useState<boolean | null>(null);
   const [dismissed, setDismissed] = useState(true); // avoid flash before mount
+  const [applyingType, setApplyingType] = useState<string | null>(null);
+
+  const applyCreatorType = async (typeKey: string) => {
+    const ct = CREATOR_TYPES.find((c) => c.key === typeKey);
+    if (!ct || applyingType) return;
+    setApplyingType(typeKey);
+    try {
+      const res = await fetch("/api/voice", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(ct.voice),
+      });
+      if (res.ok) {
+        setVoiceSet(true);
+        addToast(t("cl.typeApplied").replace("{type}", ct.label));
+      } else {
+        addToast(t("voice.saveFailed"), "error");
+      }
+    } catch {
+      addToast(t("voice.saveFailed"), "error");
+    } finally {
+      setApplyingType(null);
+    }
+  };
 
   useEffect(() => {
     setDismissed(localStorage.getItem(DISMISS_KEY) === "1");
@@ -103,6 +220,30 @@ export default function SetupChecklist({
           style={{ width: `${(doneCount / steps.length) * 100}%` }}
         />
       </div>
+      {/* One-click voice setup by creator type — shown until a voice exists. */}
+      {!voiceSet && (
+        <div className="mb-4 p-3 rounded-lg bg-cyber-dark border border-cyber-border">
+          <p className="text-xs text-cyber-muted mb-2">{t("cl.typePrompt")}</p>
+          <div className="flex flex-wrap gap-2">
+            {CREATOR_TYPES.map((ct) => (
+              <button
+                key={ct.key}
+                onClick={() => applyCreatorType(ct.key)}
+                disabled={applyingType !== null}
+                className="px-3 py-1.5 rounded-lg bg-cyber-card border border-cyber-border text-xs text-foreground hover:border-neon-purple/50 transition-colors disabled:opacity-50 flex items-center gap-1.5"
+              >
+                {applyingType === ct.key ? (
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                ) : (
+                  <span aria-hidden="true">{ct.emoji}</span>
+                )}
+                {ct.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="space-y-1.5">
         {steps.map((s) => (
           <button

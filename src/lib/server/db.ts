@@ -254,6 +254,8 @@ function getDb(): DatabaseSync {
     "ALTER TABLE users ADD COLUMN last_brief_at TEXT",
     "ALTER TABLE scheduled_posts ADD COLUMN clip_id TEXT",
     "ALTER TABLE scheduled_posts ADD COLUMN external_id TEXT",
+    "ALTER TABLE clips ADD COLUMN position TEXT NOT NULL DEFAULT 'bottom'",
+    "ALTER TABLE clips ADD COLUMN focus TEXT NOT NULL DEFAULT 'center'",
   ]) {
     try {
       conn.exec(stmt);
@@ -1756,11 +1758,13 @@ export function setScheduledStatus(
  */
 // --- Clip Studio ---
 
-/** One transcribed word with start/end seconds — the caption-burn unit. */
+/** One transcribed word with start/end seconds — the caption-burn unit.
+ *  `sp` is the diarized speaker index when the provider supplies one. */
 export interface TranscriptWord {
   w: string;
   s: number;
   e: number;
+  sp?: number;
 }
 
 export interface Clip {
@@ -1774,6 +1778,10 @@ export interface Clip {
   matched: string | null;
   status: "suggested" | "queued" | "rendering" | "ready" | "failed";
   style: string;
+  /** Caption placement: top | middle | bottom. */
+  position: string;
+  /** Horizontal crop focus for the 9:16 cut: left | center | right. */
+  focus: string;
   outputPath: string | null;
   error: string | null;
   createdAt: string;
@@ -1791,6 +1799,8 @@ function mapClip(row: Record<string, unknown>): Clip {
     matched: (row.matched as string | null) ?? null,
     status: row.status as Clip["status"],
     style: row.style as string,
+    position: (row.position as string) ?? "bottom",
+    focus: (row.focus as string) ?? "center",
     outputPath: (row.output_path as string | null) ?? null,
     error: (row.error as string | null) ?? null,
     createdAt: row.created_at as string,
@@ -1799,7 +1809,7 @@ function mapClip(row: Record<string, unknown>): Clip {
 
 export function insertClip(
   email: string,
-  c: Omit<Clip, "createdAt" | "outputPath" | "error">
+  c: Omit<Clip, "createdAt" | "outputPath" | "error" | "position" | "focus">
 ): Clip {
   const now = new Date().toISOString();
   getDb()
@@ -1821,7 +1831,14 @@ export function insertClip(
       c.style,
       now
     );
-  return { ...c, outputPath: null, error: null, createdAt: now };
+  return {
+    ...c,
+    position: "bottom",
+    focus: "center",
+    outputPath: null,
+    error: null,
+    createdAt: now,
+  };
 }
 
 export function listClips(email: string, projectId: string): Clip[] {
@@ -1854,17 +1871,26 @@ export function clearSuggestedClips(email: string, projectId: string): void {
 export function updateClip(
   email: string,
   id: string,
-  patch: { status?: Clip["status"]; style?: string; outputPath?: string | null; error?: string | null }
+  patch: {
+    status?: Clip["status"];
+    style?: string;
+    position?: string;
+    focus?: string;
+    outputPath?: string | null;
+    error?: string | null;
+  }
 ): void {
   const cur = getClip(email, id);
   if (!cur) return;
   getDb()
     .prepare(
-      "UPDATE clips SET status = ?, style = ?, output_path = ?, error = ? WHERE id = ? AND user_email = ?"
+      "UPDATE clips SET status = ?, style = ?, position = ?, focus = ?, output_path = ?, error = ? WHERE id = ? AND user_email = ?"
     )
     .run(
       patch.status ?? cur.status,
       patch.style ?? cur.style,
+      patch.position ?? cur.position,
+      patch.focus ?? cur.focus,
       patch.outputPath !== undefined ? patch.outputPath : cur.outputPath,
       patch.error !== undefined ? patch.error : cur.error,
       id,

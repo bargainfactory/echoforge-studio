@@ -1,7 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/server/auth";
 import { getClip, updateClip } from "@/lib/server/db";
-import { CAPTION_STYLES, kickRenderWorker, type CaptionStyle } from "@/lib/server/render";
+import {
+  CAPTION_POSITIONS,
+  CAPTION_STYLES,
+  CROP_FOCUSES,
+  kickRenderWorker,
+  type CaptionPosition,
+  type CaptionStyle,
+  type CropFocus,
+} from "@/lib/server/render";
 import { rateLimit } from "@/lib/server/rate-limit";
 
 export const dynamic = "force-dynamic";
@@ -31,16 +39,24 @@ export async function POST(
   }
 
   let style: CaptionStyle = "bold";
+  let position: CaptionPosition = "bottom";
+  let focus: CropFocus = "center";
   try {
-    const body = (await req.json()) as { style?: string };
+    const body = (await req.json()) as { style?: string; position?: string; focus?: string };
     if (body?.style && (CAPTION_STYLES as readonly string[]).includes(body.style)) {
       style = body.style as CaptionStyle;
     }
+    if (body?.position && (CAPTION_POSITIONS as readonly string[]).includes(body.position)) {
+      position = body.position as CaptionPosition;
+    }
+    if (body?.focus && (CROP_FOCUSES as readonly string[]).includes(body.focus)) {
+      focus = body.focus as CropFocus;
+    }
   } catch {
-    /* default style */
+    /* defaults */
   }
 
-  updateClip(user.email, id, { status: "queued", style, error: null });
+  updateClip(user.email, id, { status: "queued", style, position, focus, error: null });
   kickRenderWorker();
   return NextResponse.json({ clip: getClip(user.email, id) });
 }

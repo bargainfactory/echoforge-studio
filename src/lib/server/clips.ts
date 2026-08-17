@@ -47,20 +47,31 @@ function stamp(sec: number): string {
 }
 
 /** Transcript with a [mm:ss] marker starting each ~8s line, so the model can
- *  cite real timestamps instead of hallucinating them. */
+ *  cite real timestamps instead of hallucinating them. Diarized recordings
+ *  additionally carry S1:/S2: speaker tags, and lines break on speaker turns
+ *  so exchanges are visible to the model. */
 function timedTranscript(words: TranscriptWord[], maxChars = 24_000): string {
+  const diarized = words.some((w) => w.sp !== undefined);
   const lines: string[] = [];
   let line: string[] = [];
   let lineStart = 0;
+  let lineSpeaker: number | undefined;
+  const push = () => {
+    if (!line.length) return;
+    const tag = diarized && lineSpeaker !== undefined ? ` S${lineSpeaker + 1}:` : "";
+    lines.push(`${stamp(lineStart)}${tag} ${line.join(" ")}`);
+    line = [];
+  };
   for (const w of words) {
-    if (!line.length) lineStart = w.s;
-    line.push(w.w);
-    if (w.e - lineStart >= 8) {
-      lines.push(`${stamp(lineStart)} ${line.join(" ")}`);
-      line = [];
+    if (line.length && diarized && w.sp !== lineSpeaker) push();
+    if (!line.length) {
+      lineStart = w.s;
+      lineSpeaker = w.sp;
     }
+    line.push(w.w);
+    if (w.e - lineStart >= 8) push();
   }
-  if (line.length) lines.push(`${stamp(lineStart)} ${line.join(" ")}`);
+  push();
   let out = lines.join("\n");
   if (out.length > maxChars) out = out.slice(0, maxChars);
   return out;
@@ -165,6 +176,7 @@ export async function detectHighlights(
   const system =
     "You are a short-form video editor who finds the most clippable moments in long-form content. " +
     "Pick self-contained segments 15-60 seconds long that open with a hook, deliver one complete idea, and would stop a scroll. " +
+    "When the transcript has S1:/S2: speaker tags it is an interview — prefer complete single-speaker takes or tight exchanges with a clear payoff, and never cut mid-answer. " +
     "Use the [mm:ss] markers to report accurate startSec/endSec. Respond in the transcript's language.";
 
   const prompt = `Video title: ${title}\nDuration: ${Math.round(durationSec)}s\n\nTimestamped transcript:\n${timedTranscript(

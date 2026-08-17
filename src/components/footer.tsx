@@ -22,6 +22,12 @@ export default function Footer() {
       { label: t("services.email"), href: "/#services" },
       { label: t("services.carousel"), href: "/#services" },
     ],
+    [t("footer.solutions")]: [
+      { label: t("footer.forPodcasters"), href: "/for/podcasters" },
+      { label: t("footer.forCoaches"), href: "/for/coaches" },
+      { label: t("footer.forCourses"), href: "/for/course-creators" },
+      { label: t("footer.forAgencies"), href: "/for/agencies" },
+    ],
     [t("footer.company")]: [
       { label: t("footer.about"), href: "/about" },
       { label: t("nav.blog"), href: "/blog" },
@@ -42,7 +48,7 @@ export default function Footer() {
   return (
     <footer className="border-t border-cyber-border bg-cyber-dark">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-8">
           <div className="col-span-2 md:col-span-1">
             <Link href="/" className="flex items-center gap-2 mb-4">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-neon-purple to-electric-blue flex items-center justify-center">

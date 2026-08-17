@@ -42,8 +42,29 @@ interface ClipRow {
   matched: string | null;
   status: "suggested" | "queued" | "rendering" | "ready" | "failed";
   style: string;
+  position: string;
+  focus: string;
   outputPath: string | null;
   error: string | null;
+}
+
+const CLIP_POSITIONS = [
+  { key: "top", label: "Top" },
+  { key: "middle", label: "Middle" },
+  { key: "bottom", label: "Bottom" },
+];
+
+const CLIP_FOCUSES = [
+  { key: "left", label: "Left" },
+  { key: "center", label: "Center" },
+  { key: "right", label: "Right" },
+];
+
+// Caption overlay placement per position (bottom varies by style density).
+function capPosClass(position: string, style: string): string {
+  if (position === "top") return "top-[8%]";
+  if (position === "middle") return "top-1/2 -translate-y-1/2";
+  return style === "clean" ? "bottom-[12%]" : "bottom-[30%]";
 }
 
 const CLIP_STYLES = [
@@ -56,6 +77,7 @@ interface PreviewWord {
   w: string;
   s: number;
   e: number;
+  sp?: number;
 }
 
 interface CaptionChunk {
@@ -66,22 +88,19 @@ interface CaptionChunk {
 
 // Mirrors the server-side ASS chunking (render.ts) so the browser preview
 // shows the same caption grouping the final render will burn in.
-const CAP_STYLE: Record<string, { cls: string; pos: string; up: boolean; n: number }> = {
+const CAP_STYLE: Record<string, { cls: string; up: boolean; n: number }> = {
   bold: {
     cls: "text-white font-black text-2xl uppercase leading-tight [text-shadow:-2px_-2px_0_#000,2px_-2px_0_#000,-2px_2px_0_#000,2px_2px_0_#000,0_3px_8px_rgba(0,0,0,0.6)]",
-    pos: "bottom-[30%]",
     up: true,
     n: 3,
   },
   neon: {
     cls: "text-white font-bold text-2xl leading-tight [text-shadow:0_0_12px_#a855f7,0_0_26px_#a855f7,1px_1px_2px_#000]",
-    pos: "bottom-[30%]",
     up: false,
     n: 3,
   },
   clean: {
     cls: "text-white text-base font-medium [text-shadow:1px_1px_3px_#000,-1px_-1px_3px_#000]",
-    pos: "bottom-[12%]",
     up: false,
     n: 4,
   },
@@ -100,6 +119,9 @@ function chunkWords(words: PreviewWord[], clip: ClipRow, style: string): Caption
     cur = [];
   };
   for (const w of inRange) {
+    // Speaker turns (diarized interviews) always start a fresh caption —
+    // same rule as the server renderer.
+    if (cur.length && w.sp !== undefined && w.sp !== cur[cur.length - 1].sp) flush();
     cur.push(w);
     if (cur.length >= cfg.n || cur[cur.length - 1].e - cur[0].s >= 2.2) flush();
   }
@@ -114,14 +136,22 @@ function ClipPreviewModal({
   clip,
   words,
   style,
+  position,
+  focus,
   onStyleChange,
+  onPositionChange,
+  onFocusChange,
   onRender,
   onClose,
 }: {
   clip: ClipRow;
   words: PreviewWord[];
   style: string;
+  position: string;
+  focus: string;
   onStyleChange: (s: string) => void;
+  onPositionChange: (p: string) => void;
+  onFocusChange: (f: string) => void;
   onRender: () => void;
   onClose: () => void;
 }) {
@@ -186,12 +216,13 @@ function ClipPreviewModal({
             ref={videoRef}
             src={`/api/projects/${clip.projectId}/media`}
             className="absolute inset-0 w-full h-full object-cover"
+            style={{ objectPosition: `${focus} center` }}
             playsInline
             muted={false}
             controls={false}
           />
           {caption && (
-            <div className={`absolute inset-x-3 text-center ${cfg.pos}`}>
+            <div className={`absolute inset-x-3 text-center ${capPosClass(position, style)}`}>
               <span className={cfg.cls}>{caption}</span>
             </div>
           )}
@@ -202,7 +233,7 @@ function ClipPreviewModal({
           )}
         </div>
 
-        <div className="flex items-center gap-2 mt-4">
+        <div className="flex flex-wrap items-center gap-2 mt-4">
           <select
             value={style}
             onChange={(e) => onStyleChange(e.target.value)}
@@ -214,9 +245,31 @@ function ClipPreviewModal({
               </option>
             ))}
           </select>
+          <select
+            value={position}
+            onChange={(e) => onPositionChange(e.target.value)}
+            className="px-3 py-2 bg-cyber-dark border border-cyber-border rounded-lg text-xs text-foreground focus:outline-none focus:border-neon-purple/50"
+          >
+            {CLIP_POSITIONS.map((p) => (
+              <option key={p.key} value={p.key}>
+                {t("clips.position")}: {p.label}
+              </option>
+            ))}
+          </select>
+          <select
+            value={focus}
+            onChange={(e) => onFocusChange(e.target.value)}
+            className="px-3 py-2 bg-cyber-dark border border-cyber-border rounded-lg text-xs text-foreground focus:outline-none focus:border-neon-purple/50"
+          >
+            {CLIP_FOCUSES.map((f) => (
+              <option key={f.key} value={f.key}>
+                {t("clips.focus")}: {f.label}
+              </option>
+            ))}
+          </select>
           <button
             onClick={onRender}
-            className="flex-1 px-4 py-2 rounded-lg bg-gradient-to-r from-neon-purple to-electric-blue text-white text-xs font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-1.5"
+            className="flex-1 min-w-[140px] px-4 py-2 rounded-lg bg-gradient-to-r from-neon-purple to-electric-blue text-white text-xs font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-1.5"
           >
             <Film className="w-3.5 h-3.5" /> {t("clips.previewRender")}
           </button>
@@ -257,6 +310,8 @@ export default function ClipsTab({
   const [detecting, setDetecting] = useState(false);
   const [engine, setEngine] = useState<string | null>(null);
   const [styleSel, setStyleSel] = useState<Record<string, string>>({});
+  const [posSel, setPosSel] = useState<Record<string, string>>({});
+  const [focusSel, setFocusSel] = useState<Record<string, string>>({});
   const [schedAt, setSchedAt] = useState<Record<string, string>>({});
   const [schedPlatform, setSchedPlatform] = useState<Record<string, string>>({});
   const [preview, setPreview] = useState<{ clip: ClipRow; words: PreviewWord[] } | null>(null);
@@ -309,10 +364,12 @@ export default function ClipsTab({
   const render = useCallback(
     async (clip: ClipRow) => {
       const style = styleSel[clip.id] ?? "bold";
+      const position = posSel[clip.id] ?? clip.position ?? "bottom";
+      const focus = focusSel[clip.id] ?? clip.focus ?? "center";
       const res = await fetch(`/api/clips/${clip.id}/render`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ style }),
+        body: JSON.stringify({ style, position, focus }),
       });
       if (res.ok) {
         addToast(t("clips.queued"));
@@ -322,7 +379,7 @@ export default function ClipsTab({
         addToast(data?.error || t("clips.renderFailed"), "error");
       }
     },
-    [styleSel, addToast, t, load]
+    [styleSel, posSel, focusSel, addToast, t, load]
   );
 
   const schedule = useCallback(
@@ -480,6 +537,32 @@ export default function ClipsTab({
                       </option>
                     ))}
                   </select>
+                  <select
+                    value={posSel[clip.id] ?? clip.position ?? "bottom"}
+                    onChange={(e) =>
+                      setPosSel((prev) => ({ ...prev, [clip.id]: e.target.value }))
+                    }
+                    className="px-3 py-2 bg-cyber-dark border border-cyber-border rounded-lg text-xs text-foreground focus:outline-none focus:border-neon-purple/50"
+                  >
+                    {CLIP_POSITIONS.map((p) => (
+                      <option key={p.key} value={p.key}>
+                        {t("clips.position")}: {p.label}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    value={focusSel[clip.id] ?? clip.focus ?? "center"}
+                    onChange={(e) =>
+                      setFocusSel((prev) => ({ ...prev, [clip.id]: e.target.value }))
+                    }
+                    className="px-3 py-2 bg-cyber-dark border border-cyber-border rounded-lg text-xs text-foreground focus:outline-none focus:border-neon-purple/50"
+                  >
+                    {CLIP_FOCUSES.map((f) => (
+                      <option key={f.key} value={f.key}>
+                        {t("clips.focus")}: {f.label}
+                      </option>
+                    ))}
+                  </select>
                   <button
                     onClick={() => openPreview(clip)}
                     className="px-4 py-2 rounded-lg bg-cyber-dark border border-cyber-border text-xs font-medium text-foreground hover:border-electric-blue/60 transition-colors flex items-center gap-1.5"
@@ -571,8 +654,16 @@ export default function ClipsTab({
           clip={preview.clip}
           words={preview.words}
           style={styleSel[preview.clip.id] ?? preview.clip.style ?? "bold"}
+          position={posSel[preview.clip.id] ?? preview.clip.position ?? "bottom"}
+          focus={focusSel[preview.clip.id] ?? preview.clip.focus ?? "center"}
           onStyleChange={(s) =>
             setStyleSel((prev) => ({ ...prev, [preview.clip.id]: s }))
+          }
+          onPositionChange={(p) =>
+            setPosSel((prev) => ({ ...prev, [preview.clip.id]: p }))
+          }
+          onFocusChange={(f) =>
+            setFocusSel((prev) => ({ ...prev, [preview.clip.id]: f }))
           }
           onRender={() => {
             render(preview.clip);

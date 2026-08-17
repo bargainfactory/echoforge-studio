@@ -760,6 +760,8 @@ export const en: Record<string, string> = {
   "clips.scheduleFailed": "Could not schedule the clip",
   "clips.delete": "Delete clip",
   "clips.livePreview": "Preview",
+  "clips.position": "Position",
+  "clips.focus": "Subject",
   "clips.previewNote": "Instant preview — plays on your device, no render needed. The final clip burns these captions in permanently.",
   "clips.previewNoWords": "No word timestamps for this project — previewing without captions.",
   "clips.previewRender": "Render this clip",
@@ -773,6 +775,12 @@ export const en: Record<string, string> = {
   "proj.allTypes": "All types",
   "proj.results": "{n} matching assets",
   "voice.presets": "Presets…",
+  // Persona pages
+  "footer.solutions": "Solutions",
+  "footer.forPodcasters": "For Podcasters",
+  "footer.forCoaches": "For Coaches",
+  "footer.forCourses": "For Course Creators",
+  "footer.forAgencies": "For Agencies",
   // Setup checklist
   "cl.title": "Get set up",
   "cl.progress": "{done} of {total} complete",
@@ -782,6 +790,8 @@ export const en: Record<string, string> = {
   "cl.s4": "Connect a platform account",
   "cl.s5": "Schedule your first post",
   "cl.dismiss": "Hide checklist",
+  "cl.typePrompt": "Quick start — what kind of creator are you? One click sets a working brand voice (editable anytime in Settings).",
+  "cl.typeApplied": "{type} voice applied — tweak it anytime in Settings.",
   // Guided flow + demo-mode clarity
   "notif.open": "Open",
   "sched.demoNote": "Will publish in demo mode — connect {platform} to deliver for real.",

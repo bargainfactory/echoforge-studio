@@ -42,7 +42,7 @@ export async function transcribeMedia(
   if (deepgramKey) {
     try {
       const resp = await fetch(
-        "https://api.deepgram.com/v1/listen?model=nova-2&smart_format=true",
+        "https://api.deepgram.com/v1/listen?model=nova-2&smart_format=true&diarize=true",
         {
           method: "POST",
           headers: {
@@ -65,6 +65,8 @@ export async function transcribeMedia(
                 w: String(w.punctuated_word ?? w.word ?? ""),
                 s: Number(w.start ?? 0),
                 e: Number(w.end ?? 0),
+                // Speaker index from diarization — unlocks interview features.
+                ...(typeof w.speaker === "number" ? { sp: w.speaker } : {}),
               }))
               .filter((w) => w.w);
           }
