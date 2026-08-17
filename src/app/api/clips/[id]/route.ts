@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import fs from "node:fs";
 import path from "node:path";
 import { getSessionUser } from "@/lib/server/auth";
-import { deleteClip, getClip } from "@/lib/server/db";
+import { deleteClip, getClip, getProjectMedia } from "@/lib/server/db";
+import { estimateWords } from "@/lib/server/clips";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +16,18 @@ export async function GET(
   const { id } = await params;
   const clip = getClip(user.email, id);
   if (!clip) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  return NextResponse.json({ clip });
+
+  // Words inside the clip window power the in-browser caption preview.
+  // Same fallback chain as the renderer, so the preview matches the output.
+  const media = getProjectMedia(user.email, clip.projectId);
+  let words =
+    media?.words ??
+    (media?.transcript && media.durationSec
+      ? estimateWords(media.transcript, media.durationSec)
+      : []);
+  words = words.filter((w) => w.e > clip.startSec - 0.5 && w.s < clip.endSec + 0.5);
+
+  return NextResponse.json({ clip, words });
 }
 
 export async function DELETE(

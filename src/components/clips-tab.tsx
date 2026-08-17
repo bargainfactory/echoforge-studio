@@ -7,7 +7,7 @@
  * and scheduled straight to YouTube/TikTok.
  */
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { useApp } from "@/lib/context";
 import { useTranslation } from "@/lib/i18n";
 import {
@@ -16,10 +16,12 @@ import {
   Film,
   FileVideo,
   Loader2,
+  Play,
   Scissors,
   Sparkles,
   Trash2,
   TrendingUp,
+  X,
 } from "lucide-react";
 
 interface ClipRow {
@@ -42,6 +44,180 @@ const CLIP_STYLES = [
   { key: "neon", label: "Neon" },
   { key: "clean", label: "Clean" },
 ];
+
+interface PreviewWord {
+  w: string;
+  s: number;
+  e: number;
+}
+
+interface CaptionChunk {
+  s: number;
+  e: number;
+  text: string;
+}
+
+// Mirrors the server-side ASS chunking (render.ts) so the browser preview
+// shows the same caption grouping the final render will burn in.
+const CAP_STYLE: Record<string, { cls: string; pos: string; up: boolean; n: number }> = {
+  bold: {
+    cls: "text-white font-black text-2xl uppercase leading-tight [text-shadow:-2px_-2px_0_#000,2px_-2px_0_#000,-2px_2px_0_#000,2px_2px_0_#000,0_3px_8px_rgba(0,0,0,0.6)]",
+    pos: "bottom-[30%]",
+    up: true,
+    n: 3,
+  },
+  neon: {
+    cls: "text-white font-bold text-2xl leading-tight [text-shadow:0_0_12px_#a855f7,0_0_26px_#a855f7,1px_1px_2px_#000]",
+    pos: "bottom-[30%]",
+    up: false,
+    n: 3,
+  },
+  clean: {
+    cls: "text-white text-base font-medium [text-shadow:1px_1px_3px_#000,-1px_-1px_3px_#000]",
+    pos: "bottom-[12%]",
+    up: false,
+    n: 4,
+  },
+};
+
+function chunkWords(words: PreviewWord[], clip: ClipRow, style: string): CaptionChunk[] {
+  const cfg = CAP_STYLE[style] ?? CAP_STYLE.bold;
+  const inRange = words.filter((w) => w.e > clip.startSec && w.s < clip.endSec);
+  const chunks: CaptionChunk[] = [];
+  let cur: PreviewWord[] = [];
+  const flush = () => {
+    if (!cur.length) return;
+    let text = cur.map((w) => w.w).join(" ");
+    if (cfg.up) text = text.toUpperCase();
+    chunks.push({ s: cur[0].s, e: cur[cur.length - 1].e, text });
+    cur = [];
+  };
+  for (const w of inRange) {
+    cur.push(w);
+    if (cur.length >= cfg.n || cur[cur.length - 1].e - cur[0].s >= 2.2) flush();
+  }
+  flush();
+  return chunks;
+}
+
+/** Instant clip preview, rendered entirely in the browser: the real source
+ *  video center-cropped to 9:16 with live caption overlay — no server render
+ *  spent until the creator likes what they see. */
+function ClipPreviewModal({
+  clip,
+  words,
+  style,
+  onStyleChange,
+  onRender,
+  onClose,
+}: {
+  clip: ClipRow;
+  words: PreviewWord[];
+  style: string;
+  onStyleChange: (s: string) => void;
+  onRender: () => void;
+  onClose: () => void;
+}) {
+  const { t } = useTranslation();
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [caption, setCaption] = useState("");
+  const chunks = useMemo(() => chunkWords(words, clip, style), [words, clip, style]);
+  const cfg = CAP_STYLE[style] ?? CAP_STYLE.bold;
+
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    const seekAndPlay = () => {
+      v.currentTime = clip.startSec;
+      v.play().catch(() => {
+        /* autoplay may need a tap on mobile — controls are visible */
+      });
+    };
+    if (v.readyState >= 1) seekAndPlay();
+    v.addEventListener("loadedmetadata", seekAndPlay);
+    let raf = 0;
+    const tick = () => {
+      // Loop the clip window and keep the caption in sync with playback.
+      if (v.currentTime >= clip.endSec) v.currentTime = clip.startSec;
+      const now = v.currentTime;
+      setCaption(chunks.find((c) => now >= c.s && now <= c.e)?.text ?? "");
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => {
+      v.removeEventListener("loadedmetadata", seekAndPlay);
+      cancelAnimationFrame(raf);
+      v.pause();
+    };
+  }, [clip, chunks]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <div
+        className="bg-cyber-card border border-cyber-border rounded-2xl p-4 w-full max-w-sm"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-start justify-between gap-3 mb-3">
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-foreground line-clamp-1">{clip.title}</p>
+            <p className="text-[11px] text-cyber-muted mt-0.5">{t("clips.previewNote")}</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-cyber-muted hover:text-foreground transition-colors shrink-0"
+            title={t("clips.close")}
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="relative mx-auto aspect-[9/16] max-h-[60vh] rounded-xl overflow-hidden bg-black">
+          <video
+            ref={videoRef}
+            src={`/api/projects/${clip.projectId}/media`}
+            className="absolute inset-0 w-full h-full object-cover"
+            playsInline
+            muted={false}
+            controls={false}
+          />
+          {caption && (
+            <div className={`absolute inset-x-3 text-center ${cfg.pos}`}>
+              <span className={cfg.cls}>{caption}</span>
+            </div>
+          )}
+          {!words.length && (
+            <p className="absolute bottom-3 inset-x-3 text-center text-[11px] text-white/70">
+              {t("clips.previewNoWords")}
+            </p>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2 mt-4">
+          <select
+            value={style}
+            onChange={(e) => onStyleChange(e.target.value)}
+            className="px-3 py-2 bg-cyber-dark border border-cyber-border rounded-lg text-xs text-foreground focus:outline-none focus:border-neon-purple/50"
+          >
+            {CLIP_STYLES.map((s) => (
+              <option key={s.key} value={s.key}>
+                {t("clips.captions")}: {s.label}
+              </option>
+            ))}
+          </select>
+          <button
+            onClick={onRender}
+            className="flex-1 px-4 py-2 rounded-lg bg-gradient-to-r from-neon-purple to-electric-blue text-white text-xs font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-1.5"
+          >
+            <Film className="w-3.5 h-3.5" /> {t("clips.previewRender")}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function fmtClipTime(sec: number): string {
   const m = Math.floor(sec / 60);
@@ -66,6 +242,7 @@ export default function ClipsTab() {
   const [styleSel, setStyleSel] = useState<Record<string, string>>({});
   const [schedAt, setSchedAt] = useState<Record<string, string>>({});
   const [schedPlatform, setSchedPlatform] = useState<Record<string, string>>({});
+  const [preview, setPreview] = useState<{ clip: ClipRow; words: PreviewWord[] } | null>(null);
 
   const load = useCallback(() => {
     fetch("/api/clips", { cache: "no-store" })
@@ -160,6 +337,23 @@ export default function ClipsTab() {
     await fetch(`/api/clips/${clip.id}`, { method: "DELETE" }).catch(() => {});
     setClips((prev) => prev.filter((c) => c.id !== clip.id));
   }, []);
+
+  const openPreview = useCallback(
+    async (clip: ClipRow) => {
+      try {
+        const res = await fetch(`/api/clips/${clip.id}`, { cache: "no-store" });
+        const data = await res.json().catch(() => null);
+        if (res.ok && data?.clip) {
+          setPreview({ clip: data.clip, words: data.words ?? [] });
+        } else {
+          addToast(t("clips.previewFailed"), "error");
+        }
+      } catch {
+        addToast(t("clips.previewFailed"), "error");
+      }
+    },
+    [addToast, t]
+  );
 
   const projClips = clips.filter((c) => !selProject || c.projectId === selProject);
 
@@ -269,6 +463,12 @@ export default function ClipsTab() {
                     ))}
                   </select>
                   <button
+                    onClick={() => openPreview(clip)}
+                    className="px-4 py-2 rounded-lg bg-cyber-dark border border-cyber-border text-xs font-medium text-foreground hover:border-electric-blue/60 transition-colors flex items-center gap-1.5"
+                  >
+                    <Play className="w-3.5 h-3.5" /> {t("clips.livePreview")}
+                  </button>
+                  <button
                     onClick={() => render(clip)}
                     className="px-4 py-2 rounded-lg bg-cyber-dark border border-neon-purple/40 text-xs font-medium text-neon-purple hover:bg-neon-purple/10 transition-colors flex items-center gap-1.5"
                   >
@@ -333,6 +533,22 @@ export default function ClipsTab() {
             </div>
           ))}
         </div>
+      )}
+
+      {preview && (
+        <ClipPreviewModal
+          clip={preview.clip}
+          words={preview.words}
+          style={styleSel[preview.clip.id] ?? preview.clip.style ?? "bold"}
+          onStyleChange={(s) =>
+            setStyleSel((prev) => ({ ...prev, [preview.clip.id]: s }))
+          }
+          onRender={() => {
+            render(preview.clip);
+            setPreview(null);
+          }}
+          onClose={() => setPreview(null)}
+        />
       )}
     </div>
   );

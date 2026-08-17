@@ -759,6 +759,12 @@ export const en: Record<string, string> = {
   "clips.scheduled": "Clip scheduled for {p}",
   "clips.scheduleFailed": "Could not schedule the clip",
   "clips.delete": "Delete clip",
+  "clips.livePreview": "Preview",
+  "clips.previewNote": "Instant preview — plays on your device, no render needed. The final clip burns these captions in permanently.",
+  "clips.previewNoWords": "No word timestamps for this project — previewing without captions.",
+  "clips.previewRender": "Render this clip",
+  "clips.previewFailed": "Could not load the preview",
+  "clips.close": "Close",
   // Project asset previews
   "proj.preview": "Preview",
   "proj.noAssetsYet": "No assets yet — generation is still running.",
