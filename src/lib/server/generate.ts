@@ -234,6 +234,69 @@ ${tweets.length + 2}/ ${close}`,
   return applyVoice(assets, voice);
 }
 
+// --- Format-scoped creation (the /create/[format] tool pages) ---
+
+export const CREATE_FORMATS = [
+  "youtube-shorts",
+  "tiktok",
+  "linkedin",
+  "newsletter",
+  "thread",
+  "carousel",
+] as const;
+export type CreateFormat = (typeof CREATE_FORMATS)[number];
+
+/**
+ * One vertical, focused output: scopes the deterministic engine to a single
+ * format. Clip formats return every hook variant relabeled to the requested
+ * platform (each is a different angle on the same idea); LinkedIn synthesizes
+ * a text post from the top-scored hooks.
+ */
+export function generateForFormat(
+  title: string,
+  transcript: string,
+  locale: string | undefined,
+  format: CreateFormat
+): GeneratedAsset[] {
+  const all = generateAssetsDeterministic(title, transcript, locale);
+  const L = labelsFor(locale);
+  const clipTypes = [L.typeYoutubeShort, L.typeTiktokClip, L.typeInstagramReel];
+  switch (format) {
+    case "youtube-shorts":
+      return all
+        .filter((a) => clipTypes.includes(a.type))
+        .map((a) => ({ ...a, type: L.typeYoutubeShort }));
+    case "tiktok":
+      return all
+        .filter((a) => clipTypes.includes(a.type))
+        .map((a) => ({ ...a, type: L.typeTiktokClip }));
+    case "carousel":
+      return all.filter((a) => a.type === L.typeCarousel);
+    case "newsletter":
+      return all.filter((a) => a.type === L.typeNewsletter);
+    case "thread":
+      return all.filter((a) => a.type === L.typeThread);
+    case "linkedin": {
+      const sents = transcript ? splitSentences(transcript) : [title];
+      const ranked = sents
+        .map((s) => ({ s, score: scoreHook(s) }))
+        .sort((a, b) => b.score - a.score);
+      const hook = ranked[0]?.s ?? title;
+      const body = ranked
+        .slice(1, 4)
+        .map((h, i) => `${i + 1}. ${condense(h.s, 140)}`)
+        .join("\n");
+      return [
+        {
+          name: hook.split(/\s+/).slice(0, 7).join(" "),
+          type: "LinkedIn Post",
+          content: `${condense(hook, 180)}\n\n${L.takeaways}\n${body || condense(title, 140)}\n\n${L.carouselCta}`,
+        },
+      ];
+    }
+  }
+}
+
 const LLM_SYSTEM = `You are Virafold's content-repurposing engine. Given a title and a transcript/script of long-form content, produce a set of ready-to-post short-form assets derived from the ACTUAL content (never generic filler).
 Produce 8-10 assets spanning: several short-form video clips (each with a hook line, body, on-screen caption idea, and 2-3 hashtags), one LinkedIn carousel (numbered slides), one email newsletter edition, and one X/Twitter thread. Use the "type" field to label each (e.g. "YouTube Short", "TikTok Clip", "Instagram Reel", "LinkedIn Carousel", "Newsletter", "X Thread"). "content" is the full ready-to-post text. "name" is a short human label.`;
 

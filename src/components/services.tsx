@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { motion } from "framer-motion";
 import {
   Film,
@@ -8,53 +9,62 @@ import {
   Mail,
   MessageSquare,
   LayoutGrid,
+  ArrowRight,
 } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
 
 export default function Services() {
   const { t } = useTranslation();
 
+  // Each card opens its free format-scoped generator. Badges state what the
+  // tool does — capability labels, not sample metrics.
   const services = [
     {
       icon: Film,
       title: t("services.youtube"),
       description: t("services.youtubeDesc"),
-      stats: t("services.statYoutube"),
+      stats: "3+ script variants per idea",
+      href: "/create/youtube-shorts",
       color: "from-red-500 to-red-600",
     },
     {
       icon: Music,
       title: t("services.tiktok"),
       description: t("services.tiktokDesc"),
-      stats: t("services.statTiktok"),
+      stats: "Hook-first, sub-60s scripts",
+      href: "/create/tiktok",
       color: "from-cyan-400 to-cyan-500",
     },
     {
       icon: Briefcase,
       title: t("services.linkedin"),
       description: t("services.linkedinDesc"),
-      stats: t("services.statLinkedin"),
+      stats: "Hook + takeaways structure",
+      href: "/create/linkedin",
       color: "from-blue-500 to-blue-600",
     },
     {
       icon: Mail,
       title: t("services.email"),
       description: t("services.emailDesc"),
-      stats: t("services.statEmail"),
+      stats: "Full edition per upload",
+      href: "/create/newsletter",
       color: "from-neon-purple to-neon-purple-light",
     },
     {
       icon: MessageSquare,
       title: t("services.threads"),
       description: t("services.threadsDesc"),
-      stats: t("services.statThreads"),
+      stats: "8–10 tweets, hook-first",
+      href: "/create/thread",
       color: "from-sky-400 to-sky-500",
     },
     {
       icon: LayoutGrid,
       title: t("services.carousel"),
       description: t("services.carouselDesc"),
-      stats: t("services.statCarousel"),
+      stats: "9 slides, ready to design",
+      href: "/create/carousel",
       color: "from-pink-500 to-pink-600",
     },
   ];
@@ -84,20 +94,29 @@ export default function Services() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.1 }}
-              className="group bg-cyber-card border border-cyber-border rounded-2xl p-6 card-hover"
             >
-              <div
-                className={`w-12 h-12 rounded-xl bg-gradient-to-br ${service.color} flex items-center justify-center mb-4`}
+              <Link
+                href={service.href}
+                className="group block h-full bg-cyber-card border border-cyber-border rounded-2xl p-6 card-hover hover:border-neon-purple/50 transition-colors"
               >
-                <service.icon className="w-6 h-6 text-white" />
-              </div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">
-                {service.title}
-              </h3>
-              <p className="text-sm text-cyber-muted mb-4">{service.description}</p>
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-success/10 text-success text-xs font-medium">
-                {service.stats}
-              </div>
+                <div
+                  className={`w-12 h-12 rounded-xl bg-gradient-to-br ${service.color} flex items-center justify-center mb-4`}
+                >
+                  <service.icon className="w-6 h-6 text-white" />
+                </div>
+                <h3 className="text-lg font-semibold text-foreground mb-2">
+                  {service.title}
+                </h3>
+                <p className="text-sm text-cyber-muted mb-4">{service.description}</p>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-success/10 text-success text-xs font-medium">
+                    {service.stats}
+                  </div>
+                  <span className="text-xs text-neon-purple flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {t("services.createFree")} <ArrowRight className="w-3 h-3" />
+                  </span>
+                </div>
+              </Link>
             </motion.div>
           ))}
         </div>

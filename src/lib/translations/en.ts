@@ -775,6 +775,7 @@ export const en: Record<string, string> = {
   "proj.allTypes": "All types",
   "proj.results": "{n} matching assets",
   "voice.presets": "Presets…",
+  "services.createFree": "Create one free",
   // Persona pages
   "footer.solutions": "Solutions",
   "footer.forPodcasters": "For Podcasters",

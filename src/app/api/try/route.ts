@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { generateAssetsDeterministic } from "@/lib/server/generate";
+import {
+  CREATE_FORMATS,
+  generateAssetsDeterministic,
+  generateForFormat,
+  type CreateFormat,
+} from "@/lib/server/generate";
 import { getFlags, insertEvent } from "@/lib/server/db";
 import { rateLimit, clientIp } from "@/lib/server/rate-limit";
 
@@ -47,8 +52,17 @@ export async function POST(req: NextRequest) {
   const title = isTranscript ? input.split(/\s+/).slice(0, 8).join(" ") : input;
   const transcript = isTranscript ? input : "";
 
-  const assets = generateAssetsDeterministic(title, transcript, locale);
-  insertEvent("try_generate", "/", JSON.stringify({ words: wordCount, assets: assets.length }));
+  // Optional format scope — the /create/[format] tool pages generate one
+  // vertical instead of the full spread.
+  const format = String(b?.format ?? "");
+  const assets = (CREATE_FORMATS as readonly string[]).includes(format)
+    ? generateForFormat(title, transcript, locale, format as CreateFormat)
+    : generateAssetsDeterministic(title, transcript, locale);
+  insertEvent(
+    "try_generate",
+    format ? `/create/${format}` : "/",
+    JSON.stringify({ words: wordCount, assets: assets.length })
+  );
 
   return NextResponse.json({ assets });
 }
