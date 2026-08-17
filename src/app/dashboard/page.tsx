@@ -500,6 +500,7 @@ export default function Dashboard() {
             <ClipsTab
               initialProject={clipsProject}
               onNavigate={() => setActiveTab("Settings")}
+              onUpload={() => setShowUploadModal(true)}
             />
           )}
           {activeTab === "Schedule" && (

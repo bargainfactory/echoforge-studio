@@ -294,11 +294,14 @@ function scoreColor(score: number): string {
 export default function ClipsTab({
   initialProject = "",
   onNavigate,
+  onUpload,
 }: {
   /** Preselects a project when arriving from the Projects tab's clip button. */
   initialProject?: string;
   /** Navigates to Settings for the connect-account nudge. */
   onNavigate?: () => void;
+  /** Opens the upload modal — the empty state's primary CTA. */
+  onUpload?: () => void;
 }) {
   const { addToast } = useApp();
   const { t } = useTranslation();
@@ -442,12 +445,92 @@ export default function ClipsTab({
       </div>
 
       {projects.length === 0 ? (
-        <div className="bg-cyber-card border border-cyber-border rounded-xl p-8 text-center">
-          <FileVideo className="w-8 h-8 text-cyber-muted mx-auto mb-3" />
-          <p className="text-sm text-cyber-muted">{t("clips.empty")}</p>
+        /* Empty state as a pitch: show what comes out, explain the three
+           steps, and put the upload CTA right here instead of a dead end. */
+        <div className="rounded-2xl bg-gradient-to-r from-neon-purple via-fuchsia-500 to-electric-blue p-[1.5px] shadow-[0_0_45px_rgba(168,85,247,0.18)]">
+          <div className="bg-cyber-card rounded-2xl p-6 sm:p-10">
+            <div className="grid lg:grid-cols-2 gap-10 items-center">
+              <div>
+                <h3 className="text-2xl font-bold text-foreground mb-3">
+                  {t("clips.emptyTitle")}
+                </h3>
+                <p className="text-sm text-cyber-muted leading-relaxed mb-6">
+                  {t("clips.emptySub")}
+                </p>
+
+                <div className="space-y-4 mb-8">
+                  {[
+                    { icon: FileVideo, tKey: "clips.emptyS1t", dKey: "clips.emptyS1d" },
+                    { icon: Sparkles, tKey: "clips.emptyS2t", dKey: "clips.emptyS2d" },
+                    { icon: Film, tKey: "clips.emptyS3t", dKey: "clips.emptyS3d" },
+                  ].map((s, i) => (
+                    <div key={s.tKey} className="flex gap-3">
+                      <span className="w-8 h-8 rounded-lg bg-neon-purple/15 border border-neon-purple/30 flex items-center justify-center shrink-0">
+                        <s.icon className="w-4 h-4 text-neon-purple" />
+                      </span>
+                      <div>
+                        <p className="text-sm font-medium text-foreground">
+                          {i + 1}. {t(s.tKey)}
+                        </p>
+                        <p className="text-xs text-cyber-muted mt-0.5 leading-relaxed">
+                          {t(s.dKey)}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <button
+                  onClick={() => onUpload?.()}
+                  className="px-6 py-3 rounded-xl bg-gradient-to-r from-fuchsia-500 via-neon-purple to-electric-blue text-white font-semibold text-sm shadow-lg shadow-neon-purple/40 hover:brightness-110 transition-all flex items-center gap-2"
+                >
+                  <FileVideo className="w-4 h-4" /> {t("clips.emptyCta")}
+                </button>
+                <p className="text-[11px] text-cyber-muted mt-2">{t("clips.emptyHint")}</p>
+              </div>
+
+              {/* What comes out: three scored 9:16 clip mockups */}
+              <div className="hidden sm:flex items-end justify-center gap-4 select-none" aria-hidden="true">
+                {[
+                  { score: 87, h: "h-48", glow: false },
+                  { score: 94, h: "h-60", glow: true },
+                  { score: 81, h: "h-44", glow: false },
+                ].map((m, i) => (
+                  <div
+                    key={i}
+                    className={`relative w-28 ${m.h} rounded-2xl overflow-hidden border ${
+                      m.glow
+                        ? "border-neon-purple/60 shadow-[0_0_30px_rgba(168,85,247,0.35)]"
+                        : "border-cyber-border"
+                    } bg-gradient-to-b from-neon-purple/40 via-purple-900/40 to-cyber-dark`}
+                  >
+                    <span
+                      className={`absolute top-2 left-2 px-1.5 py-0.5 rounded-md text-[10px] font-bold ${
+                        m.glow
+                          ? "bg-success/20 text-success border border-success/40"
+                          : "bg-black/40 text-white/80"
+                      }`}
+                    >
+                      {m.score}
+                    </span>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-9 h-9 rounded-full border-2 border-white/80 flex items-center justify-center">
+                        <Play className="w-3.5 h-3.5 text-white fill-white ml-0.5" />
+                      </div>
+                    </div>
+                    <div className="absolute bottom-3 inset-x-2.5 space-y-1">
+                      <div className="mx-auto w-4/5 h-1.5 rounded-full bg-white/90" />
+                      <div className="mx-auto w-1/2 h-1.5 rounded-full bg-white/50" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       ) : (
-        <div className="bg-cyber-card border border-cyber-border rounded-xl p-4 flex flex-wrap items-end gap-3">
+        <div className="rounded-xl bg-gradient-to-r from-neon-purple/60 to-electric-blue/60 p-[1px]">
+        <div className="bg-cyber-card rounded-xl p-4 flex flex-wrap items-end gap-3">
           <div className="flex-1 min-w-[220px]">
             <label className="block text-[11px] text-cyber-muted mb-1">{t("clips.project")}</label>
             <select
@@ -475,6 +558,7 @@ export default function ClipsTab({
             {detecting ? t("clips.detecting") : t("clips.detect")}
           </button>
         </div>
+        </div>
       )}
 
       {engine && (
@@ -488,7 +572,7 @@ export default function ClipsTab({
           {projClips.map((clip) => (
             <div
               key={clip.id}
-              className="bg-cyber-card border border-cyber-border rounded-xl p-4 space-y-3"
+              className="bg-cyber-card border border-cyber-border rounded-xl p-4 space-y-3 hover:border-neon-purple/40 transition-colors"
             >
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div className="flex items-start gap-3 min-w-0">
