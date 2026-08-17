@@ -363,7 +363,7 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-background flex">
       {/* Sidebar */}
-      <aside className="hidden lg:flex w-64 border-r border-cyber-border bg-cyber-dark flex-col">
+      <aside className="hidden md:flex w-64 border-r border-cyber-border bg-cyber-dark flex-col">
         <div className="p-6 border-b border-cyber-border">
           <Link href="/" className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-neon-purple to-electric-blue flex items-center justify-center">
@@ -444,7 +444,7 @@ export default function Dashboard() {
           </div>
 
           {/* Mobile tabs */}
-          <div className="lg:hidden flex gap-1 mt-4 overflow-x-auto pb-1">
+          <div className="md:hidden flex gap-1 mt-4 overflow-x-auto pb-1">
             {sidebarItems.map((item) => (
               <button
                 key={item.label}
@@ -1383,7 +1383,10 @@ function ScheduleTab({ onNavigate }: { onNavigate: () => void }) {
   const connections = useConnections();
   const [posts, setPosts] = useState<SchedPost[]>([]);
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState<"calendar" | "list">("calendar");
+  // Phones default to list view — a 7-column month grid is cramped there.
+  const [view, setView] = useState<"calendar" | "list">(() =>
+    typeof window !== "undefined" && window.innerWidth < 768 ? "list" : "calendar"
+  );
   const [month, setMonth] = useState(() => {
     const n = new Date();
     return new Date(n.getFullYear(), n.getMonth(), 1);
