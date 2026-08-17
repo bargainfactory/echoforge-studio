@@ -16,11 +16,11 @@ export default function Footer() {
 
   const footerLinks = {
     [t("footer.services")]: [
-      { label: t("services.youtube"), href: "/#services" },
-      { label: t("services.tiktok"), href: "/#services" },
-      { label: t("services.linkedin"), href: "/#services" },
-      { label: t("services.email"), href: "/#services" },
-      { label: t("services.carousel"), href: "/#services" },
+      { label: t("services.youtube"), href: "/product" },
+      { label: t("services.tiktok"), href: "/product" },
+      { label: t("services.linkedin"), href: "/product" },
+      { label: t("services.email"), href: "/product" },
+      { label: t("services.carousel"), href: "/product" },
     ],
     [t("footer.solutions")]: [
       { label: t("footer.forPodcasters"), href: "/for/podcasters" },
@@ -34,9 +34,9 @@ export default function Footer() {
       { label: t("footer.contact"), href: "/contact" },
     ],
     [t("footer.resources")]: [
-      { label: t("footer.howItWorks"), href: "/#how-it-works" },
+      { label: t("footer.howItWorks"), href: "/how-it-works" },
       { label: t("footer.pricing"), href: "/pricing" },
-      { label: t("footer.successStories"), href: "/#success-stories" },
+      { label: t("footer.successStories"), href: "/examples" },
       { label: t("footer.clientDashboard"), href: "/dashboard" },
     ],
     [t("footer.legal")]: [

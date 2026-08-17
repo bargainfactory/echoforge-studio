@@ -16,6 +16,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const pages: MetadataRoute.Sitemap = [
     { url: `${BASE}/`, changeFrequency: "weekly", priority: 1 },
     { url: `${BASE}/audit`, changeFrequency: "monthly", priority: 0.9 },
+    { url: `${BASE}/product`, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${BASE}/how-it-works`, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${BASE}/examples`, changeFrequency: "monthly", priority: 0.7 },
     { url: `${BASE}/alternatives/opusclip`, changeFrequency: "monthly", priority: 0.7 },
     { url: `${BASE}/alternatives/repurpose-io`, changeFrequency: "monthly", priority: 0.7 },
     { url: `${BASE}/for/podcasters`, changeFrequency: "monthly", priority: 0.8 },
