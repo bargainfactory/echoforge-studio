@@ -19,9 +19,11 @@ import path from "node:path";
 import {
   abGroupStats,
   createScheduledPost,
+  expireTrials,
   getAsset,
   getClip,
   getPlatformAccount,
+  insertAudit,
   insertNotification,
   listAllScheduledPending,
   listPublishedWithExternalId,
@@ -352,6 +354,22 @@ export function startScheduler(): void {
     }
     if (tick % BRIEF_CHECK_EVERY_TICKS === 0) {
       sendWeeklyBriefs().catch(() => {});
+      // Operator-granted free trials revert automatically on expiry.
+      try {
+        for (const trial of expireTrials()) {
+          insertNotification(trial.email, {
+            id: `n-${crypto.randomUUID()}`,
+            title: "Trial Ended",
+            message: `Your ${trial.trialPlan} trial has ended — you're back on the ${trial.plan} plan. Upgrade anytime to keep the higher limits.`,
+            time: "Just now",
+            read: false,
+            type: "info",
+          });
+          insertAudit("system", "user.trial_expired", `${trial.email}: ${trial.trialPlan} → ${trial.plan}`);
+        }
+      } catch {
+        /* trial expiry is best-effort per tick */
+      }
     }
   }, TICK_MS);
   // Never hold the process open (build workers, scripts, graceful shutdown).

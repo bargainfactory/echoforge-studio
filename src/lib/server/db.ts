@@ -256,6 +256,8 @@ function getDb(): DatabaseSync {
     "ALTER TABLE scheduled_posts ADD COLUMN external_id TEXT",
     "ALTER TABLE clips ADD COLUMN position TEXT NOT NULL DEFAULT 'bottom'",
     "ALTER TABLE clips ADD COLUMN focus TEXT NOT NULL DEFAULT 'center'",
+    "ALTER TABLE users ADD COLUMN trial_ends_at TEXT",
+    "ALTER TABLE users ADD COLUMN trial_prev_plan TEXT",
   ]) {
     try {
       conn.exec(stmt);
@@ -1416,6 +1418,8 @@ export interface AdminUserRow {
   createdAt: string;
   projects: number;
   assets: number;
+  trialEndsAt: string | null;
+  trialPrevPlan: string | null;
 }
 
 export function listUsers(): AdminUserRow[] {
@@ -1423,6 +1427,7 @@ export function listUsers(): AdminUserRow[] {
     getDb()
       .prepare(
         `SELECT u.email, u.name, u.plan, u.created_at AS createdAt,
+           u.trial_ends_at AS trialEndsAt, u.trial_prev_plan AS trialPrevPlan,
            (SELECT COUNT(*) FROM projects p WHERE p.user_email = u.email) AS projects,
            (SELECT COUNT(*) FROM assets a WHERE a.user_email = u.email) AS assets
          FROM users u ORDER BY u.created_at DESC`
@@ -1436,6 +1441,62 @@ export function setUserPlan(email: string, plan: string): boolean {
     .prepare("UPDATE users SET plan = ? WHERE email = ?")
     .run(plan, email.toLowerCase());
   return Number(res.changes) > 0;
+}
+
+// --- Timed free trials (operator-granted) ---
+
+/** Puts the user on `plan` until now+days. The pre-trial plan is remembered
+ *  once — re-granting during an active trial extends it without losing the
+ *  original plan to revert to. */
+export function grantTrial(email: string, plan: string, days: number): boolean {
+  const row = getDb()
+    .prepare("SELECT plan, trial_prev_plan FROM users WHERE email = ?")
+    .get(email.toLowerCase()) as { plan: string; trial_prev_plan: string | null } | undefined;
+  if (!row) return false;
+  const prev = row.trial_prev_plan ?? row.plan;
+  const ends = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
+  getDb()
+    .prepare(
+      "UPDATE users SET plan = ?, trial_prev_plan = ?, trial_ends_at = ? WHERE email = ?"
+    )
+    .run(plan, prev, ends, email.toLowerCase());
+  return true;
+}
+
+/** Ends an active trial immediately, reverting to the pre-trial plan. */
+export function cancelTrial(email: string): { reverted: string } | null {
+  const row = getDb()
+    .prepare("SELECT trial_prev_plan FROM users WHERE email = ?")
+    .get(email.toLowerCase()) as { trial_prev_plan: string | null } | undefined;
+  if (!row?.trial_prev_plan) return null;
+  getDb()
+    .prepare(
+      "UPDATE users SET plan = trial_prev_plan, trial_prev_plan = NULL, trial_ends_at = NULL WHERE email = ?"
+    )
+    .run(email.toLowerCase());
+  return { reverted: row.trial_prev_plan };
+}
+
+/** Reverts every expired trial; returns what changed for notifications. */
+export function expireTrials(): { email: string; plan: string; trialPlan: string }[] {
+  const now = new Date().toISOString();
+  const rows = getDb()
+    .prepare(
+      "SELECT email, plan, trial_prev_plan FROM users WHERE trial_ends_at IS NOT NULL AND trial_ends_at < ?"
+    )
+    .all(now) as { email: string; plan: string; trial_prev_plan: string | null }[];
+  for (const r of rows) {
+    getDb()
+      .prepare(
+        "UPDATE users SET plan = COALESCE(trial_prev_plan, plan), trial_prev_plan = NULL, trial_ends_at = NULL WHERE email = ?"
+      )
+      .run(r.email);
+  }
+  return rows.map((r) => ({
+    email: r.email,
+    plan: r.trial_prev_plan ?? r.plan,
+    trialPlan: r.plan,
+  }));
 }
 
 export function adminTotals(): {

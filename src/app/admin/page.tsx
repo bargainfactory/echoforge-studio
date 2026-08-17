@@ -10,6 +10,7 @@ import {
   CheckCircle,
   DollarSign,
   Film,
+  Gift,
   Loader2,
   Power,
   ScrollText,
@@ -47,7 +48,11 @@ interface AdminUserRow {
   createdAt: string;
   projects: number;
   assets: number;
+  trialEndsAt: string | null;
+  trialPrevPlan: string | null;
 }
+
+const TRIAL_PLANS = ["Lite", "Starter", "Creator Pro", "Agency"];
 interface AuditEntry {
   id: number;
   actor: string;
@@ -136,6 +141,57 @@ export default function AdminPage() {
     [addToast]
   );
 
+  // Timed free trials: per-row draft (plan + days), grant, and early end.
+  const [trialDraft, setTrialDraft] = useState<Record<string, { plan: string; days: number }>>({});
+  const [trialBusy, setTrialBusy] = useState<string | null>(null);
+
+  const giftTrial = useCallback(
+    async (email: string) => {
+      const draft = trialDraft[email] ?? { plan: "Creator Pro", days: 14 };
+      setTrialBusy(email);
+      try {
+        const res = await fetch("/api/admin/trial", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, plan: draft.plan, days: draft.days }),
+        });
+        const d = await res.json().catch(() => null);
+        if (res.ok && d?.users) {
+          setUsers(d.users);
+          addToast(`${email} → ${draft.plan} trial for ${draft.days} days`);
+        } else {
+          addToast(d?.error ?? "Could not grant trial", "error");
+        }
+      } finally {
+        setTrialBusy(null);
+      }
+    },
+    [trialDraft, addToast]
+  );
+
+  const endTrial = useCallback(
+    async (email: string) => {
+      setTrialBusy(email);
+      try {
+        const res = await fetch("/api/admin/trial", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        });
+        const d = await res.json().catch(() => null);
+        if (res.ok && d?.users) {
+          setUsers(d.users);
+          addToast(`Trial ended for ${email}`, "info");
+        } else {
+          addToast(d?.error ?? "Could not end trial", "error");
+        }
+      } finally {
+        setTrialBusy(null);
+      }
+    },
+    [addToast]
+  );
+
   const savePricing = useCallback(async () => {
     if (!pricing) return;
     setSavingPricing(true);
@@ -190,13 +246,14 @@ export default function AdminPage() {
 
   const statCards = totals
     ? [
-        { label: "Users", value: totals.users, icon: Users, color: "text-electric-blue" },
-        { label: "Projects", value: totals.projects, icon: TrendingUp, color: "text-neon-purple" },
-        { label: "Assets", value: totals.assets, icon: Film, color: "text-neon-purple" },
-        { label: "Published", value: totals.published, icon: CheckCircle, color: "text-success" },
-        { label: "Scheduled", value: totals.scheduled, icon: Activity, color: "text-warning" },
+        { label: "Users", value: totals.users, icon: Users, tile: "bg-electric-blue/10 border-electric-blue/30 text-electric-blue" },
+        { label: "Projects", value: totals.projects, icon: TrendingUp, tile: "bg-neon-purple/10 border-neon-purple/30 text-neon-purple" },
+        { label: "Assets", value: totals.assets, icon: Film, tile: "bg-fuchsia-500/10 border-fuchsia-500/30 text-fuchsia-400" },
+        { label: "Published", value: totals.published, icon: CheckCircle, tile: "bg-success/10 border-success/30 text-success" },
+        { label: "Scheduled", value: totals.scheduled, icon: Activity, tile: "bg-warning/10 border-warning/30 text-warning" },
       ]
     : [];
+  const maxEventCount = Math.max(1, ...events.map((e) => e.count));
 
   return (
     <div className="min-h-screen bg-background">
@@ -224,9 +281,14 @@ export default function AdminPage() {
         {/* Totals */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
           {statCards.map((s) => (
-            <div key={s.label} className="bg-cyber-card border border-cyber-border rounded-xl p-4">
-              <s.icon className={`w-5 h-5 ${s.color} mb-2`} />
-              <p className="text-2xl font-bold text-foreground">{s.value}</p>
+            <div
+              key={s.label}
+              className="bg-cyber-card border border-cyber-border rounded-xl p-4 hover:border-neon-purple/30 transition-colors"
+            >
+              <div className={`w-9 h-9 rounded-lg border flex items-center justify-center mb-3 ${s.tile}`}>
+                <s.icon className="w-4 h-4" />
+              </div>
+              <p className="text-2xl font-bold text-foreground tabular-nums">{s.value}</p>
               <p className="text-xs text-cyber-muted mt-1">{s.label}</p>
             </div>
           ))}
@@ -276,9 +338,16 @@ export default function AdminPage() {
             ) : (
               <div className="divide-y divide-cyber-border">
                 {events.map((e) => (
-                  <div key={e.event} className="flex items-center justify-between px-6 py-3">
-                    <span className="text-sm text-foreground">{e.event}</span>
-                    <span className="text-sm font-medium text-neon-purple">{e.count}</span>
+                  <div key={e.event} className="relative px-6 py-3">
+                    {/* Proportional bar makes the funnel scannable at a glance. */}
+                    <div
+                      className="absolute inset-y-1.5 left-2 rounded-md bg-gradient-to-r from-neon-purple/15 to-electric-blue/10"
+                      style={{ width: `${Math.max(6, (e.count / maxEventCount) * 92)}%` }}
+                    />
+                    <div className="relative flex items-center justify-between">
+                      <span className="text-sm text-foreground">{e.event}</span>
+                      <span className="text-sm font-semibold text-neon-purple tabular-nums">{e.count}</span>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -298,12 +367,14 @@ export default function AdminPage() {
                 {audit.map((a) => (
                   <div key={a.id} className="px-6 py-3">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-sm font-medium text-foreground">{a.action}</span>
+                      <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-neon-purple/10 border border-neon-purple/30 text-neon-purple">
+                        {a.action}
+                      </span>
                       <span className="text-xs text-cyber-muted shrink-0">
                         {new Date(a.ts).toLocaleString()}
                       </span>
                     </div>
-                    <p className="text-xs text-cyber-muted mt-0.5 truncate">
+                    <p className="text-xs text-cyber-muted mt-1.5 truncate">
                       {a.actor} — {a.detail}
                     </p>
                   </div>
@@ -328,38 +399,127 @@ export default function AdminPage() {
                   <tr className="text-left text-xs text-cyber-muted border-b border-cyber-border">
                     <th className="px-6 py-3 font-medium">User</th>
                     <th className="px-4 py-3 font-medium">Plan</th>
+                    <th className="px-4 py-3 font-medium">Free trial</th>
                     <th className="px-4 py-3 font-medium text-right">Projects</th>
                     <th className="px-4 py-3 font-medium text-right">Assets</th>
                     <th className="px-6 py-3 font-medium text-right">Joined</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-cyber-border">
-                  {users.map((u) => (
-                    <tr key={u.email}>
-                      <td className="px-6 py-3">
-                        <p className="text-foreground font-medium">{u.name}</p>
-                        <p className="text-xs text-cyber-muted">{u.email}</p>
-                      </td>
-                      <td className="px-4 py-3">
-                        <select
-                          value={u.plan}
-                          onChange={(e) => changePlan(u.email, e.target.value)}
-                          className="px-2 py-1.5 bg-cyber-dark border border-cyber-border rounded-lg text-xs text-foreground focus:outline-none focus:border-neon-purple/50"
-                        >
-                          {(PLANS.includes(u.plan) ? PLANS : [u.plan, ...PLANS]).map((p) => (
-                            <option key={p} value={p}>
-                              {p}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
-                      <td className="px-4 py-3 text-right text-cyber-muted">{u.projects}</td>
-                      <td className="px-4 py-3 text-right text-cyber-muted">{u.assets}</td>
-                      <td className="px-6 py-3 text-right text-xs text-cyber-muted">
-                        {new Date(u.createdAt).toLocaleDateString()}
-                      </td>
-                    </tr>
-                  ))}
+                  {users.map((u) => {
+                    const onTrial =
+                      u.trialEndsAt !== null && new Date(u.trialEndsAt).getTime() > Date.now();
+                    const draft = trialDraft[u.email] ?? { plan: "Creator Pro", days: 14 };
+                    const initials = u.name
+                      .split(/\s+/)
+                      .map((w) => w[0])
+                      .slice(0, 2)
+                      .join("")
+                      .toUpperCase();
+                    return (
+                      <tr key={u.email} className="hover:bg-cyber-dark/40 transition-colors">
+                        <td className="px-6 py-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-neon-purple to-electric-blue flex items-center justify-center text-white text-xs font-bold shrink-0">
+                              {initials || "?"}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-foreground font-medium">{u.name}</p>
+                              <p className="text-xs text-cyber-muted">{u.email}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <select
+                            value={u.plan}
+                            onChange={(e) => changePlan(u.email, e.target.value)}
+                            disabled={onTrial}
+                            title={onTrial ? "Plan is managed by the active trial" : undefined}
+                            className="px-2 py-1.5 bg-cyber-dark border border-cyber-border rounded-lg text-xs text-foreground focus:outline-none focus:border-neon-purple/50 disabled:opacity-60"
+                          >
+                            {(PLANS.includes(u.plan) ? PLANS : [u.plan, ...PLANS]).map((p) => (
+                              <option key={p} value={p}>
+                                {p}
+                              </option>
+                            ))}
+                          </select>
+                        </td>
+                        <td className="px-4 py-3">
+                          {onTrial ? (
+                            <div className="flex items-center gap-2">
+                              <span className="text-[11px] px-2 py-1 rounded-full bg-warning/10 border border-warning/40 text-warning whitespace-nowrap">
+                                {u.plan} · ends{" "}
+                                {new Date(u.trialEndsAt!).toLocaleDateString(undefined, {
+                                  month: "short",
+                                  day: "numeric",
+                                })}
+                              </span>
+                              <button
+                                onClick={() => endTrial(u.email)}
+                                disabled={trialBusy === u.email}
+                                className="text-xs text-red-400 hover:underline disabled:opacity-50"
+                              >
+                                End
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-1.5">
+                              <select
+                                value={draft.plan}
+                                onChange={(e) =>
+                                  setTrialDraft((prev) => ({
+                                    ...prev,
+                                    [u.email]: { ...draft, plan: e.target.value },
+                                  }))
+                                }
+                                className="px-2 py-1.5 bg-cyber-dark border border-cyber-border rounded-lg text-xs text-foreground focus:outline-none focus:border-neon-purple/50"
+                              >
+                                {TRIAL_PLANS.map((p) => (
+                                  <option key={p} value={p}>
+                                    {p}
+                                  </option>
+                                ))}
+                              </select>
+                              <input
+                                type="number"
+                                min={1}
+                                max={90}
+                                value={draft.days}
+                                onChange={(e) =>
+                                  setTrialDraft((prev) => ({
+                                    ...prev,
+                                    [u.email]: {
+                                      ...draft,
+                                      days: Math.max(1, Math.min(90, Number(e.target.value) || 1)),
+                                    },
+                                  }))
+                                }
+                                className="w-14 px-2 py-1.5 bg-cyber-dark border border-cyber-border rounded-lg text-xs text-foreground focus:outline-none focus:border-neon-purple/50 tabular-nums"
+                              />
+                              <span className="text-[10px] text-cyber-muted">days</span>
+                              <button
+                                onClick={() => giftTrial(u.email)}
+                                disabled={trialBusy === u.email}
+                                title="Gift this trial"
+                                className="p-1.5 rounded-lg bg-neon-purple/10 border border-neon-purple/40 text-neon-purple hover:bg-neon-purple/20 transition-colors disabled:opacity-50"
+                              >
+                                {trialBusy === u.email ? (
+                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                ) : (
+                                  <Gift className="w-3.5 h-3.5" />
+                                )}
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-right text-cyber-muted tabular-nums">{u.projects}</td>
+                        <td className="px-4 py-3 text-right text-cyber-muted tabular-nums">{u.assets}</td>
+                        <td className="px-6 py-3 text-right text-xs text-cyber-muted">
+                          {new Date(u.createdAt).toLocaleDateString()}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
