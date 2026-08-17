@@ -768,6 +768,29 @@ export const en: Record<string, string> = {
   // Project asset previews
   "proj.preview": "Preview",
   "proj.noAssetsYet": "No assets yet — generation is still running.",
+  "proj.clip": "Find viral moments",
+  "proj.searchPh": "Search assets…",
+  "proj.allTypes": "All types",
+  "proj.results": "{n} matching assets",
+  // Setup checklist
+  "cl.title": "Get set up",
+  "cl.progress": "{done} of {total} complete",
+  "cl.s1": "Upload your first recording",
+  "cl.s2": "Set your brand voice",
+  "cl.s3": "Review & approve your generated assets",
+  "cl.s4": "Connect a platform account",
+  "cl.s5": "Schedule your first post",
+  "cl.dismiss": "Hide checklist",
+  // Guided flow + demo-mode clarity
+  "notif.open": "Open",
+  "sched.demoNote": "Will publish in demo mode — connect {platform} to deliver for real.",
+  "sched.demoNoteIg": "Instagram delivery isn't wired yet — this will be marked published locally.",
+  "sched.connectNow": "Connect",
+  // Sidebar groups
+  "dash.gCreate": "Create",
+  "dash.gPublish": "Publish",
+  "dash.gGrow": "Grow",
+  "dash.gManage": "Manage",
   // Hero transformation visual
   "tv.source": "Your recording",
   "tv.short": "YouTube Short",

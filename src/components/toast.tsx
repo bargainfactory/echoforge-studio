@@ -34,6 +34,17 @@ export default function ToastContainer() {
             >
               <Icon className="w-4 h-4 shrink-0" />
               <span className="text-sm flex-1">{toast.message}</span>
+              {toast.action && (
+                <button
+                  onClick={() => {
+                    toast.action?.run();
+                    removeToast(toast.id);
+                  }}
+                  className="shrink-0 text-xs font-semibold underline hover:opacity-80"
+                >
+                  {toast.action.label}
+                </button>
+              )}
               <button onClick={() => removeToast(toast.id)} className="shrink-0 opacity-60 hover:opacity-100">
                 <X className="w-3.5 h-3.5" />
               </button>

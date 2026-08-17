@@ -6,6 +6,7 @@ import {
   useState,
   useCallback,
   useEffect,
+  useRef,
   type ReactNode,
 } from "react";
 import { type Project, type Asset, type Notification } from "./data";
@@ -22,6 +23,8 @@ export interface Toast {
   id: string;
   message: string;
   type: "success" | "error" | "info";
+  /** Optional action button (e.g. Undo) — extends the toast's lifetime. */
+  action?: { label: string; run: () => void };
 }
 
 interface AppState {
@@ -50,7 +53,7 @@ interface AppState {
   regenerateAsset: (id: string, feedback?: string) => Promise<Asset | null>;
   markNotificationRead: (id: string) => void;
   markAllNotificationsRead: () => void;
-  addToast: (message: string, type?: Toast["type"]) => void;
+  addToast: (message: string, type?: Toast["type"], action?: Toast["action"]) => void;
   removeToast: (id: string) => void;
 }
 
@@ -106,13 +109,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [toasts, setToasts] = useState<Toast[]>([]);
 
-  const addToast = useCallback((message: string, type: Toast["type"] = "success") => {
-    const id = `toast-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-    setToasts((prev) => [...prev, { id, message, type }]);
-    setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 4000);
-  }, []);
+  const addToast = useCallback(
+    (message: string, type: Toast["type"] = "success", action?: Toast["action"]) => {
+      const id = `toast-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+      setToasts((prev) => [...prev, { id, message, type, action }]);
+      // Action toasts (Undo) linger long enough to actually be clicked.
+      setTimeout(() => {
+        setToasts((prev) => prev.filter((t) => t.id !== id));
+      }, action ? 6000 : 4000);
+    },
+    []
+  );
 
   const removeToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
@@ -264,12 +271,43 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }).catch(() => {});
   }, []);
 
+  // Deletions are held client-side for a grace window so Undo can restore
+  // the project and its assets without any server round-trip.
+  const pendingDeletes = useRef(new Map<string, ReturnType<typeof setTimeout>>());
   const removeProject = useCallback(
     async (id: string) => {
-      setProjects((prev) => prev.filter((p) => p.id !== id));
-      setAssets((prev) => prev.filter((a) => a.projectId !== id));
-      addToast("Project removed", "info");
-      await api(`/api/projects/${id}`, { method: "DELETE" }).catch(() => {});
+      let removedProject: Project | undefined;
+      let removedAssets: Asset[] = [];
+      setProjects((prev) => {
+        removedProject = prev.find((p) => p.id === id);
+        return prev.filter((p) => p.id !== id);
+      });
+      setAssets((prev) => {
+        removedAssets = prev.filter((a) => a.projectId === id);
+        return prev.filter((a) => a.projectId !== id);
+      });
+      const timer = setTimeout(() => {
+        pendingDeletes.current.delete(id);
+        api(`/api/projects/${id}`, { method: "DELETE" }).catch(() => {});
+      }, 5500);
+      pendingDeletes.current.set(id, timer);
+      addToast("Project removed", "info", {
+        label: "Undo",
+        run: () => {
+          const tm = pendingDeletes.current.get(id);
+          if (tm) clearTimeout(tm);
+          pendingDeletes.current.delete(id);
+          setProjects((prev) =>
+            removedProject && !prev.some((p) => p.id === id)
+              ? [removedProject, ...prev]
+              : prev
+          );
+          setAssets((prev) => [
+            ...removedAssets.filter((a) => !prev.some((x) => x.id === a.id)),
+            ...prev,
+          ]);
+        },
+      });
     },
     [addToast]
   );

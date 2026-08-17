@@ -11,6 +11,13 @@ import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { useApp } from "@/lib/context";
 import { useTranslation } from "@/lib/i18n";
 import {
+  useConnections,
+  isConnected,
+  nextMorning,
+  lastPlatform,
+  rememberPlatform,
+} from "@/lib/use-connections";
+import {
   Calendar,
   Download,
   Film,
@@ -231,12 +238,22 @@ function scoreColor(score: number): string {
   return "text-cyber-muted border-cyber-border bg-cyber-dark";
 }
 
-export default function ClipsTab() {
+export default function ClipsTab({
+  initialProject = "",
+  onNavigate,
+}: {
+  /** Preselects a project when arriving from the Projects tab's clip button. */
+  initialProject?: string;
+  /** Navigates to Settings for the connect-account nudge. */
+  onNavigate?: () => void;
+}) {
   const { addToast } = useApp();
   const { t } = useTranslation();
+  const connections = useConnections();
+  const defaultAt = useMemo(() => nextMorning(), []);
   const [projects, setProjects] = useState<{ id: string; title: string }[]>([]);
   const [clips, setClips] = useState<ClipRow[]>([]);
-  const [selProject, setSelProject] = useState("");
+  const [selProject, setSelProject] = useState(initialProject);
   const [detecting, setDetecting] = useState(false);
   const [engine, setEngine] = useState<string | null>(null);
   const [styleSel, setStyleSel] = useState<Record<string, string>>({});
@@ -310,9 +327,9 @@ export default function ClipsTab() {
 
   const schedule = useCallback(
     async (clip: ClipRow) => {
-      const at = schedAt[clip.id];
+      const at = schedAt[clip.id] ?? defaultAt;
       if (!at) return;
-      const platform = schedPlatform[clip.id] ?? "YouTube";
+      const platform = schedPlatform[clip.id] ?? lastPlatform("YouTube");
       const res = await fetch("/api/schedule", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -324,13 +341,14 @@ export default function ClipsTab() {
         }),
       });
       if (res.ok) {
+        rememberPlatform(platform);
         addToast(t("clips.scheduled").replace("{p}", platform));
       } else {
         const data = await res.json().catch(() => null);
         addToast(data?.error || t("clips.scheduleFailed"), "error");
       }
     },
-    [schedAt, schedPlatform, addToast, t]
+    [schedAt, schedPlatform, defaultAt, addToast, t]
   );
 
   const remove = useCallback(async (clip: ClipRow) => {
@@ -495,7 +513,7 @@ export default function ClipsTab() {
                       <Download className="w-3.5 h-3.5" /> {t("clips.download")}
                     </a>
                     <select
-                      value={schedPlatform[clip.id] ?? "YouTube"}
+                      value={schedPlatform[clip.id] ?? lastPlatform("YouTube")}
                       onChange={(e) =>
                         setSchedPlatform((prev) => ({ ...prev, [clip.id]: e.target.value }))
                       }
@@ -509,7 +527,7 @@ export default function ClipsTab() {
                     </select>
                     <input
                       type="datetime-local"
-                      value={schedAt[clip.id] ?? ""}
+                      value={schedAt[clip.id] ?? defaultAt}
                       onChange={(e) =>
                         setSchedAt((prev) => ({ ...prev, [clip.id]: e.target.value }))
                       }
@@ -517,12 +535,25 @@ export default function ClipsTab() {
                     />
                     <button
                       onClick={() => schedule(clip)}
-                      disabled={!schedAt[clip.id]}
-                      className="px-4 py-2 rounded-lg bg-gradient-to-r from-neon-purple to-electric-blue text-white text-xs font-medium hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-1.5"
+                      className="px-4 py-2 rounded-lg bg-gradient-to-r from-neon-purple to-electric-blue text-white text-xs font-medium hover:opacity-90 transition-opacity flex items-center gap-1.5"
                     >
                       <Calendar className="w-3.5 h-3.5" /> {t("clips.schedule")}
                     </button>
                   </div>
+                  {connections &&
+                    !isConnected(connections, schedPlatform[clip.id] ?? lastPlatform("YouTube")) && (
+                      <p className="text-[11px] text-warning flex flex-wrap items-center gap-1.5">
+                        {t("sched.demoNote", {
+                          platform: schedPlatform[clip.id] ?? lastPlatform("YouTube"),
+                        })}
+                        <button
+                          onClick={() => onNavigate?.()}
+                          className="underline hover:text-foreground transition-colors"
+                        >
+                          {t("sched.connectNow")}
+                        </button>
+                      </p>
+                    )}
                 </div>
               ) : (
                 <p className="text-xs text-electric-blue flex items-center gap-1.5">

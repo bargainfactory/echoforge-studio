@@ -56,6 +56,15 @@ import type { Project, Asset } from "@/lib/data";
 import IntegrationsPanel from "@/components/integrations-panel";
 import BrandVoicePanel from "@/components/brand-voice-panel";
 import ClipsTab from "@/components/clips-tab";
+import SetupChecklist from "@/components/setup-checklist";
+import {
+  useConnections,
+  isConnected,
+  nextMorning,
+  lastPlatform,
+  rememberPlatform,
+  PLATFORM_KEYS,
+} from "@/lib/use-connections";
 
 type Tab =
   | "Overview"
@@ -84,6 +93,16 @@ const sidebarItems: { icon: typeof LayoutDashboard; label: Tab; tKey: string }[]
   { icon: DollarSign, label: "Business", tKey: "dash.business" },
   { icon: Bell, label: "Notifications", tKey: "dash.notifications" },
   { icon: Settings, label: "Settings", tKey: "dash.settings" },
+];
+
+// Twelve flat tabs exceed comfortable scanning; labeled groups make the same
+// features read as a workflow: create → publish → grow → manage.
+const sidebarGroups: { labelKey: string | null; tabs: Tab[] }[] = [
+  { labelKey: null, tabs: ["Overview"] },
+  { labelKey: "dash.gCreate", tabs: ["Ideas", "Upload", "Projects", "Clips"] },
+  { labelKey: "dash.gPublish", tabs: ["Schedule"] },
+  { labelKey: "dash.gGrow", tabs: ["Analytics", "Audit", "Audience"] },
+  { labelKey: "dash.gManage", tabs: ["Business", "Notifications", "Settings"] },
 ];
 
 // --- Client-side export helpers (no server round-trip needed) ---
@@ -161,6 +180,8 @@ export default function Dashboard() {
   const [uploading, setUploading] = useState(false);
   const [uploadPct, setUploadPct] = useState(0);
   const [viewingAsset, setViewingAsset] = useState<Asset | null>(null);
+  const [clipsProject, setClipsProject] = useState("");
+  const connections = useConnections();
   const [editDraft, setEditDraft] = useState<string | null>(null);
   const [savingEdit, setSavingEdit] = useState(false);
   const [regenFeedback, setRegenFeedback] = useState("");
@@ -170,8 +191,8 @@ export default function Dashboard() {
     findings: { severity: string; category: string; term: string; snippet: string }[];
   } | null>(null);
   const [prov, setProv] = useState<{ engine: string; actions: number; valid: boolean } | null>(null);
-  const [schedulePlatform, setSchedulePlatform] = useState("TikTok");
-  const [scheduleAt, setScheduleAt] = useState("");
+  const [schedulePlatform, setSchedulePlatform] = useState(() => lastPlatform("TikTok"));
+  const [scheduleAt, setScheduleAt] = useState(() => nextMorning());
   const [settingsForm, setSettingsForm] = useState({
     name: "",
     email: "",
@@ -289,9 +310,10 @@ export default function Dashboard() {
       }),
     });
     if (res.ok) {
+      rememberPlatform(schedulePlatform);
       addToast(`Scheduled to ${schedulePlatform}`);
       setViewingAsset(null);
-      setScheduleAt("");
+      setScheduleAt(nextMorning());
     } else {
       addToast("Could not schedule", "error");
     }
@@ -350,25 +372,38 @@ export default function Dashboard() {
           </Link>
         </div>
 
-        <nav className="flex-1 p-4 space-y-1">
-          {sidebarItems.map((item) => (
-            <button
-              key={item.label}
-              onClick={() => setActiveTab(item.label)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
-                activeTab === item.label
-                  ? "bg-neon-purple/10 text-neon-purple"
-                  : "text-cyber-muted hover:text-foreground hover:bg-cyber-card"
-              }`}
-            >
-              <item.icon className="w-4 h-4" />
-              {t(item.tKey)}
-              {item.label === "Notifications" && unreadCount > 0 && (
-                <span className="ml-auto w-5 h-5 rounded-full bg-neon-purple text-white text-xs flex items-center justify-center">
-                  {unreadCount}
-                </span>
+        <nav className="flex-1 p-4 space-y-0.5 overflow-y-auto">
+          {sidebarGroups.map((group) => (
+            <div key={group.labelKey ?? "top"}>
+              {group.labelKey && (
+                <p className="px-3 pt-4 pb-1 text-[10px] font-semibold uppercase tracking-wider text-cyber-muted/70">
+                  {t(group.labelKey)}
+                </p>
               )}
-            </button>
+              {group.tabs.map((label) => {
+                const item = sidebarItems.find((i) => i.label === label);
+                if (!item) return null;
+                return (
+                  <button
+                    key={item.label}
+                    onClick={() => setActiveTab(item.label)}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
+                      activeTab === item.label
+                        ? "bg-neon-purple/10 text-neon-purple"
+                        : "text-cyber-muted hover:text-foreground hover:bg-cyber-card"
+                    }`}
+                  >
+                    <item.icon className="w-4 h-4" />
+                    {t(item.tKey)}
+                    {item.label === "Notifications" && unreadCount > 0 && (
+                      <span className="ml-auto w-5 h-5 rounded-full bg-neon-purple text-white text-xs flex items-center justify-center">
+                        {unreadCount}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           ))}
         </nav>
 
@@ -444,6 +479,10 @@ export default function Dashboard() {
               onApprove={approveProject}
               onRemove={removeProject}
               onView={setViewingAsset}
+              onClip={(id) => {
+                setClipsProject(id);
+                setActiveTab("Clips");
+              }}
             />
           )}
           {activeTab === "Upload" && (
@@ -456,8 +495,15 @@ export default function Dashboard() {
             />
           )}
           {activeTab === "Ideas" && <IdeasTab />}
-          {activeTab === "Clips" && <ClipsTab />}
-          {activeTab === "Schedule" && <ScheduleTab />}
+          {activeTab === "Clips" && (
+            <ClipsTab
+              initialProject={clipsProject}
+              onNavigate={() => setActiveTab("Settings")}
+            />
+          )}
+          {activeTab === "Schedule" && (
+            <ScheduleTab onNavigate={() => setActiveTab("Settings")} />
+          )}
           {activeTab === "Analytics" && <AnalyticsTab />}
           {activeTab === "Audit" && <AuditTab />}
           {activeTab === "Audience" && <AudienceTab />}
@@ -467,6 +513,7 @@ export default function Dashboard() {
               notifications={notifications}
               onMarkRead={markNotificationRead}
               onMarkAllRead={markAllNotificationsRead}
+              onNavigate={setActiveTab}
             />
           )}
           {activeTab === "Settings" && (
@@ -781,6 +828,24 @@ export default function Dashboard() {
                     <Calendar className="w-4 h-4" /> Schedule
                   </button>
                 </div>
+                {connections && !isConnected(connections, schedulePlatform) && (
+                  <p className="text-[11px] text-warning flex flex-wrap items-center gap-1.5">
+                    {PLATFORM_KEYS[schedulePlatform]
+                      ? t("sched.demoNote", { platform: schedulePlatform })
+                      : t("sched.demoNoteIg")}
+                    {PLATFORM_KEYS[schedulePlatform] && (
+                      <button
+                        onClick={() => {
+                          setViewingAsset(null);
+                          setActiveTab("Settings");
+                        }}
+                        className="underline hover:text-foreground transition-colors"
+                      >
+                        {t("sched.connectNow")}
+                      </button>
+                    )}
+                  </p>
+                )}
                 <div className="flex flex-wrap items-center gap-4">
                   <button
                     onClick={() => {
@@ -876,38 +941,10 @@ function OverviewTab({
     rejected: { label: t("dash.rejected"), color: statusColorMap.rejected },
   };
 
-  const onboardingSteps = [
-    { icon: Mic2, text: t("onb.step1"), cta: t("onb.go1"), tab: "Settings" as Tab },
-    { icon: Lightbulb, text: t("onb.step2"), cta: t("onb.go2"), tab: "Ideas" as Tab },
-    { icon: Calendar, text: t("onb.step3"), cta: t("onb.go3"), tab: "Schedule" as Tab },
-  ];
-
   return (
     <div className="space-y-6">
-      {projects.length === 0 && (
-        <div className="bg-cyber-card border border-neon-purple/30 rounded-xl p-6">
-          <h2 className="font-semibold text-foreground mb-4">{t("onb.title")}</h2>
-          <div className="grid sm:grid-cols-3 gap-4">
-            {onboardingSteps.map((s, i) => (
-              <div key={i} className="bg-cyber-dark border border-cyber-border rounded-xl p-4 flex flex-col">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-6 h-6 rounded-full bg-neon-purple/10 text-neon-purple text-xs flex items-center justify-center font-bold shrink-0">
-                    {i + 1}
-                  </div>
-                  <s.icon className="w-4 h-4 text-neon-purple" />
-                </div>
-                <p className="text-xs text-cyber-muted flex-1">{s.text}</p>
-                <button
-                  onClick={() => onNavigate(s.tab)}
-                  className="mt-3 px-3 py-1.5 rounded-lg bg-gradient-to-r from-neon-purple to-electric-blue text-white text-xs font-medium hover:opacity-90 self-start"
-                >
-                  {s.cta}
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Live activation checklist replaces the old static onboarding banner. */}
+      <SetupChecklist projects={projects} onNavigate={(tab) => onNavigate(tab as Tab)} />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
@@ -1011,19 +1048,38 @@ function ProjectsTab({
   onApprove,
   onRemove,
   onView,
+  onClip,
 }: {
   projects: Project[];
   assets: Asset[];
   onApprove: (id: string) => void;
   onRemove: (id: string) => void;
   onView: (asset: Asset) => void;
+  onClip: (projectId: string) => void;
 }) {
   const { t } = useTranslation();
   const [filter, setFilter] = useState<string>("all");
+  const [query, setQuery] = useState("");
+  const [typeFilter, setTypeFilter] = useState("all");
   // The newest project starts expanded so fresh generations are immediately
   // previewable without an extra click.
   const [openId, setOpenId] = useState<string | null>(projects[0]?.id ?? null);
   const filtered = filter === "all" ? projects : projects.filter((p) => p.status === filter);
+
+  // Cross-project asset search: typing switches the list to matching assets.
+  const assetTypes = Array.from(new Set(assets.map((a) => a.type))).sort();
+  const searching = query.trim().length > 0 || typeFilter !== "all";
+  const q = query.trim().toLowerCase();
+  const matches = searching
+    ? assets.filter(
+        (a) =>
+          (typeFilter === "all" || a.type === typeFilter) &&
+          (!q ||
+            a.name.toLowerCase().includes(q) ||
+            a.type.toLowerCase().includes(q) ||
+            (a.content ?? "").toLowerCase().includes(q))
+      )
+    : [];
 
   const statusConfig: Record<string, { label: string; color: string }> = {
     uploading: { label: t("dash.uploading"), color: statusColorMap.uploading },
@@ -1042,7 +1098,7 @@ function ProjectsTab({
 
   return (
     <div className="space-y-6">
-      <div className="flex gap-2 flex-wrap">
+      <div className="flex gap-2 flex-wrap items-center">
         {["all", "processing", "review", "published"].map((f) => (
           <button
             key={f}
@@ -1054,9 +1110,56 @@ function ProjectsTab({
             {filterLabels[f] ?? f}
           </button>
         ))}
+        <div className="flex gap-2 flex-1 min-w-[220px] sm:justify-end">
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={t("proj.searchPh")}
+            className="flex-1 sm:max-w-[220px] px-3 py-1.5 bg-cyber-card border border-cyber-border rounded-lg text-xs text-foreground placeholder:text-cyber-muted focus:outline-none focus:border-neon-purple/50"
+          />
+          <select
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value)}
+            className="px-2 py-1.5 bg-cyber-card border border-cyber-border rounded-lg text-xs text-cyber-muted focus:outline-none focus:border-neon-purple/50"
+          >
+            <option value="all">{t("proj.allTypes")}</option>
+            {assetTypes.map((tp) => (
+              <option key={tp} value={tp}>
+                {tp}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
-      {filtered.length === 0 ? (
+      {searching ? (
+        <div>
+          <p className="text-xs text-cyber-muted mb-3">
+            {t("proj.results").replace("{n}", String(matches.length))}
+          </p>
+          <div className="grid sm:grid-cols-2 gap-2.5">
+            {matches.map((asset) => (
+              <button
+                key={asset.id}
+                onClick={() => onView(asset)}
+                className="text-left bg-cyber-card border border-cyber-border rounded-lg p-3 hover:border-neon-purple/50 transition-colors group"
+              >
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <span className="text-[11px] font-medium text-neon-purple">{asset.type}</span>
+                  <span className="flex items-center gap-1 text-[11px] text-cyber-muted group-hover:text-foreground transition-colors">
+                    <Eye className="w-3 h-3" /> {t("proj.preview")}
+                  </span>
+                </div>
+                <p className="text-sm text-foreground font-medium line-clamp-1">{asset.name}</p>
+                {asset.content && (
+                  <p className="text-xs text-cyber-muted mt-1 line-clamp-2">{asset.content}</p>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : filtered.length === 0 ? (
         <div className="text-center py-16 text-cyber-muted">{t("dash.noProjects")}</div>
       ) : (
         <div className="space-y-3">
@@ -1094,6 +1197,17 @@ function ProjectsTab({
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
+                    {project.fileName && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onClip(project.id);
+                        }}
+                        className="hidden sm:flex px-3 py-1.5 text-xs font-medium rounded-lg bg-cyber-dark border border-neon-purple/40 text-neon-purple hover:bg-neon-purple/10 transition-colors items-center gap-1.5"
+                      >
+                        <Scissors className="w-3 h-3" /> {t("proj.clip")}
+                      </button>
+                    )}
                     {project.status === "review" && (
                       <button
                         onClick={(e) => {
@@ -1262,9 +1376,10 @@ function schedDayKey(d: Date): string {
   return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
 }
 
-function ScheduleTab() {
+function ScheduleTab({ onNavigate }: { onNavigate: () => void }) {
   const { assets, addToast } = useApp();
   const { t, locale } = useTranslation();
+  const connections = useConnections();
   const [posts, setPosts] = useState<SchedPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<"calendar" | "list">("calendar");
@@ -1276,7 +1391,7 @@ function ScheduleTab() {
   const [selected, setSelected] = useState<SchedPost | null>(null);
   const [saving, setSaving] = useState(false);
   const [formAsset, setFormAsset] = useState("");
-  const [formPlatform, setFormPlatform] = useState("TikTok");
+  const [formPlatform, setFormPlatform] = useState(() => lastPlatform("TikTok"));
   const [formAt, setFormAt] = useState(() => {
     const d = new Date();
     d.setDate(d.getDate() + 1);
@@ -1351,6 +1466,7 @@ function ScheduleTab() {
     setSaving(false);
     if (res.ok) {
       const { post } = await res.json();
+      rememberPlatform(formPlatform);
       setPosts((prev) => [post, ...prev]);
       setComposerOpen(false);
       addToast(t("sched.toastScheduled", { platform: formPlatform }));
@@ -1668,6 +1784,21 @@ function ScheduleTab() {
                       />
                     </div>
                   </div>
+                  {connections && !isConnected(connections, formPlatform) && (
+                    <p className="text-[11px] text-warning flex flex-wrap items-center gap-1.5">
+                      {PLATFORM_KEYS[formPlatform]
+                        ? t("sched.demoNote", { platform: formPlatform })
+                        : t("sched.demoNoteIg")}
+                      {PLATFORM_KEYS[formPlatform] && (
+                        <button
+                          onClick={onNavigate}
+                          className="underline hover:text-foreground transition-colors"
+                        >
+                          {t("sched.connectNow")}
+                        </button>
+                      )}
+                    </p>
+                  )}
                   <button
                     onClick={createPost}
                     disabled={saving || !formAsset || !formAt}
@@ -3521,14 +3652,29 @@ function AnalyticsTab() {
 }
 
 // --- Notifications Tab ---
+// Server notification titles → the tab where that event actually lives, so a
+// "Clip Ready" notification is one click from the clip itself.
+const NOTIF_TABS: Record<string, Tab> = {
+  "Clip Ready": "Clips",
+  "Clip Render Failed": "Clips",
+  "Scheduled Post Published": "Schedule",
+  "Evergreen Re-queued": "Schedule",
+  "A/B Hook Test Decided": "Schedule",
+  "Assets Ready for Review": "Projects",
+  "Media Transcribed": "Projects",
+  "Your Weekly Brief": "Analytics",
+};
+
 function NotificationsTab({
   notifications,
   onMarkRead,
   onMarkAllRead,
+  onNavigate,
 }: {
   notifications: { id: string; title: string; message: string; time: string; read: boolean; type: string }[];
   onMarkRead: (id: string) => void;
   onMarkAllRead: () => void;
+  onNavigate: (tab: Tab) => void;
 }) {
   const { t } = useTranslation();
   const typeIcons: Record<string, typeof CheckCircle> = { success: CheckCircle, info: Bell, warning: Clock };
@@ -3570,6 +3716,18 @@ function NotificationsTab({
                 <p className="text-sm text-cyber-muted mt-0.5">{n.message}</p>
                 <p className="text-xs text-cyber-muted mt-1">{n.time}</p>
               </div>
+              {NOTIF_TABS[n.title] && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onMarkRead(n.id);
+                    onNavigate(NOTIF_TABS[n.title]);
+                  }}
+                  className="text-xs text-electric-blue hover:underline shrink-0 flex items-center gap-0.5"
+                >
+                  {t("notif.open")} <ChevronRight className="w-3 h-3" />
+                </button>
+              )}
               {!n.read && (
                 <button className="text-xs text-neon-purple hover:underline shrink-0">
                   {t("dash.markRead")}
