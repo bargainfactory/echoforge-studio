@@ -772,6 +772,7 @@ export const en: Record<string, string> = {
   "proj.searchPh": "Search assets…",
   "proj.allTypes": "All types",
   "proj.results": "{n} matching assets",
+  "voice.presets": "Presets…",
   // Setup checklist
   "cl.title": "Get set up",
   "cl.progress": "{done} of {total} complete",
