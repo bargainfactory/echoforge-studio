@@ -784,6 +784,7 @@ export const en: Record<string, string> = {
   "proj.searchPh": "Search assets…",
   "proj.allTypes": "All types",
   "proj.results": "{n} matching assets",
+  "proj.assetsWord": "assets",
   "voice.presets": "Presets…",
   "services.createFree": "Create one free",
   // Ideas pipeline CTA

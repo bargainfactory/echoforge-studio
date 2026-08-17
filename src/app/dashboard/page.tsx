@@ -106,6 +106,18 @@ const sidebarGroups: { labelKey: string | null; tabs: Tab[] }[] = [
   { labelKey: "dash.gManage", tabs: ["Business", "Notifications"] },
 ];
 
+/** Type-colored dot for asset preview cards — a scannable format cue. */
+function assetTypeDot(type: string): string {
+  const s = type.toLowerCase();
+  if (s.includes("short")) return "bg-red-400";
+  if (s.includes("tiktok")) return "bg-cyan-400";
+  if (s.includes("reel")) return "bg-pink-400";
+  if (s.includes("carousel")) return "bg-blue-400";
+  if (s.includes("newsletter") || s.includes("email")) return "bg-neon-purple";
+  if (s.includes("thread")) return "bg-sky-400";
+  return "bg-cyber-muted";
+}
+
 // --- Client-side export helpers (no server round-trip needed) ---
 
 function downloadBlob(name: string, mime: string, content: string) {
@@ -1148,7 +1160,10 @@ function ProjectsTab({
                 className="text-left bg-cyber-card border border-cyber-border rounded-lg p-3 hover:border-neon-purple/50 transition-colors group"
               >
                 <div className="flex items-center justify-between gap-2 mb-1">
-                  <span className="text-[11px] font-medium text-neon-purple">{asset.type}</span>
+                  <span className="flex items-center gap-1.5 text-[11px] font-medium text-neon-purple">
+                    <span className={`w-1.5 h-1.5 rounded-full ${assetTypeDot(asset.type)}`} />
+                    {asset.type}
+                  </span>
                   <span className="flex items-center gap-1 text-[11px] text-cyber-muted group-hover:text-foreground transition-colors">
                     <Eye className="w-3 h-3" /> {t("proj.preview")}
                   </span>
@@ -1169,21 +1184,45 @@ function ProjectsTab({
             const config = statusConfig[project.status] || statusConfig.processing;
             const projAssets = assets.filter((a) => a.projectId === project.id);
             const open = openId === project.id;
+            // Status-tinted icon tile + created date distinguish look-alike rows.
+            const tile =
+              project.status === "published"
+                ? "bg-gradient-to-br from-success/25 to-success/5 border-success/40 text-success"
+                : project.status === "review"
+                  ? "bg-gradient-to-br from-neon-purple/30 to-electric-blue/15 border-neon-purple/40 text-neon-purple"
+                  : "bg-gradient-to-br from-electric-blue/25 to-electric-blue/5 border-electric-blue/40 text-electric-blue";
+            const dt = new Date(project.createdAt);
+            const dateLabel = Number.isNaN(dt.getTime())
+              ? null
+              : dt.toLocaleDateString(undefined, { month: "short", day: "numeric" });
             return (
-              <div key={project.id} className="bg-cyber-card border border-cyber-border rounded-xl p-5">
+              <div
+                key={project.id}
+                className={`bg-cyber-card border rounded-xl p-5 transition-colors ${
+                  open ? "border-neon-purple/40" : "border-cyber-border hover:border-neon-purple/25"
+                }`}
+              >
                 <div
                   className="flex items-start gap-4 cursor-pointer"
                   onClick={() => setOpenId(open ? null : project.id)}
                 >
-                  <div className="w-12 h-12 rounded-xl bg-cyber-dark border border-cyber-border flex items-center justify-center shrink-0">
-                    <FileVideo className="w-5 h-5 text-cyber-muted" />
+                  <div
+                    className={`w-12 h-12 rounded-xl border flex items-center justify-center shrink-0 ${tile}`}
+                  >
+                    <FileVideo className="w-5 h-5" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-foreground">{project.title}</p>
                     <div className="flex flex-wrap items-center gap-3 mt-1">
                       <span className={`text-xs px-2 py-0.5 rounded-full ${config.color}`}>{config.label}</span>
+                      {dateLabel && <span className="text-xs text-cyber-muted">{dateLabel}</span>}
                       {project.fileName && <span className="text-xs text-cyber-muted">{project.fileName}</span>}
                       {project.fileSize && <span className="text-xs text-cyber-muted">{project.fileSize}</span>}
+                      {projAssets.length > 0 && (
+                        <span className="text-xs text-neon-purple">
+                          {projAssets.length} {t("proj.assetsWord")}
+                        </span>
+                      )}
                     </div>
                     <div className="mt-3">
                       <div className="flex items-center justify-between text-xs text-cyber-muted mb-1">
@@ -1251,7 +1290,10 @@ function ProjectsTab({
                             className="text-left bg-cyber-dark border border-cyber-border rounded-lg p-3 hover:border-neon-purple/50 transition-colors group"
                           >
                             <div className="flex items-center justify-between gap-2 mb-1">
-                              <span className="text-[11px] font-medium text-neon-purple">{asset.type}</span>
+                              <span className="flex items-center gap-1.5 text-[11px] font-medium text-neon-purple">
+                    <span className={`w-1.5 h-1.5 rounded-full ${assetTypeDot(asset.type)}`} />
+                    {asset.type}
+                  </span>
                               <span className="flex items-center gap-1 text-[11px] text-cyber-muted group-hover:text-foreground transition-colors">
                                 <Eye className="w-3 h-3" /> {t("proj.preview")}
                               </span>
