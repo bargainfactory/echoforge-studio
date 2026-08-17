@@ -776,6 +776,14 @@ export const en: Record<string, string> = {
   "proj.results": "{n} matching assets",
   "voice.presets": "Presets…",
   "services.createFree": "Create one free",
+  // Ideas pipeline CTA
+  "ideas.ctaTitle": "From spark to scheduled content — three clicks:",
+  "ideas.ctaS1t": "1. Drop in every idea",
+  "ideas.ctaS1d": "Each one gets an instant hook-potential score out of 10 (the purple badge). High scores mean the title can stop a scroll — make those first.",
+  "ideas.ctaS2t": "2. Write script",
+  "ideas.ctaS2d": "One click drafts the full recording script from your idea — cold-open hook, structured sections, and closing CTA — ready to edit or read as-is.",
+  "ideas.ctaS3t": "3. Generate assets",
+  "ideas.ctaS3d": "Folds the script into a complete asset set — shorts, carousel, newsletter, and thread — in your brand voice, ready to review and schedule.",
   // Persona pages
   "footer.solutions": "Solutions",
   "footer.forPodcasters": "For Podcasters",

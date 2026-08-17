@@ -2172,7 +2172,40 @@ function IdeasTab() {
 
   return (
     <div className="space-y-5">
-      <p className="text-sm text-cyber-muted">{t("ideas.intro")}</p>
+      {/* The pipeline, spelled out: what to do, what the score means, and
+          what each button produces — mirrors the actual controls below. */}
+      <div className="bg-cyber-card border border-neon-purple/30 rounded-xl p-5">
+        <p className="text-sm font-semibold text-foreground mb-4">{t("ideas.ctaTitle")}</p>
+        <div className="grid sm:grid-cols-3 gap-4">
+          <div className="flex gap-3">
+            <span className="w-8 h-8 rounded-lg bg-neon-purple/20 border border-neon-purple/40 text-neon-purple text-sm font-bold flex items-center justify-center shrink-0">
+              8
+            </span>
+            <div>
+              <p className="text-sm font-medium text-foreground">{t("ideas.ctaS1t")}</p>
+              <p className="text-xs text-cyber-muted mt-0.5 leading-relaxed">{t("ideas.ctaS1d")}</p>
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <span className="w-8 h-8 rounded-lg bg-cyber-dark border border-cyber-border flex items-center justify-center shrink-0">
+              <FileText className="w-4 h-4 text-electric-blue" />
+            </span>
+            <div>
+              <p className="text-sm font-medium text-foreground">{t("ideas.ctaS2t")}</p>
+              <p className="text-xs text-cyber-muted mt-0.5 leading-relaxed">{t("ideas.ctaS2d")}</p>
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <span className="w-8 h-8 rounded-lg bg-cyber-dark border border-cyber-border flex items-center justify-center shrink-0">
+              <Sparkles className="w-4 h-4 text-neon-purple" />
+            </span>
+            <div>
+              <p className="text-sm font-medium text-foreground">{t("ideas.ctaS3t")}</p>
+              <p className="text-xs text-cyber-muted mt-0.5 leading-relaxed">{t("ideas.ctaS3d")}</p>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <div className="bg-cyber-card border border-cyber-border rounded-xl p-4 space-y-3">
         <input
