@@ -81,28 +81,29 @@ type Tab =
   | "Settings";
 
 const sidebarItems: { icon: typeof LayoutDashboard; label: Tab; tKey: string }[] = [
+  { icon: Settings, label: "Settings", tKey: "dash.settings" },
   { icon: LayoutDashboard, label: "Overview", tKey: "dash.overview" },
   { icon: Lightbulb, label: "Ideas", tKey: "dash.ideas" },
+  { icon: Upload, label: "Upload", tKey: "dash.upload" },
   { icon: Film, label: "Projects", tKey: "dash.projects" },
   { icon: Scissors, label: "Clips", tKey: "dash.clips" },
-  { icon: Upload, label: "Upload", tKey: "dash.upload" },
   { icon: Calendar, label: "Schedule", tKey: "dash.schedule" },
   { icon: BarChart3, label: "Analytics", tKey: "dash.analytics" },
   { icon: Gauge, label: "Audit", tKey: "dash.audit" },
   { icon: Users, label: "Audience", tKey: "dash.audience" },
   { icon: DollarSign, label: "Business", tKey: "dash.business" },
   { icon: Bell, label: "Notifications", tKey: "dash.notifications" },
-  { icon: Settings, label: "Settings", tKey: "dash.settings" },
 ];
 
 // Twelve flat tabs exceed comfortable scanning; labeled groups make the same
-// features read as a workflow: create → publish → grow → manage.
+// features read as a workflow. Settings leads — it is where accounts, keys,
+// and brand voice live, the levers everything else depends on.
 const sidebarGroups: { labelKey: string | null; tabs: Tab[] }[] = [
-  { labelKey: null, tabs: ["Overview"] },
+  { labelKey: null, tabs: ["Settings", "Overview"] },
   { labelKey: "dash.gCreate", tabs: ["Ideas", "Upload", "Projects", "Clips"] },
   { labelKey: "dash.gPublish", tabs: ["Schedule"] },
   { labelKey: "dash.gGrow", tabs: ["Analytics", "Audit", "Audience"] },
-  { labelKey: "dash.gManage", tabs: ["Business", "Notifications", "Settings"] },
+  { labelKey: "dash.gManage", tabs: ["Business", "Notifications"] },
 ];
 
 // --- Client-side export helpers (no server round-trip needed) ---
