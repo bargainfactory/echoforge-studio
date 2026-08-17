@@ -4,12 +4,13 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, Zap } from "lucide-react";
+import { ChevronDown, Menu, X, Zap } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
 import LanguageSwitcher from "@/components/language-switcher";
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
+  const [solutionsOpen, setSolutionsOpen] = useState(false);
   const pathname = usePathname();
   const { t } = useTranslation();
 
@@ -20,6 +21,14 @@ export default function Navbar() {
     { href: "/#portfolio", label: t("nav.portfolio") },
     { href: "/#pricing", label: t("nav.pricing") },
     { href: "/blog", label: t("nav.blog") },
+  ];
+
+  // Persona funnels — the parallel doors into the same product.
+  const solutions = [
+    { href: "/for/podcasters", label: t("footer.forPodcasters") },
+    { href: "/for/coaches", label: t("footer.forCoaches") },
+    { href: "/for/course-creators", label: t("footer.forCourses") },
+    { href: "/for/agencies", label: t("footer.forAgencies") },
   ];
 
   return (
@@ -34,6 +43,54 @@ export default function Navbar() {
           </Link>
 
           <div className="hidden md:flex items-center gap-8">
+            {/* Solutions dropdown: who Virafold is for */}
+            <div
+              className="relative"
+              onMouseEnter={() => setSolutionsOpen(true)}
+              onMouseLeave={() => setSolutionsOpen(false)}
+            >
+              <button
+                onClick={() => setSolutionsOpen((v) => !v)}
+                className={`text-sm transition-colors flex items-center gap-1 ${
+                  pathname.startsWith("/for/")
+                    ? "text-foreground"
+                    : "text-cyber-muted hover:text-foreground"
+                }`}
+              >
+                {t("footer.solutions")}
+                <ChevronDown
+                  className={`w-3.5 h-3.5 transition-transform ${solutionsOpen ? "rotate-180" : ""}`}
+                />
+              </button>
+              <AnimatePresence>
+                {solutionsOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 6 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute left-0 top-full pt-2"
+                  >
+                    <div className="w-52 bg-background/95 backdrop-blur-xl border border-cyber-border rounded-xl p-1.5 shadow-xl shadow-black/30">
+                      {solutions.map((s) => (
+                        <Link
+                          key={s.href}
+                          href={s.href}
+                          onClick={() => setSolutionsOpen(false)}
+                          className={`block px-3 py-2 rounded-lg text-sm transition-colors ${
+                            pathname === s.href
+                              ? "text-neon-purple bg-neon-purple/10"
+                              : "text-cyber-muted hover:text-foreground hover:bg-cyber-card"
+                          }`}
+                        >
+                          {s.label}
+                        </Link>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
             {links.map((link) => (
               <Link
                 key={link.href}
@@ -81,6 +138,20 @@ export default function Navbar() {
             className="md:hidden border-t border-cyber-border bg-background/95 backdrop-blur-xl"
           >
             <div className="px-4 py-4 space-y-3">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-cyber-muted/70 pt-1">
+                {t("footer.solutions")}
+              </p>
+              {solutions.map((s) => (
+                <Link
+                  key={s.href}
+                  href={s.href}
+                  onClick={() => setOpen(false)}
+                  className="block text-sm text-cyber-muted hover:text-foreground transition-colors py-2"
+                >
+                  {s.label}
+                </Link>
+              ))}
+              <div className="border-t border-cyber-border pt-3" />
               {links.map((link) => (
                 <Link
                   key={link.href}
