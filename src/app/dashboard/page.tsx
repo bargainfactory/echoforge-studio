@@ -2441,7 +2441,7 @@ function IdeasTab() {
                       : writeScript(idea)
                   }
                   disabled={busyId === idea.id}
-                  className="px-3 py-1.5 text-xs font-medium rounded-lg bg-cyber-dark border border-cyber-border text-foreground hover:border-neon-purple/50 transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                  className="px-3 py-1.5 text-xs font-medium rounded-lg bg-electric-blue/10 border border-electric-blue/40 text-electric-blue hover:bg-electric-blue/20 transition-colors disabled:opacity-50 flex items-center gap-1.5"
                 >
                   {busyId === idea.id ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -2461,7 +2461,7 @@ function IdeasTab() {
                   onClick={() => makeVideo(idea)}
                   disabled={busyId === idea.id || !idea.script}
                   title={idea.script ? t("ideas.makeVideoHint") : t("ideas.makeVideoNeedsScript")}
-                  className="px-3 py-1.5 text-xs font-medium rounded-lg bg-cyber-dark border border-electric-blue/40 text-electric-blue hover:bg-electric-blue/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
+                  className="px-3 py-1.5 text-xs font-medium rounded-lg bg-fuchsia-500/10 border border-fuchsia-500/40 text-fuchsia-400 hover:bg-fuchsia-500/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
                 >
                   <Film className="w-3.5 h-3.5" /> {t("ideas.makeVideo")}
                 </button>
