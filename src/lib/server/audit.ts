@@ -238,7 +238,7 @@ COMPUTED WEAKNESSES:
 ${report.findings.join("\n") || "(none flagged)"}
 Section scores: ${report.sections.map((s) => `${s.key} ${s.score}/100`).join(", ")}`;
 
-    const res = await llmComplete(AUDIT_SYSTEM, prompt, AUDIT_SCHEMA);
+    const res = await llmComplete(AUDIT_SYSTEM, prompt, AUDIT_SCHEMA, { tier: "standard" });
     if (!res) return report;
     const start = res.text.indexOf("{");
     const end = res.text.lastIndexOf("}");

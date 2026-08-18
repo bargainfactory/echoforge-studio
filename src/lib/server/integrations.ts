@@ -64,6 +64,30 @@ export const INTEGRATIONS: IntegrationDef[] = [
     ],
   },
   {
+    name: "routing",
+    label: "Model routing (token efficiency)",
+    description:
+      "Maps task tiers to models. Format: provider:model where provider is anthropic, xai, openai, or custom. Flagship = full generation & scripts, Standard = coaching & clip detection, Fast = one-line rewrites. Unset tiers use sensible defaults; unavailable models fall through the provider chain.",
+    docsHint: "Change a tier here the day a better/cheaper model ships — no deploy needed.",
+    fields: [
+      { key: "flagshipModel", label: "Flagship tier", envVar: "LLM_FLAGSHIP", placeholder: "anthropic:claude-opus-4-8" },
+      { key: "standardModel", label: "Standard tier", envVar: "LLM_STANDARD", placeholder: "xai:grok-4" },
+      { key: "fastModel", label: "Fast tier", envVar: "LLM_FAST", placeholder: "openai:gpt-4o-mini" },
+    ],
+  },
+  {
+    name: "customllm",
+    label: "Custom endpoint (OpenAI-compatible)",
+    description:
+      "Any OpenAI-compatible server — Groq, Together, Fireworks, DeepInfra, or your own vLLM/Ollama box. Once set, route any tier to it with custom:<model> in Model routing.",
+    docsHint: "Base URL up to /v1 (e.g. https://api.groq.com/openai/v1).",
+    fields: [
+      { key: "baseUrl", label: "Base URL", envVar: "CUSTOM_LLM_URL", placeholder: "https://api.groq.com/openai/v1" },
+      { key: "model", label: "Model name", envVar: "CUSTOM_LLM_MODEL", placeholder: "llama-3.3-70b-versatile" },
+      { key: "apiKey", label: "API key", envVar: "CUSTOM_LLM_KEY", secret: true, placeholder: "gsk_..." },
+    ],
+  },
+  {
     name: "voiceover",
     label: "Voiceover (ElevenLabs)",
     description:

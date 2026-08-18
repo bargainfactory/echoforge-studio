@@ -143,7 +143,11 @@ function run(cmd: string, args: string[], cwd?: string): Promise<{ code: number;
     let err = "";
     let child;
     try {
-      child = spawn(cmd, args, { cwd, windowsHide: true });
+      // Renders are CPU-bound; deprioritize them on the shared box so live
+      // web requests always win the scheduler.
+      const [bin, argv] =
+        process.platform === "win32" ? [cmd, args] : ["nice", ["-n", "15", cmd, ...args]];
+      child = spawn(bin, argv, { cwd, windowsHide: true });
     } catch (e) {
       resolve({ code: -1, err: String(e) });
       return;

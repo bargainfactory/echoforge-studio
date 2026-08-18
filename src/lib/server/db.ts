@@ -1683,6 +1683,33 @@ export function insertEvent(event: string, path: string, meta: string | null): v
     .run(event.slice(0, 64), path.slice(0, 256), Date.now(), meta ? meta.slice(0, 512) : null);
 }
 
+/** Token telemetry by tier, aggregated from llm_* analytics events. */
+export function llmUsage(): {
+  tier: string;
+  calls: number;
+  inTok: number;
+  outTok: number;
+}[] {
+  const rows = getDb()
+    .prepare("SELECT event, meta FROM analytics_events WHERE event LIKE 'llm_%'")
+    .all() as { event: string; meta: string | null }[];
+  const agg = new Map<string, { calls: number; inTok: number; outTok: number }>();
+  for (const r of rows) {
+    const tier = r.event.slice(4);
+    const cur = agg.get(tier) ?? { calls: 0, inTok: 0, outTok: 0 };
+    cur.calls++;
+    try {
+      const m = r.meta ? (JSON.parse(r.meta) as { i?: number; o?: number }) : null;
+      cur.inTok += m?.i ?? 0;
+      cur.outTok += m?.o ?? 0;
+    } catch {
+      /* count the call even when meta is unparseable */
+    }
+    agg.set(tier, cur);
+  }
+  return [...agg.entries()].map(([tier, v]) => ({ tier, ...v }));
+}
+
 export function eventCounts(): { event: string; count: number }[] {
   return getDb()
     .prepare("SELECT event, COUNT(*) as count FROM analytics_events GROUP BY event ORDER BY count DESC")

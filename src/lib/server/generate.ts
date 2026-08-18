@@ -234,6 +234,49 @@ ${tweets.length + 2}/ ${close}`,
   return applyVoice(assets, voice);
 }
 
+// --- Model evals (the safe-downgrade gate for the tier router) ---
+
+const GOLDEN_EVAL = {
+  title: "Why most creators quit at 90 days",
+  transcript:
+    "Most creators quit around day ninety, and it is almost never about talent. The first month runs on excitement. The second month runs on discipline. By the third month the numbers are still small, the effort is still large, and the gap between them feels personal. Here is what the data actually shows: channels that survive the first hundred days usually change only one thing — they stop judging every post and start judging every batch of ten. One post is noise. Ten posts is a signal. The creators who make it treat publishing like reps in a gym, not like lottery tickets. They also cut production time in half by batching: one recording day, one editing day, and the rest of the week off the tools. If you are close to quitting, do not change your niche. Change your unit of measurement.",
+};
+
+export interface TierEvalResult {
+  tier: LlmTier;
+  engine: string | null;
+  ok: boolean;
+  assetCount: number;
+  avgHookScore: number;
+  ms: number;
+}
+
+/** Runs the golden generation through one tier and grades it with the same
+ *  deterministic checks the product uses — the gate before any model swap. */
+export async function evalTier(tier: LlmTier): Promise<TierEvalResult> {
+  const started = Date.now();
+  const res = await llmComplete(
+    LLM_SYSTEM,
+    `Title: ${GOLDEN_EVAL.title}`,
+    LLM_SCHEMA,
+    { tier, context: `Transcript / script:\n${GOLDEN_EVAL.transcript}` }
+  );
+  const ms = Date.now() - started;
+  if (!res) return { tier, engine: null, ok: false, assetCount: 0, avgHookScore: 0, ms };
+  const assets = parseAssets(res.text) ?? [];
+  const avg = assets.length
+    ? Math.round(assets.reduce((a, x) => a + scoreHook(x.name), 0) / assets.length)
+    : 0;
+  return {
+    tier,
+    engine: res.engine,
+    ok: assets.length >= 5,
+    assetCount: assets.length,
+    avgHookScore: avg,
+    ms,
+  };
+}
+
 // --- Format-scoped creation (the /create/[format] tool pages) ---
 
 export const CREATE_FORMATS = [
@@ -335,101 +378,195 @@ const REGEN_SCHEMA = {
 } as const;
 
 /**
- * Shared LLM call. Uses Anthropic (Claude) when an Anthropic key is configured
- * (env or the integrations store), else OpenAI when that key is present, else
- * returns null so the deterministic engine runs. Any error falls through.
+ * Tier-routed LLM call — the token-efficiency core.
+ *
+ * Tasks declare a tier, never a model: flagship (full generation, scripts),
+ * standard (coaching, highlight detection), fast (one-line rewrites). The
+ * tier→model mapping is operator-editable ("routing" integration, values like
+ * "anthropic:claude-opus-4-8" / "xai:grok-4" / "custom:llama-3.3-70b"), so
+ * adopting a new frontier or open-source model is a config change, not a
+ * deploy. "custom" hits any OpenAI-compatible endpoint (vLLM, Ollama, Groq,
+ * Together…) configured in the "customllm" integration.
+ *
+ * Reusable context (transcripts) is passed separately: Anthropic gets it as a
+ * cache_control block (repeat calls pay ~10% input cost), others get it
+ * prepended. Every successful call logs tier/engine/token telemetry.
+ * Any failure falls through the provider chain; null → deterministic engine.
  */
+export type LlmTier = "flagship" | "standard" | "fast";
+
+export interface LlmOpts {
+  tier?: LlmTier;
+  maxTokens?: number;
+  /** Large reusable context (e.g. a transcript) — provider-cached where supported. */
+  context?: string;
+}
+
+const TIER_DEFAULTS: Record<LlmTier, { route: string; maxTokens: number }> = {
+  flagship: { route: "anthropic:claude-opus-4-8", maxTokens: 32000 },
+  standard: { route: "xai:grok-4", maxTokens: 8192 },
+  fast: { route: "openai:gpt-4o-mini", maxTokens: 2048 },
+};
+
+function parseRoute(s: string): { provider: string; model: string } | null {
+  const i = s.indexOf(":");
+  if (i < 1) return null;
+  return { provider: s.slice(0, i).trim().toLowerCase(), model: s.slice(i + 1).trim() };
+}
+
 export async function llmComplete(
   system: string,
   prompt: string,
-  schema: Record<string, unknown>
+  schema: Record<string, unknown>,
+  opts: LlmOpts = {}
 ): Promise<{ text: string; engine: string } | null> {
+  const tier: LlmTier = opts.tier ?? "flagship";
   // Resolve keys from env or the integrations store, without a static import
   // cycle at module load.
   const { resolveField } = await import("./integrations");
-  const anthropicKey = resolveField("llm", "anthropicApiKey");
-  const xaiKey = resolveField("llm", "xaiApiKey");
-  const openaiKey = resolveField("llm", "openaiApiKey");
+  const creds = {
+    anthropic: resolveField("llm", "anthropicApiKey"),
+    xai: resolveField("llm", "xaiApiKey"),
+    openai: resolveField("llm", "openaiApiKey"),
+    customUrl: resolveField("customllm", "baseUrl"),
+    customModel: resolveField("customllm", "model"),
+    customKey: resolveField("customllm", "apiKey"),
+  };
+  const maxTokens = opts.maxTokens ?? TIER_DEFAULTS[tier].maxTokens;
 
-  if (anthropicKey) {
-    // Each provider gets its own try/catch so a bad or exhausted key falls
-    // through to the next provider instead of aborting the whole chain.
+  // Routed model first, then the default chain (one attempt per provider).
+  const routed = parseRoute(
+    resolveField("routing", `${tier}Model`) || TIER_DEFAULTS[tier].route
+  );
+  const attempts: { provider: string; model: string }[] = [];
+  const push = (a: { provider: string; model: string } | null) => {
+    if (a && !attempts.some((x) => x.provider === a.provider)) attempts.push(a);
+  };
+  push(routed);
+  push({ provider: "anthropic", model: "claude-opus-4-8" });
+  push({ provider: "xai", model: "grok-4" });
+  push({ provider: "openai", model: "gpt-4o" });
+  if (creds.customUrl && creds.customModel) {
+    push({ provider: "custom", model: creds.customModel });
+  }
+
+  const record = async (engine: string, inTok: number, outTok: number) => {
     try {
-      const { default: Anthropic } = await import("@anthropic-ai/sdk");
-      const client = new Anthropic({ apiKey: anthropicKey });
-      // Stream so adaptive thinking + the structured JSON output share a
-      // generous token budget without risking an HTTP timeout or a mid-object
-      // truncation that would silently drop us to the deterministic engine.
-      const stream = client.messages.stream({
-        model: "claude-opus-4-8",
-        max_tokens: 32000,
-        thinking: { type: "adaptive" },
-        system,
-        output_config: { format: { type: "json_schema", schema } },
-        messages: [{ role: "user", content: prompt }],
+      const { insertEvent } = await import("./db");
+      insertEvent(`llm_${tier}`, engine, JSON.stringify({ i: inTok, o: outTok }));
+    } catch {
+      /* telemetry is best-effort */
+    }
+  };
+
+  for (const a of attempts) {
+    try {
+      if (a.provider === "anthropic") {
+        if (!creds.anthropic) continue;
+        const { default: Anthropic } = await import("@anthropic-ai/sdk");
+        const client = new Anthropic({ apiKey: creds.anthropic });
+        // Context block carries cache_control so repeated calls on the same
+        // transcript hit the provider cache. Stream so adaptive thinking +
+        // structured output share the budget without an HTTP timeout.
+        const content = opts.context
+          ? ([
+              {
+                type: "text",
+                text: opts.context,
+                cache_control: { type: "ephemeral" },
+              },
+              { type: "text", text: prompt },
+            ] as never)
+          : prompt;
+        const stream = client.messages.stream({
+          model: a.model,
+          max_tokens: maxTokens,
+          ...(tier === "flagship" ? { thinking: { type: "adaptive" } } : {}),
+          system,
+          output_config: { format: { type: "json_schema", schema } },
+          messages: [{ role: "user", content }],
+        } as never);
+        const res = await stream.finalMessage();
+        const text = res.content
+          .filter((b) => b.type === "text")
+          .map((b) => (b as { text: string }).text)
+          .join("");
+        if (text) {
+          const engine = `anthropic:${a.model}`;
+          const u = res.usage as unknown as { input_tokens?: number; output_tokens?: number };
+          await record(engine, u?.input_tokens ?? 0, u?.output_tokens ?? 0);
+          return { text, engine };
+        }
+        continue;
+      }
+
+      // xAI / OpenAI / custom all speak the OpenAI chat-completions protocol.
+      const base =
+        a.provider === "xai"
+          ? "https://api.x.ai/v1"
+          : a.provider === "openai"
+            ? "https://api.openai.com/v1"
+            : (creds.customUrl ?? "").replace(/\/+$/, "");
+      const key =
+        a.provider === "xai"
+          ? creds.xai
+          : a.provider === "openai"
+            ? creds.openai
+            : creds.customKey || "none";
+      if (!base || !key) continue;
+
+      const user = opts.context ? `${opts.context}\n\n${prompt}` : prompt;
+      const resp = await fetch(`${base}/chat/completions`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: a.model,
+          response_format: { type: "json_object" },
+          max_tokens: maxTokens,
+          messages: [
+            { role: "system", content: system + " Respond with a single JSON object." },
+            { role: "user", content: user },
+          ],
+        }),
       });
-      const res = await stream.finalMessage();
-      const text = res.content
-        .filter((b) => b.type === "text")
-        .map((b) => (b as { text: string }).text)
-        .join("");
-      if (text) return { text, engine: "anthropic:claude-opus-4-8" };
+      if (!resp.ok) continue;
+      const data = await resp.json();
+      const text = data?.choices?.[0]?.message?.content;
+      if (text) {
+        const engine = `${a.provider}:${a.model}`;
+        await record(
+          engine,
+          data?.usage?.prompt_tokens ?? 0,
+          data?.usage?.completion_tokens ?? 0
+        );
+        return { text, engine };
+      }
     } catch {
       /* fall through to the next provider */
     }
   }
 
-  if (xaiKey) {
-    // xAI's API is OpenAI-compatible; Grok handles the same JSON contract.
-    try {
-      const resp = await fetch("https://api.x.ai/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${xaiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "grok-4",
-          response_format: { type: "json_object" },
-          messages: [
-            { role: "system", content: system + " Respond with a single JSON object." },
-            { role: "user", content: prompt },
-          ],
-        }),
-      });
-      if (resp.ok) {
-        const data = await resp.json();
-        const text = data?.choices?.[0]?.message?.content;
-        if (text) return { text, engine: "xai:grok-4" };
-      }
-    } catch {
-      /* fall through to OpenAI on any xAI failure */
-    }
-  }
-
-  if (openaiKey) {
-    const resp = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${openaiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "gpt-4o",
-        response_format: { type: "json_object" },
-        messages: [
-          { role: "system", content: system + " Respond with a single JSON object." },
-          { role: "user", content: prompt },
-        ],
-      }),
-    });
-    if (!resp.ok) return null;
-    const data = await resp.json();
-    const text = data?.choices?.[0]?.message?.content;
-    return text ? { text, engine: "openai:gpt-4o" } : null;
-  }
-
   return null;
+}
+
+/**
+ * Context diet: a transcript over the cap is reduced to its opening plus its
+ * highest-hook-scoring sentences — what regeneration and coaching actually
+ * use — instead of re-sending the whole thing.
+ */
+export function digestTranscript(transcript: string, cap = 4500): string {
+  if (transcript.length <= cap) return transcript;
+  const sents = splitSentences(transcript);
+  let out = sents.slice(0, 3).join(" ");
+  const ranked = sents
+    .slice(3)
+    .map((s) => ({ s, score: scoreHook(s) }))
+    .sort((a, b) => b.score - a.score);
+  for (const r of ranked) {
+    if (out.length + r.s.length + 1 > cap) break;
+    out += " " + r.s;
+  }
+  return out;
 }
 
 function langLine(locale?: string): string {
@@ -490,8 +627,14 @@ export async function generateAssets(
   exemplars?: string[]
 ): Promise<GenerationResult> {
   try {
-    const userPrompt = `Title: ${title}\n\nTranscript / script:\n${transcript || "(no transcript provided — infer from the title)"}${voiceBlock(voice)}${exemplarBlock(exemplars)}${langLine(locale)}`;
-    const res = await llmComplete(LLM_SYSTEM, userPrompt, LLM_SCHEMA);
+    // The transcript rides as reusable context (provider-cached); the task
+    // part stays small and cheap.
+    const context = transcript ? `Transcript / script:\n${transcript}` : undefined;
+    const userPrompt = `Title: ${title}${transcript ? "" : "\n\n(no transcript provided — infer from the title)"}${voiceBlock(voice)}${exemplarBlock(exemplars)}${langLine(locale)}`;
+    const res = await llmComplete(LLM_SYSTEM, userPrompt, LLM_SCHEMA, {
+      tier: "flagship",
+      context,
+    });
     if (res) {
       const parsed = parseAssets(res.text);
       if (parsed && parsed.length) {
@@ -536,7 +679,7 @@ export async function generateScript(
 ): Promise<{ script: string; engine: string }> {
   try {
     const prompt = `Idea: ${title}${notes.trim() ? `\n\nNotes / angle:\n${notes.trim()}` : ""}${voiceBlock(voice)}${langLine(locale)}`;
-    const res = await llmComplete(SCRIPT_SYSTEM, prompt, SCRIPT_SCHEMA);
+    const res = await llmComplete(SCRIPT_SYSTEM, prompt, SCRIPT_SCHEMA, { tier: "flagship" });
     if (res) {
       const parsed = parseJsonLoose(res.text) as { script?: unknown } | null;
       const script = typeof parsed?.script === "string" ? parsed.script.trim() : "";
@@ -596,17 +739,20 @@ export async function regenerateAsset(
   }
 ): Promise<{ asset: GeneratedAsset; engine: string }> {
   try {
+    // Context diet: a single-asset regen needs the transcript's best material,
+    // not all 60k characters of it — and it runs on the standard tier.
+    const digest = ctx.transcript ? digestTranscript(ctx.transcript) : "";
     const prompt = `Title: ${ctx.title}
-
-Source transcript / script:
-${ctx.transcript || "(none — infer from the title)"}
 
 Asset to regenerate:
 Type: ${current.type}
 Name: ${current.name}
 Current content:
 ${current.content}${ctx.feedback?.trim() ? `\n\nRevision feedback (apply this): ${ctx.feedback.trim()}` : ""}${voiceBlock(ctx.voice)}${exemplarBlock(ctx.exemplars)}${langLine(ctx.locale)}`;
-    const res = await llmComplete(REGEN_SYSTEM, prompt, REGEN_SCHEMA);
+    const res = await llmComplete(REGEN_SYSTEM, prompt, REGEN_SCHEMA, {
+      tier: "standard",
+      context: digest ? `Source transcript / script (condensed):\n${digest}` : undefined,
+    });
     if (res) {
       const parsed = cleanAsset(parseJsonLoose(res.text));
       // Keep the original type label so the asset stays grouped consistently.

@@ -48,10 +48,12 @@ export async function POST(
     );
   }
 
+  // A one-line rewrite is fast-tier work — routed to the cheapest model.
   const res = await llmComplete(
     "You rewrite hooks for short-form content. Change ONLY the opening hook line; keep every other line byte-identical.",
     `Asset (${asset.type}):\n\n${asset.content}\n\nRewrite the opening hook in a clearly different style and return the full content.`,
-    VARIANT_SCHEMA
+    VARIANT_SCHEMA,
+    { tier: "fast" }
   );
   if (!res) {
     return NextResponse.json(

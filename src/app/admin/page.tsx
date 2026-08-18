@@ -60,6 +60,20 @@ interface AuditEntry {
   detail: string;
   ts: number;
 }
+interface LlmTierUsage {
+  tier: string;
+  calls: number;
+  inTok: number;
+  outTok: number;
+}
+interface TierEvalRow {
+  tier: string;
+  engine: string | null;
+  ok: boolean;
+  assetCount: number;
+  avgHookScore: number;
+  ms: number;
+}
 
 const PLANS = ["Free", "Lite", "Starter", "Creator Pro", "Agency"];
 
@@ -72,6 +86,21 @@ export default function AdminPage() {
   const [users, setUsers] = useState<AdminUserRow[]>([]);
   const [audit, setAudit] = useState<AuditEntry[]>([]);
   const [pricing, setPricing] = useState<PricingConfig | null>(null);
+  const [llm, setLlm] = useState<LlmTierUsage[]>([]);
+  const [evalRows, setEvalRows] = useState<TierEvalRow[] | null>(null);
+  const [evalRunning, setEvalRunning] = useState(false);
+
+  const runEvals = useCallback(async () => {
+    setEvalRunning(true);
+    try {
+      const res = await fetch("/api/admin/eval", { method: "POST" });
+      const d = await res.json().catch(() => null);
+      if (res.ok && d?.results) setEvalRows(d.results);
+      else addToast(d?.error ?? "Eval run failed", "error");
+    } finally {
+      setEvalRunning(false);
+    }
+  }, [addToast]);
   const [savingPricing, setSavingPricing] = useState(false);
   const [togglingFlag, setTogglingFlag] = useState(false);
 
@@ -89,6 +118,7 @@ export default function AdminPage() {
       setTotals(d.totals);
       setEvents(d.events);
       setFlagsState(d.flags);
+      if (d.llm) setLlm(d.llm);
       setState("ready");
       const [u, a, p] = await Promise.all([
         fetch("/api/admin/users", { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)),
@@ -379,6 +409,73 @@ export default function AdminPage() {
                     </p>
                   </div>
                 ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* LLM efficiency: token telemetry by tier + the model-swap eval gate */}
+        <div className="bg-cyber-card border border-cyber-border rounded-xl">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-cyber-border">
+            <div className="flex items-center gap-2">
+              <Zap className="w-4 h-4 text-neon-purple" />
+              <h2 className="font-semibold text-foreground">LLM usage & evals</h2>
+            </div>
+            <button
+              onClick={runEvals}
+              disabled={evalRunning}
+              title="Runs the golden generation through all three tiers (3 LLM calls)"
+              className="px-4 py-2 rounded-lg bg-gradient-to-r from-neon-purple to-electric-blue text-white text-xs font-medium hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-1.5"
+            >
+              {evalRunning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+              Run tier evals
+            </button>
+          </div>
+          <div className="p-6 space-y-5">
+            <div>
+              <p className="text-xs font-medium text-cyber-muted mb-2">
+                Tokens spent by tier (route models in Settings → Integrations → Model routing)
+              </p>
+              {llm.length === 0 ? (
+                <p className="text-sm text-cyber-muted">No routed LLM calls recorded yet.</p>
+              ) : (
+                <div className="grid sm:grid-cols-3 gap-3">
+                  {llm.map((u) => (
+                    <div key={u.tier} className="bg-cyber-dark border border-cyber-border rounded-xl p-4">
+                      <p className="text-xs font-semibold text-neon-purple capitalize mb-1">{u.tier}</p>
+                      <p className="text-lg font-bold text-foreground tabular-nums">{u.calls} calls</p>
+                      <p className="text-[11px] text-cyber-muted mt-0.5 tabular-nums">
+                        {u.inTok.toLocaleString()} in · {u.outTok.toLocaleString()} out
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            {evalRows && (
+              <div>
+                <p className="text-xs font-medium text-cyber-muted mb-2">Latest eval run</p>
+                <div className="grid sm:grid-cols-3 gap-3">
+                  {evalRows.map((r) => (
+                    <div
+                      key={r.tier}
+                      className={`bg-cyber-dark border rounded-xl p-4 ${
+                        r.ok ? "border-success/40" : "border-red-400/40"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="text-xs font-semibold text-neon-purple capitalize">{r.tier}</p>
+                        <span className={`text-[11px] font-medium ${r.ok ? "text-success" : "text-red-400"}`}>
+                          {r.ok ? "PASS" : "FAIL"}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-cyber-muted">{r.engine ?? "no provider available"}</p>
+                      <p className="text-[11px] text-cyber-muted mt-1 tabular-nums">
+                        {r.assetCount} assets · hook {r.avgHookScore} · {(r.ms / 1000).toFixed(1)}s
+                      </p>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>

@@ -179,11 +179,13 @@ export async function detectHighlights(
     "When the transcript has S1:/S2: speaker tags it is an interview — prefer complete single-speaker takes or tight exchanges with a clear payoff, and never cut mid-answer. " +
     "Use the [mm:ss] markers to report accurate startSec/endSec. Respond in the transcript's language.";
 
-  const prompt = `Video title: ${title}\nDuration: ${Math.round(durationSec)}s\n\nTimestamped transcript:\n${timedTranscript(
-    words
-  )}${winnersBlock}\n\nReturn the ${MAX_SUGGESTIONS} best clips, ranked by virality potential.`;
+  const context = `Timestamped transcript:\n${timedTranscript(words)}`;
+  const prompt = `Video title: ${title}\nDuration: ${Math.round(durationSec)}s${winnersBlock}\n\nReturn the ${MAX_SUGGESTIONS} best clips, ranked by virality potential.`;
 
-  const res = await llmComplete(system, prompt, CLIPS_SCHEMA as unknown as Record<string, unknown>);
+  const res = await llmComplete(system, prompt, CLIPS_SCHEMA as unknown as Record<string, unknown>, {
+    tier: "standard",
+    context,
+  });
   if (res) {
     try {
       const parsed = JSON.parse(res.text) as { clips?: ClipSuggestion[] };
