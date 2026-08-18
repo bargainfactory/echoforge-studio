@@ -2457,16 +2457,14 @@ function IdeasTab() {
                 >
                   <Sparkles className="w-3.5 h-3.5" /> {t("ideas.genAssets")}
                 </button>
-                {idea.script && (
-                  <button
-                    onClick={() => makeVideo(idea)}
-                    disabled={busyId === idea.id}
-                    title={t("ideas.makeVideoHint")}
-                    className="px-3 py-1.5 text-xs font-medium rounded-lg bg-cyber-dark border border-electric-blue/40 text-electric-blue hover:bg-electric-blue/10 transition-colors disabled:opacity-50 flex items-center gap-1.5"
-                  >
-                    <Film className="w-3.5 h-3.5" /> {t("ideas.makeVideo")}
-                  </button>
-                )}
+                <button
+                  onClick={() => makeVideo(idea)}
+                  disabled={busyId === idea.id || !idea.script}
+                  title={idea.script ? t("ideas.makeVideoHint") : t("ideas.makeVideoNeedsScript")}
+                  className="px-3 py-1.5 text-xs font-medium rounded-lg bg-cyber-dark border border-electric-blue/40 text-electric-blue hover:bg-electric-blue/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
+                >
+                  <Film className="w-3.5 h-3.5" /> {t("ideas.makeVideo")}
+                </button>
                 <button
                   onClick={() => remove(idea.id)}
                   className="p-1.5 text-cyber-muted hover:text-red-400 transition-colors rounded-lg hover:bg-red-400/10"

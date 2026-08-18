@@ -788,6 +788,7 @@ export const en: Record<string, string> = {
   // Script-to-video (Ideas)
   "ideas.makeVideo": "Make video",
   "ideas.makeVideoHint": "Turn this script into a narrated, captioned vertical video — no recording needed.",
+  "ideas.makeVideoNeedsScript": "Write the script first — the video narrates it. Click Write script, then this unlocks.",
   "ideas.videoQueued": "Script video queued — it narrates and renders in the Clips tab.",
   "ideas.videoFailed": "Could not queue the video",
   // Smart scheduling
