@@ -2363,24 +2363,35 @@ function IdeasTab() {
       </div>
 
       <div className="bg-cyber-card border border-cyber-border rounded-xl p-4 space-y-3">
-        <input
-          type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && addIdea()}
-          placeholder={t("ideas.placeholder")}
-          maxLength={200}
-          className="w-full px-3 py-2.5 bg-cyber-dark border border-cyber-border rounded-xl text-sm text-foreground placeholder:text-cyber-muted focus:outline-none focus:border-neon-purple/50"
-        />
-        <div className="flex gap-3">
+        <div>
+          <label className="block text-sm font-medium text-foreground mb-1.5">
+            {t("ideas.titleLabel")}
+          </label>
           <input
             type="text"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder={t("ideas.notesPh")}
-            maxLength={2000}
-            className="flex-1 px-3 py-2.5 bg-cyber-dark border border-cyber-border rounded-xl text-sm text-foreground placeholder:text-cyber-muted focus:outline-none focus:border-neon-purple/50"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && addIdea()}
+            placeholder={t("ideas.placeholder")}
+            maxLength={200}
+            className="w-full px-3 py-2.5 bg-cyber-dark border border-cyber-border rounded-xl text-sm text-foreground placeholder:text-cyber-muted focus:outline-none focus:border-neon-purple/50"
           />
+        </div>
+        <div className="flex gap-3 items-end">
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-foreground mb-1.5">
+              {t("ideas.notesLabel")}
+            </label>
+            <input
+              type="text"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && addIdea()}
+              placeholder={t("ideas.notesPh")}
+              maxLength={2000}
+              className="w-full px-3 py-2.5 bg-cyber-dark border border-cyber-border rounded-xl text-sm text-foreground placeholder:text-cyber-muted focus:outline-none focus:border-neon-purple/50"
+            />
+          </div>
           <button
             onClick={addIdea}
             disabled={adding || !title.trim()}

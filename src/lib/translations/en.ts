@@ -783,6 +783,8 @@ export const en: Record<string, string> = {
   "clips.thumb": "Thumbnail",
   "clips.thumbDownload": "Download thumbnail",
   "clips.thumbFailed": "Could not generate a thumbnail",
+  "ideas.titleLabel": "1. Type your content idea",
+  "ideas.notesLabel": "2. Add notes — angle, links, key points (optional)",
   // Script-to-video (Ideas)
   "ideas.makeVideo": "Make video",
   "ideas.makeVideoHint": "Turn this script into a narrated, captioned vertical video — no recording needed.",
