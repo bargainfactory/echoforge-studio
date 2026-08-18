@@ -354,6 +354,14 @@ export function startScheduler(): void {
     }
     if (tick % BRIEF_CHECK_EVERY_TICKS === 0) {
       sendWeeklyBriefs().catch(() => {});
+      // Competitor watchlist: weekly re-audits, a few per hour (YouTube quota).
+      (async () => {
+        const { listWatchDue } = await import("./db");
+        const { checkWatchEntry } = await import("./watch");
+        for (const entry of listWatchDue(3)) {
+          await checkWatchEntry(entry.userEmail, entry).catch(() => {});
+        }
+      })().catch(() => {});
       // Operator-granted free trials revert automatically on expiry.
       try {
         for (const trial of expireTrials()) {

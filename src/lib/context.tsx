@@ -41,7 +41,8 @@ interface AppState {
     file: File | null,
     transcript: string,
     onProgress?: (pct: number) => void,
-    titleOverride?: string
+    titleOverride?: string,
+    sourceUrl?: string
   ) => Promise<Project | null>;
   toggleAssetEvergreen: (id: string) => void;
   updateProject: (id: string, updates: Partial<Project>) => void;
@@ -222,16 +223,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
       file: File | null,
       transcript: string,
       onProgress?: (pct: number) => void,
-      titleOverride?: string
+      titleOverride?: string,
+      sourceUrl?: string
     ) => {
       const derivedFromFile = file?.name?.replace(/\.[^.]+$/, "").replace(/[-_]/g, " ");
       const derivedFromText = transcript.trim().split(/\s+/).slice(0, 7).join(" ");
-      const title = (titleOverride?.trim() || derivedFromFile || derivedFromText || "Untitled project").trim();
+      // A URL-only upload lets the server derive the title from the article.
+      const title = (
+        titleOverride?.trim() ||
+        derivedFromFile ||
+        derivedFromText ||
+        (sourceUrl?.trim() ? "" : "Untitled project")
+      ).trim();
 
       const form = new FormData();
-      form.append("title", title);
+      if (title) form.append("title", title);
       form.append("locale", localStorage.getItem("ef_locale") || "en");
       if (transcript.trim()) form.append("transcript", transcript.trim());
+      if (sourceUrl?.trim()) form.append("sourceUrl", sourceUrl.trim());
       if (file) form.append("file", file);
 
       const res = await xhrPost("/api/projects", form, onProgress);

@@ -57,6 +57,7 @@ import IntegrationsPanel from "@/components/integrations-panel";
 import BrandVoicePanel from "@/components/brand-voice-panel";
 import ClipsTab from "@/components/clips-tab";
 import SetupChecklist from "@/components/setup-checklist";
+import WatchlistCard from "@/components/watchlist-card";
 import {
   useConnections,
   isConnected,
@@ -190,6 +191,7 @@ export default function Dashboard() {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploadTranscript, setUploadTranscript] = useState("");
+  const [uploadUrl, setUploadUrl] = useState("");
   const [uploading, setUploading] = useState(false);
   const [uploadPct, setUploadPct] = useState(0);
   const [viewingAsset, setViewingAsset] = useState<Asset | null>(null);
@@ -333,17 +335,24 @@ export default function Dashboard() {
   }, [viewingAsset, scheduleAt, schedulePlatform, addToast]);
 
   const handleGenerate = useCallback(async () => {
-    if (!uploadFile && !uploadTranscript.trim()) return;
+    if (!uploadFile && !uploadTranscript.trim() && !uploadUrl.trim()) return;
     setUploading(true);
     setUploadPct(0);
-    const project = await uploadProject(uploadFile, uploadTranscript, setUploadPct);
+    const project = await uploadProject(
+      uploadFile,
+      uploadTranscript,
+      setUploadPct,
+      undefined,
+      uploadUrl
+    );
     setUploading(false);
     if (project) {
       setShowUploadModal(false);
       resetUpload();
+      setUploadUrl("");
       setActiveTab("Projects");
     }
-  }, [uploadFile, uploadTranscript, uploadProject, resetUpload]);
+  }, [uploadFile, uploadTranscript, uploadUrl, uploadProject, resetUpload]);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
@@ -519,7 +528,12 @@ export default function Dashboard() {
             <ScheduleTab onNavigate={() => setActiveTab("Settings")} />
           )}
           {activeTab === "Analytics" && <AnalyticsTab />}
-          {activeTab === "Audit" && <AuditTab />}
+          {activeTab === "Audit" && (
+            <>
+              <AuditTab />
+              <WatchlistCard />
+            </>
+          )}
           {activeTab === "Audience" && <AudienceTab />}
           {activeTab === "Business" && <BusinessTab />}
           {activeTab === "Notifications" && (
@@ -615,6 +629,18 @@ export default function Dashboard() {
               />
               <p className="text-xs text-cyber-muted mt-1.5 mb-4">{t("dash.transcriptHint")}</p>
 
+              {/* Wider input mouth: article/blog URL as the source */}
+              <label className="block text-sm font-medium text-foreground mb-1.5">
+                {t("dash.sourceUrlLabel")}
+              </label>
+              <input
+                type="url"
+                value={uploadUrl}
+                onChange={(e) => setUploadUrl(e.target.value)}
+                placeholder="https://yourblog.com/post"
+                className="w-full px-3 py-2.5 bg-cyber-dark border border-cyber-border rounded-xl text-sm text-foreground placeholder:text-cyber-muted focus:outline-none focus:border-neon-purple/50 mb-4"
+              />
+
               {uploading && (
                 <div className="mb-4">
                   <div className="flex justify-between text-xs text-cyber-muted mb-1">
@@ -632,7 +658,7 @@ export default function Dashboard() {
 
               <button
                 onClick={handleGenerate}
-                disabled={uploading || (!uploadFile && !uploadTranscript.trim())}
+                disabled={uploading || (!uploadFile && !uploadTranscript.trim() && !uploadUrl.trim())}
                 className="w-full py-3 rounded-xl bg-gradient-to-r from-neon-purple to-electric-blue text-white font-medium text-sm hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 <Sparkles className="w-4 h-4" />
@@ -1072,9 +1098,22 @@ function ProjectsTab({
   onClip: (projectId: string) => void;
 }) {
   const { t } = useTranslation();
+  const { addToast } = useApp();
   const [filter, setFilter] = useState<string>("all");
   const [query, setQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
+
+  // Agency workflow: mint the project's client-approval link and copy it.
+  const shareForApproval = useCallback(async (projectId: string) => {
+    const res = await fetch(`/api/projects/${projectId}/share`, { method: "POST" });
+    const d = await res.json().catch(() => null);
+    if (res.ok && d?.url) {
+      navigator.clipboard?.writeText(d.url);
+      addToast(t("proj.shareCopied"));
+    } else {
+      addToast(t("proj.shareFailed"), "error");
+    }
+  }, [addToast, t]);
   // The newest project starts expanded so fresh generations are immediately
   // previewable without an extra click.
   const [openId, setOpenId] = useState<string | null>(projects[0]?.id ?? null);
@@ -1238,6 +1277,16 @@ function ProjectsTab({
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        shareForApproval(project.id);
+                      }}
+                      title={t("proj.shareHint")}
+                      className="hidden sm:flex p-1.5 text-cyber-muted hover:text-electric-blue transition-colors rounded-lg hover:bg-electric-blue/10"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                    </button>
                     {project.fileName && (
                       <button
                         onClick={(e) => {
@@ -1439,6 +1488,33 @@ function ScheduleTab({ onNavigate }: { onNavigate: () => void }) {
   const [saving, setSaving] = useState(false);
   const [formAsset, setFormAsset] = useState("");
   const [formPlatform, setFormPlatform] = useState(() => lastPlatform("TikTok"));
+  const [filling, setFilling] = useState(false);
+  const [bestTimes, setBestTimes] = useState<Record<string, { hour: number; source: string }> | null>(null);
+
+  useEffect(() => {
+    fetch("/api/schedule/smart", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => d?.bestTimes && setBestTimes(d.bestTimes))
+      .catch(() => {});
+  }, []);
+
+  // One click distributes ready assets across the week at each platform's
+  // best measured hour.
+  const fillWeek = useCallback(async () => {
+    setFilling(true);
+    try {
+      const res = await fetch("/api/schedule/smart", { method: "POST" });
+      const d = await res.json().catch(() => null);
+      if (res.ok && d?.posts) {
+        setPosts((prev) => [...d.posts, ...prev]);
+        addToast(t("sched.fillDone", { count: String(d.posts.length) }));
+      } else {
+        addToast(d?.error ?? t("sched.fillFailed"), "error");
+      }
+    } finally {
+      setFilling(false);
+    }
+  }, [addToast, t]);
   const [formAt, setFormAt] = useState(() => {
     const d = new Date();
     d.setDate(d.getDate() + 1);
@@ -1666,6 +1742,15 @@ function ScheduleTab({ onNavigate }: { onNavigate: () => void }) {
             </button>
           </div>
           <button
+            onClick={fillWeek}
+            disabled={filling}
+            title={t("sched.fillHint")}
+            className="px-4 py-2 rounded-xl bg-cyber-dark border border-neon-purple/40 text-neon-purple text-sm font-medium hover:bg-neon-purple/10 transition-colors disabled:opacity-50 flex items-center gap-2"
+          >
+            {filling ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+            {t("sched.fillWeek")}
+          </button>
+          <button
             onClick={() => setComposerOpen(true)}
             className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-neon-purple to-electric-blue text-white text-xs font-medium hover:opacity-90 transition-opacity flex items-center gap-1.5"
           >
@@ -1831,6 +1916,15 @@ function ScheduleTab({ onNavigate }: { onNavigate: () => void }) {
                       />
                     </div>
                   </div>
+                  {bestTimes?.[formPlatform] && (
+                    <p className="text-[11px] text-electric-blue">
+                      {t("sched.bestTime", {
+                        platform: formPlatform,
+                        hour: `${bestTimes[formPlatform].hour}:00`,
+                        source: bestTimes[formPlatform].source,
+                      })}
+                    </p>
+                  )}
                   {connections && !isConnected(connections, formPlatform) && (
                     <p className="text-[11px] text-warning flex flex-wrap items-center gap-1.5">
                       {PLATFORM_KEYS[formPlatform]
@@ -2165,6 +2259,24 @@ function IdeasTab() {
     [patchIdea, addToast, t]
   );
 
+  // Script-to-video: TTS narration + waveform + captions, no recording.
+  const makeVideo = useCallback(
+    async (idea: IdeaRow) => {
+      if (!idea.script) return;
+      setBusyId(idea.id);
+      const res = await fetch("/api/script-video", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: idea.title, script: idea.script }),
+      });
+      setBusyId(null);
+      const d = await res.json().catch(() => null);
+      if (res.ok) addToast(t("ideas.videoQueued"));
+      else addToast(d?.error ?? t("ideas.videoFailed"), "error");
+    },
+    [addToast, t]
+  );
+
   const saveScript = useCallback(async () => {
     if (!scriptIdea) return;
     setSavingScript(true);
@@ -2334,6 +2446,16 @@ function IdeasTab() {
                 >
                   <Sparkles className="w-3.5 h-3.5" /> {t("ideas.genAssets")}
                 </button>
+                {idea.script && (
+                  <button
+                    onClick={() => makeVideo(idea)}
+                    disabled={busyId === idea.id}
+                    title={t("ideas.makeVideoHint")}
+                    className="px-3 py-1.5 text-xs font-medium rounded-lg bg-cyber-dark border border-electric-blue/40 text-electric-blue hover:bg-electric-blue/10 transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                  >
+                    <Film className="w-3.5 h-3.5" /> {t("ideas.makeVideo")}
+                  </button>
+                )}
                 <button
                   onClick={() => remove(idea.id)}
                   className="p-1.5 text-cyber-muted hover:text-red-400 transition-colors rounded-lg hover:bg-red-400/10"

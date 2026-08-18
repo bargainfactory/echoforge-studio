@@ -235,6 +235,23 @@ function getDb(): DatabaseSync {
       created_at  TEXT NOT NULL
     );
     CREATE INDEX IF NOT EXISTS idx_clips_user ON clips(user_email);
+    CREATE TABLE IF NOT EXISTS watchlist (
+      id              TEXT PRIMARY KEY,
+      user_email      TEXT NOT NULL REFERENCES users(email) ON DELETE CASCADE,
+      handle          TEXT NOT NULL,
+      label           TEXT,
+      last_grade      INTEGER,
+      last_top        TEXT,
+      last_checked_at TEXT,
+      created_at      TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS gen_images (
+      id         TEXT PRIMARY KEY,
+      user_email TEXT NOT NULL REFERENCES users(email) ON DELETE CASCADE,
+      prompt     TEXT NOT NULL,
+      path       TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
     CREATE INDEX IF NOT EXISTS idx_projects_user ON projects(user_email);
     CREATE INDEX IF NOT EXISTS idx_assets_user ON assets(user_email);
     CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_email);
@@ -258,6 +275,9 @@ function getDb(): DatabaseSync {
     "ALTER TABLE clips ADD COLUMN focus TEXT NOT NULL DEFAULT 'center'",
     "ALTER TABLE users ADD COLUMN trial_ends_at TEXT",
     "ALTER TABLE users ADD COLUMN trial_prev_plan TEXT",
+    "ALTER TABLE clips ADD COLUMN kind TEXT NOT NULL DEFAULT 'clip'",
+    "ALTER TABLE clips ADD COLUMN script TEXT",
+    "ALTER TABLE projects ADD COLUMN approve_token TEXT",
   ]) {
     try {
       conn.exec(stmt);
@@ -1843,6 +1863,9 @@ export interface Clip {
   position: string;
   /** Horizontal crop focus for the 9:16 cut: left | center | right. */
   focus: string;
+  /** 'clip' = cut from a source video; 'script' = TTS-narrated script video. */
+  kind: string;
+  script: string | null;
   outputPath: string | null;
   error: string | null;
   createdAt: string;
@@ -1862,15 +1885,50 @@ function mapClip(row: Record<string, unknown>): Clip {
     style: row.style as string,
     position: (row.position as string) ?? "bottom",
     focus: (row.focus as string) ?? "center",
+    kind: (row.kind as string) ?? "clip",
+    script: (row.script as string | null) ?? null,
     outputPath: (row.output_path as string | null) ?? null,
     error: (row.error as string | null) ?? null,
     createdAt: row.created_at as string,
   };
 }
 
+/** A TTS-narrated script video: enters the same render queue as clips. */
+export function insertScriptVideo(
+  email: string,
+  v: { id: string; title: string; script: string; style: string; position: string }
+): Clip {
+  const now = new Date().toISOString();
+  getDb()
+    .prepare(
+      `INSERT INTO clips (id, user_email, project_id, title, start_sec, end_sec, score, reason, matched, status, style, position, created_at, kind, script)
+       VALUES (?, ?, '', ?, 0, 0, 0, '', NULL, 'queued', ?, ?, ?, 'script', ?)`
+    )
+    .run(v.id, email.toLowerCase(), v.title, v.style, v.position, now, v.script);
+  return {
+    id: v.id,
+    projectId: "",
+    title: v.title,
+    startSec: 0,
+    endSec: 0,
+    score: 0,
+    reason: "",
+    matched: null,
+    status: "queued",
+    style: v.style,
+    position: v.position,
+    focus: "center",
+    kind: "script",
+    script: v.script,
+    outputPath: null,
+    error: null,
+    createdAt: now,
+  };
+}
+
 export function insertClip(
   email: string,
-  c: Omit<Clip, "createdAt" | "outputPath" | "error" | "position" | "focus">
+  c: Omit<Clip, "createdAt" | "outputPath" | "error" | "position" | "focus" | "kind" | "script">
 ): Clip {
   const now = new Date().toISOString();
   getDb()
@@ -1896,6 +1954,8 @@ export function insertClip(
     ...c,
     position: "bottom",
     focus: "center",
+    kind: "clip",
+    script: null,
     outputPath: null,
     error: null,
     createdAt: now,
@@ -2115,6 +2175,161 @@ export function markAbGroupDecided(userEmail: string, abGroup: string): void {
   getDb()
     .prepare("UPDATE assets SET ab_group = ? WHERE user_email = ? AND ab_group = ?")
     .run(`${abGroup}:decided`, userEmail.toLowerCase(), abGroup);
+}
+
+// --- Competitor watchlist ---
+
+export interface WatchEntry {
+  id: string;
+  handle: string;
+  label: string | null;
+  lastGrade: number | null;
+  lastTop: string | null;
+  lastCheckedAt: string | null;
+  createdAt: string;
+}
+
+function mapWatch(row: Record<string, unknown>): WatchEntry {
+  return {
+    id: row.id as string,
+    handle: row.handle as string,
+    label: (row.label as string | null) ?? null,
+    lastGrade: (row.last_grade as number | null) ?? null,
+    lastTop: (row.last_top as string | null) ?? null,
+    lastCheckedAt: (row.last_checked_at as string | null) ?? null,
+    createdAt: row.created_at as string,
+  };
+}
+
+export function listWatchlist(email: string): WatchEntry[] {
+  return (
+    getDb()
+      .prepare("SELECT * FROM watchlist WHERE user_email = ? ORDER BY created_at ASC")
+      .all(email.toLowerCase()) as Record<string, unknown>[]
+  ).map(mapWatch);
+}
+
+export function insertWatch(email: string, id: string, handle: string): void {
+  getDb()
+    .prepare(
+      "INSERT INTO watchlist (id, user_email, handle, created_at) VALUES (?, ?, ?, ?)"
+    )
+    .run(id, email.toLowerCase(), handle, new Date().toISOString());
+}
+
+export function deleteWatch(email: string, id: string): void {
+  getDb()
+    .prepare("DELETE FROM watchlist WHERE id = ? AND user_email = ?")
+    .run(id, email.toLowerCase());
+}
+
+export function updateWatchResult(
+  email: string,
+  id: string,
+  r: { label: string; grade: number; top: string[] }
+): void {
+  getDb()
+    .prepare(
+      "UPDATE watchlist SET label = ?, last_grade = ?, last_top = ?, last_checked_at = ? WHERE id = ? AND user_email = ?"
+    )
+    .run(r.label, r.grade, JSON.stringify(r.top), new Date().toISOString(), id, email.toLowerCase());
+}
+
+/** Watchlist entries due a weekly re-check, oldest first — the scheduler's
+ *  cross-user worklist (bounded per tick to respect YouTube quota). */
+export function listWatchDue(limit = 3): (WatchEntry & { userEmail: string })[] {
+  const cutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  return (
+    getDb()
+      .prepare(
+        `SELECT * FROM watchlist WHERE last_checked_at IS NULL OR last_checked_at < ?
+         ORDER BY last_checked_at ASC LIMIT ?`
+      )
+      .all(cutoff, limit) as Record<string, unknown>[]
+  ).map((row) => ({ ...mapWatch(row), userEmail: row.user_email as string }));
+}
+
+// --- Generated images (thumbnails / cover art) ---
+
+export function insertGenImage(email: string, id: string, prompt: string, path: string): void {
+  getDb()
+    .prepare(
+      "INSERT INTO gen_images (id, user_email, prompt, path, created_at) VALUES (?, ?, ?, ?, ?)"
+    )
+    .run(id, email.toLowerCase(), prompt, path, new Date().toISOString());
+}
+
+export function getGenImage(email: string, id: string): { path: string } | null {
+  const row = getDb()
+    .prepare("SELECT path FROM gen_images WHERE id = ? AND user_email = ?")
+    .get(id, email.toLowerCase()) as { path: string } | undefined;
+  return row ?? null;
+}
+
+// --- Client approval links (agency workflow) ---
+
+export function getOrCreateApproveToken(email: string, projectId: string): string | null {
+  const row = getDb()
+    .prepare("SELECT approve_token FROM projects WHERE id = ? AND user_email = ?")
+    .get(projectId, email.toLowerCase()) as { approve_token: string | null } | undefined;
+  if (!row) return null;
+  if (row.approve_token) return row.approve_token;
+  const token = crypto.randomUUID().replace(/-/g, "");
+  getDb()
+    .prepare("UPDATE projects SET approve_token = ? WHERE id = ? AND user_email = ?")
+    .run(token, projectId, email.toLowerCase());
+  return token;
+}
+
+export function getProjectByApproveToken(
+  token: string
+): { email: string; projectId: string; title: string } | null {
+  if (!token || token.length < 16) return null;
+  const row = getDb()
+    .prepare("SELECT user_email, id, title FROM projects WHERE approve_token = ?")
+    .get(token) as { user_email: string; id: string; title: string } | undefined;
+  return row ? { email: row.user_email, projectId: row.id, title: row.title } : null;
+}
+
+// --- Smart scheduling ---
+
+/** Measured performance by platform × local posting hour, for best-time hints. */
+export function bestHoursByPlatform(
+  email: string
+): { platform: string; hour: number; avgViews: number; samples: number }[] {
+  return getDb()
+    .prepare(
+      `SELECT sp.platform, CAST(substr(sp.scheduled_at, 12, 2) AS INTEGER) AS hour,
+              AVG(pm.views) AS avgViews, COUNT(*) AS samples
+       FROM post_metrics pm
+       JOIN scheduled_posts sp ON sp.id = pm.post_id AND sp.user_email = pm.user_email
+       WHERE pm.user_email = ? AND length(sp.scheduled_at) >= 13
+       GROUP BY sp.platform, hour`
+    )
+    .all(email.toLowerCase()) as unknown as {
+    platform: string;
+    hour: number;
+    avgViews: number;
+    samples: number;
+  }[];
+}
+
+/** Ready assets with no pending scheduled post — "Fill my week" candidates. */
+export function listUnscheduledAssets(email: string, limit = 7): Asset[] {
+  return (
+    getDb()
+      .prepare(
+        `SELECT a.* FROM assets a
+         WHERE a.user_email = ?
+           AND a.content IS NOT NULL
+           AND NOT EXISTS (
+             SELECT 1 FROM scheduled_posts sp
+             WHERE sp.asset_id = a.id AND sp.user_email = a.user_email AND sp.status = 'scheduled'
+           )
+         ORDER BY a.sort DESC LIMIT ?`
+      )
+      .all(email.toLowerCase(), limit) as Record<string, unknown>[]
+  ).map(mapAsset);
 }
 
 // --- Weekly operator brief ---

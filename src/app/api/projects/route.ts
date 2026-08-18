@@ -16,6 +16,8 @@ import {
   type TranscriptWord,
 } from "@/lib/server/db";
 import { auditExemplars } from "@/lib/server/audit";
+import { fetchArticleText } from "@/lib/server/article";
+import { watchExemplars } from "@/lib/server/watch";
 import { generateAssets } from "@/lib/server/generate";
 import { PLAN_MONTHLY_PROJECTS } from "@/lib/server/pricing";
 import { createManifest, signManifest } from "@/lib/server/provenance";
@@ -108,12 +110,14 @@ export async function POST(req: NextRequest) {
   let transcribedBy: string | undefined;
   let transcriptWords: TranscriptWord[] | null = null;
   let durationSec: number | null = null;
+  let sourceUrl = "";
 
   if (contentType.includes("multipart/form-data")) {
     const form = await req.formData();
     title = String(form.get("title") ?? "").trim();
     transcript = String(form.get("transcript") ?? "").trim();
     locale = String(form.get("locale") ?? "en").slice(0, 8);
+    sourceUrl = String(form.get("sourceUrl") ?? "").trim();
     const file = form.get("file");
     if (file && typeof file === "object" && "arrayBuffer" in file) {
       const f = file as File;
@@ -169,6 +173,20 @@ export async function POST(req: NextRequest) {
     locale = String(b?.locale ?? "en").slice(0, 8);
     fileName = b?.fileName ? String(b.fileName) : undefined;
     fileSize = b?.fileSize ? String(b.fileSize) : undefined;
+    sourceUrl = b?.sourceUrl ? String(b.sourceUrl).trim() : "";
+  }
+
+  // Wider input mouth: an article/blog URL becomes the source transcript.
+  if (!transcript && sourceUrl) {
+    const article = await fetchArticleText(sourceUrl);
+    if (!article) {
+      return NextResponse.json(
+        { error: "Could not read that URL — check the link (articles and blog posts work best)" },
+        { status: 422 }
+      );
+    }
+    transcript = article.text;
+    if (!title) title = article.title.slice(0, 120);
   }
 
   if (!title) {
@@ -182,6 +200,8 @@ export async function POST(req: NextRequest) {
   const exemplars = [
     ...topPerformers(user.email, 5).map((p) => p.assetName),
     ...auditExemplars(user.email),
+    // Niche swipe file: proven winners from watched competitor channels.
+    ...watchExemplars(user.email, 2),
   ].slice(0, 6);
   const { assets: generated, engine } = await generateAssets(
     title,

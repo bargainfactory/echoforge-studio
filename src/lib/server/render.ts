@@ -267,6 +267,101 @@ async function renderOne(clip: Clip & { userEmail: string }): Promise<void> {
   }
 }
 
+/**
+ * Script video: TTS narration + animated waveform + burned captions over a
+ * branded dark canvas — a complete faceless video from typed text, no
+ * recording involved. Enters the same queue and delivery path as clips.
+ */
+async function renderScriptVideo(clip: Clip & { userEmail: string }): Promise<void> {
+  if (!clip.script?.trim()) throw new Error("script text is missing");
+
+  const { synthesizeSpeech } = await import("./tts");
+  const tts = await synthesizeSpeech(clip.script);
+  if (!tts) {
+    throw new Error(
+      "no voiceover provider — connect an ElevenLabs or OpenAI key in the Operator Console"
+    );
+  }
+
+  fs.mkdirSync(RENDERS_DIR, { recursive: true });
+  const jobDir = path.join(RENDERS_DIR, `tmp-${clip.id}`);
+  fs.mkdirSync(jobDir, { recursive: true });
+  const outAbs = path.join(RENDERS_DIR, `${clip.id}.mp4`);
+
+  try {
+    const voicePath = path.join(jobDir, "voice.mp3");
+    fs.writeFileSync(voicePath, tts.bytes);
+    const duration = await probeDuration(voicePath);
+    if (!duration) throw new Error("could not read the narration's duration");
+
+    const words = estimateWords(clip.script, duration);
+    const ass = buildAss(
+      words,
+      0,
+      duration,
+      clip.style as CaptionStyle,
+      clip.position as CaptionPosition
+    );
+    fs.writeFileSync(path.join(jobDir, "subs.ass"), ass, "utf8");
+
+    const args = [
+      "-y",
+      "-f",
+      "lavfi",
+      "-i",
+      "color=c=0x140a24:s=1080x1920:r=30",
+      "-i",
+      "voice.mp3",
+      "-filter_complex",
+      "[1:a]showwaves=s=1080x220:mode=cline:rate=30:colors=0xa855f7|0x3b82f6[w];[0:v][w]overlay=0:1520[bg];[bg]ass=subs.ass[v]",
+      "-map",
+      "[v]",
+      "-map",
+      "1:a",
+      "-shortest",
+      "-c:v",
+      "libx264",
+      "-preset",
+      "veryfast",
+      "-crf",
+      "23",
+      "-c:a",
+      "aac",
+      "-b:a",
+      "128k",
+      "-movflags",
+      "+faststart",
+      outAbs,
+    ];
+    const res = await run("ffmpeg", args, jobDir);
+    if (res.code !== 0) {
+      throw new Error(
+        res.err.includes("ENOENT")
+          ? "ffmpeg is not installed on this server"
+          : `ffmpeg exited ${res.code}: ${res.err.slice(-300)}`
+      );
+    }
+    if (!fs.existsSync(outAbs) || fs.statSync(outAbs).size === 0) {
+      throw new Error("render produced no output");
+    }
+    updateClip(clip.userEmail, clip.id, {
+      status: "ready",
+      outputPath: path.relative(process.cwd(), outAbs),
+      error: null,
+    });
+    insertNotification(clip.userEmail, {
+      id: `n-${crypto.randomUUID()}`,
+      title: "Script Video Ready",
+      message: `"${clip.title}" is narrated (${tts.provider}), captioned, and rendered — preview, download, or schedule it from the Clips tab.`,
+      time: "Just now",
+      read: false,
+      type: "success",
+    });
+  } finally {
+    fs.rmSync(jobDir, { recursive: true, force: true });
+  }
+}
+
 declare global {
   // One render at a time, surviving dev-mode module reloads.
   var __virafoldRenderBusy: boolean | undefined;
@@ -284,7 +379,8 @@ export function kickRenderWorker(): void {
         if (!next) break;
         updateClip(next.userEmail, next.id, { status: "rendering" });
         try {
-          await renderOne(next);
+          if (next.kind === "script") await renderScriptVideo(next);
+          else await renderOne(next);
         } catch (e) {
           updateClip(next.userEmail, next.id, {
             status: "failed",

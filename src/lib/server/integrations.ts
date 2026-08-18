@@ -64,6 +64,16 @@ export const INTEGRATIONS: IntegrationDef[] = [
     ],
   },
   {
+    name: "voiceover",
+    label: "Voiceover (ElevenLabs)",
+    description:
+      "Narrates script videos with a natural AI voice. Falls back to your OpenAI key (tts-1) when no ElevenLabs key is set.",
+    docsHint: "Add an ElevenLabs API key, or rely on your OpenAI key.",
+    fields: [
+      { key: "elevenlabsApiKey", label: "ElevenLabs API key", envVar: "ELEVENLABS_API_KEY", secret: true, placeholder: "sk_..." },
+    ],
+  },
+  {
     name: "email",
     label: "Email (Resend)",
     description:

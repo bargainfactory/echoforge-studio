@@ -44,6 +44,7 @@ interface ClipRow {
   style: string;
   position: string;
   focus: string;
+  kind: string;
   outputPath: string | null;
   error: string | null;
 }
@@ -433,7 +434,31 @@ export default function ClipsTab({
     [addToast, t]
   );
 
-  const projClips = clips.filter((c) => !selProject || c.projectId === selProject);
+  const projClips = clips.filter(
+    (c) => c.kind !== "script" && (!selProject || c.projectId === selProject)
+  );
+  const svClips = clips.filter((c) => c.kind === "script");
+
+  // AI thumbnails for ready videos: background art + title overlay.
+  const [thumbs, setThumbs] = useState<Record<string, { id?: string; busy: boolean }>>({});
+  const genThumb = useCallback(
+    async (clip: ClipRow) => {
+      setThumbs((p) => ({ ...p, [clip.id]: { busy: true } }));
+      const res = await fetch("/api/images", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: clip.title, topic: clip.reason || clip.title }),
+      });
+      const d = await res.json().catch(() => null);
+      if (res.ok && d?.id) {
+        setThumbs((p) => ({ ...p, [clip.id]: { id: d.id, busy: false } }));
+      } else {
+        setThumbs((p) => ({ ...p, [clip.id]: { busy: false } }));
+        addToast(d?.error ?? t("clips.thumbFailed"), "error");
+      }
+    },
+    [addToast, t]
+  );
 
   return (
     <div className="space-y-6">
@@ -706,7 +731,36 @@ export default function ClipsTab({
                     >
                       <Calendar className="w-3.5 h-3.5" /> {t("clips.schedule")}
                     </button>
+                    <button
+                      onClick={() => genThumb(clip)}
+                      disabled={thumbs[clip.id]?.busy}
+                      className="px-3 py-2 rounded-lg bg-cyber-dark border border-cyber-border text-xs text-cyber-muted hover:text-foreground hover:border-electric-blue/50 transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                    >
+                      {thumbs[clip.id]?.busy ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Sparkles className="w-3.5 h-3.5" />
+                      )}
+                      {t("clips.thumb")}
+                    </button>
                   </div>
+                  {thumbs[clip.id]?.id && (
+                    <div className="space-y-1.5">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={`/api/images/${thumbs[clip.id].id}`}
+                        alt=""
+                        className="w-full max-w-[320px] rounded-lg border border-cyber-border"
+                      />
+                      <a
+                        href={`/api/images/${thumbs[clip.id].id}`}
+                        download={`thumbnail-${clip.id}.png`}
+                        className="text-xs text-electric-blue hover:underline inline-flex items-center gap-1"
+                      >
+                        <Download className="w-3 h-3" /> {t("clips.thumbDownload")}
+                      </a>
+                    </div>
+                  )}
                   {connections &&
                     !isConnected(connections, schedPlatform[clip.id] ?? lastPlatform("YouTube")) && (
                       <p className="text-[11px] text-warning flex flex-wrap items-center gap-1.5">
@@ -730,6 +784,114 @@ export default function ClipsTab({
               )}
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Script videos: TTS-narrated, caption-burned — no recording involved */}
+      {svClips.length > 0 && (
+        <div className="pt-4">
+          <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+            <Film className="w-4 h-4 text-electric-blue" /> {t("clips.svTitle")}
+          </h3>
+          <div className="grid gap-4">
+            {svClips.map((clip) => (
+              <div
+                key={clip.id}
+                className="bg-cyber-card border border-cyber-border rounded-xl p-4 space-y-3 hover:border-neon-purple/40 transition-colors"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-sm font-medium text-foreground">{clip.title}</p>
+                  <button
+                    onClick={() => remove(clip)}
+                    className="text-cyber-muted hover:text-danger transition-colors shrink-0"
+                    title={t("clips.delete")}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+                {clip.status === "ready" ? (
+                  <div className="space-y-3">
+                    <video
+                      src={`/api/clips/${clip.id}/file`}
+                      controls
+                      preload="metadata"
+                      className="w-full max-w-[240px] rounded-lg border border-cyber-border aspect-[9/16] bg-black"
+                    />
+                    <div className="flex flex-wrap items-end gap-2">
+                      <a
+                        href={`/api/clips/${clip.id}/file?download=1`}
+                        className="px-3 py-2 rounded-lg bg-cyber-dark border border-cyber-border text-xs text-cyber-muted hover:text-foreground transition-colors flex items-center gap-1.5"
+                      >
+                        <Download className="w-3.5 h-3.5" /> {t("clips.download")}
+                      </a>
+                      <select
+                        value={schedPlatform[clip.id] ?? lastPlatform("YouTube")}
+                        onChange={(e) =>
+                          setSchedPlatform((prev) => ({ ...prev, [clip.id]: e.target.value }))
+                        }
+                        className="px-3 py-2 bg-cyber-dark border border-cyber-border rounded-lg text-xs text-foreground focus:outline-none focus:border-neon-purple/50"
+                      >
+                        {["YouTube", "TikTok"].map((p) => (
+                          <option key={p} value={p}>
+                            {p}
+                          </option>
+                        ))}
+                      </select>
+                      <input
+                        type="datetime-local"
+                        value={schedAt[clip.id] ?? defaultAt}
+                        onChange={(e) =>
+                          setSchedAt((prev) => ({ ...prev, [clip.id]: e.target.value }))
+                        }
+                        className="px-3 py-2 bg-cyber-dark border border-cyber-border rounded-lg text-xs text-foreground focus:outline-none focus:border-neon-purple/50"
+                      />
+                      <button
+                        onClick={() => schedule(clip)}
+                        className="px-4 py-2 rounded-lg bg-gradient-to-r from-neon-purple to-electric-blue text-white text-xs font-medium hover:opacity-90 transition-opacity flex items-center gap-1.5"
+                      >
+                        <Calendar className="w-3.5 h-3.5" /> {t("clips.schedule")}
+                      </button>
+                      <button
+                        onClick={() => genThumb(clip)}
+                        disabled={thumbs[clip.id]?.busy}
+                        className="px-3 py-2 rounded-lg bg-cyber-dark border border-cyber-border text-xs text-cyber-muted hover:text-foreground hover:border-electric-blue/50 transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                      >
+                        {thumbs[clip.id]?.busy ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Sparkles className="w-3.5 h-3.5" />
+                        )}
+                        {t("clips.thumb")}
+                      </button>
+                    </div>
+                    {thumbs[clip.id]?.id && (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img
+                        src={`/api/images/${thumbs[clip.id].id}`}
+                        alt=""
+                        className="w-full max-w-[320px] rounded-lg border border-cyber-border"
+                      />
+                    )}
+                  </div>
+                ) : clip.status === "failed" ? (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-[11px] text-danger">{clip.error}</span>
+                    <button
+                      onClick={() => render(clip)}
+                      className="px-3 py-1.5 rounded-lg bg-cyber-dark border border-neon-purple/40 text-xs font-medium text-neon-purple hover:bg-neon-purple/10 transition-colors"
+                    >
+                      {t("clips.retry")}
+                    </button>
+                  </div>
+                ) : (
+                  <p className="text-xs text-electric-blue flex items-center gap-1.5">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    {clip.status === "queued" ? t("clips.svQueued") : t("clips.svRendering")}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

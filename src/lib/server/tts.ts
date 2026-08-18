@@ -1,0 +1,62 @@
+import { resolveField } from "./integrations";
+
+/**
+ * Text-to-speech for script videos. ElevenLabs when a voiceover key is
+ * connected (best quality), else OpenAI TTS via the existing LLM key.
+ * Returns null when neither is available — callers surface a clear
+ * connect-a-key error, same contract as every other provider chain.
+ */
+
+// ElevenLabs "Rachel" — a neutral, widely-liked narration voice.
+const ELEVENLABS_VOICE = "21m00Tcm4TlvDq8ikWAM";
+const MAX_TTS_CHARS = 4800;
+
+export async function synthesizeSpeech(
+  text: string
+): Promise<{ bytes: Buffer; provider: string } | null> {
+  const input = text.trim().slice(0, MAX_TTS_CHARS);
+  if (!input) return null;
+
+  const elevenKey = resolveField("voiceover", "elevenlabsApiKey");
+  if (elevenKey) {
+    try {
+      const resp = await fetch(
+        `https://api.elevenlabs.io/v1/text-to-speech/${ELEVENLABS_VOICE}?output_format=mp3_44100_128`,
+        {
+          method: "POST",
+          headers: { "xi-api-key": elevenKey, "Content-Type": "application/json" },
+          body: JSON.stringify({ text: input, model_id: "eleven_multilingual_v2" }),
+        }
+      );
+      if (resp.ok) {
+        return {
+          bytes: Buffer.from(await resp.arrayBuffer()),
+          provider: "elevenlabs:multilingual-v2",
+        };
+      }
+    } catch {
+      /* fall through to OpenAI */
+    }
+  }
+
+  const openaiKey = resolveField("llm", "openaiApiKey");
+  if (openaiKey) {
+    try {
+      const resp = await fetch("https://api.openai.com/v1/audio/speech", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${openaiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ model: "tts-1", voice: "onyx", input }),
+      });
+      if (resp.ok) {
+        return { bytes: Buffer.from(await resp.arrayBuffer()), provider: "openai:tts-1" };
+      }
+    } catch {
+      /* no TTS available */
+    }
+  }
+
+  return null;
+}
