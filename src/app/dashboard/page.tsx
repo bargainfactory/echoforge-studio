@@ -189,7 +189,23 @@ export default function Dashboard() {
     addToast,
   } = useApp();
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState<Tab>("Overview");
+  // The active tab lives in the URL hash (#Clips), so a refresh reloads the
+  // page you were on with fresh data instead of dumping you back to Overview,
+  // and back/forward walk your tab history.
+  const [activeTab, setActiveTabState] = useState<Tab>("Overview");
+  const setActiveTab = useCallback((tab: Tab) => {
+    setActiveTabState(tab);
+    window.history.replaceState(null, "", `#${encodeURIComponent(tab)}`);
+  }, []);
+  useEffect(() => {
+    const applyHash = () => {
+      const h = decodeURIComponent(window.location.hash.slice(1));
+      if (sidebarItems.some((i) => i.label === h)) setActiveTabState(h as Tab);
+    };
+    applyHash();
+    window.addEventListener("hashchange", applyHash);
+    return () => window.removeEventListener("hashchange", applyHash);
+  }, []);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploadTranscript, setUploadTranscript] = useState("");
