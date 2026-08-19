@@ -58,6 +58,8 @@ import BrandVoicePanel from "@/components/brand-voice-panel";
 import ClipsTab from "@/components/clips-tab";
 import SetupChecklist from "@/components/setup-checklist";
 import WatchlistCard from "@/components/watchlist-card";
+import ClientSwitcher from "@/components/client-switcher";
+import ManagedClientsCard from "@/components/managed-clients-card";
 import {
   useConnections,
   isConnected,
@@ -455,13 +457,16 @@ export default function Dashboard() {
               </h1>
               <p className="text-sm text-cyber-muted">{t("dash.welcomeBack", { name: user.name })}</p>
             </div>
-            <button
-              onClick={() => setShowUploadModal(true)}
-              className="px-4 py-2 rounded-lg bg-gradient-to-r from-neon-purple to-electric-blue text-white text-sm font-medium hover:opacity-90 transition-opacity flex items-center gap-2"
-            >
-              <Upload className="w-4 h-4" />
-              {t("dash.newUpload")}
-            </button>
+            <div className="flex items-center gap-2">
+              <ClientSwitcher />
+              <button
+                onClick={() => setShowUploadModal(true)}
+                className="px-4 py-2 rounded-lg bg-gradient-to-r from-neon-purple to-electric-blue text-white text-sm font-medium hover:opacity-90 transition-opacity flex items-center gap-2"
+              >
+                <Upload className="w-4 h-4" />
+                {t("dash.newUpload")}
+              </button>
+            </div>
           </div>
 
           {/* Mobile tabs */}
@@ -4026,6 +4031,8 @@ function SettingsTab({
       <BrandVoicePanel />
 
       <ConnectedAccountsCard />
+
+      <ManagedClientsCard />
 
       <IntegrationsPanel />
 

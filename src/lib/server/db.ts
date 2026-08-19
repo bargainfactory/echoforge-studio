@@ -245,6 +245,13 @@ function getDb(): DatabaseSync {
       last_checked_at TEXT,
       created_at      TEXT NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS managed_accounts (
+      manager_email TEXT NOT NULL REFERENCES users(email) ON DELETE CASCADE,
+      client_email  TEXT NOT NULL REFERENCES users(email) ON DELETE CASCADE,
+      status        TEXT NOT NULL,
+      created_at    TEXT NOT NULL,
+      PRIMARY KEY (manager_email, client_email)
+    );
     CREATE TABLE IF NOT EXISTS gen_images (
       id         TEXT PRIMARY KEY,
       user_email TEXT NOT NULL REFERENCES users(email) ON DELETE CASCADE,
@@ -2357,6 +2364,110 @@ export function listUnscheduledAssets(email: string, limit = 7): Asset[] {
       )
       .all(email.toLowerCase(), limit) as Record<string, unknown>[]
   ).map(mapAsset);
+}
+
+// --- Managed client accounts (agency delegated access) ---
+
+export interface ManagedLink {
+  managerEmail: string;
+  clientEmail: string;
+  status: "invited" | "active";
+  createdAt: string;
+  name: string;
+  plan: string;
+}
+
+/** Clients this manager can (or is waiting to) act as, with user info. */
+export function listClientsOf(manager: string): ManagedLink[] {
+  return getDb()
+    .prepare(
+      `SELECT m.manager_email AS managerEmail, m.client_email AS clientEmail,
+              m.status, m.created_at AS createdAt, u.name, u.plan
+       FROM managed_accounts m JOIN users u ON u.email = m.client_email
+       WHERE m.manager_email = ? ORDER BY m.created_at ASC`
+    )
+    .all(manager.toLowerCase()) as unknown as ManagedLink[];
+}
+
+/** Managers who have (or requested) access to this client's account. */
+export function listManagersOf(client: string): ManagedLink[] {
+  return getDb()
+    .prepare(
+      `SELECT m.manager_email AS managerEmail, m.client_email AS clientEmail,
+              m.status, m.created_at AS createdAt, u.name, u.plan
+       FROM managed_accounts m JOIN users u ON u.email = m.manager_email
+       WHERE m.client_email = ? ORDER BY m.created_at ASC`
+    )
+    .all(client.toLowerCase()) as unknown as ManagedLink[];
+}
+
+export function insertManagedLink(
+  manager: string,
+  client: string,
+  status: "invited" | "active"
+): void {
+  getDb()
+    .prepare(
+      `INSERT OR REPLACE INTO managed_accounts (manager_email, client_email, status, created_at)
+       VALUES (?, ?, ?, ?)`
+    )
+    .run(manager.toLowerCase(), client.toLowerCase(), status, new Date().toISOString());
+}
+
+/** Client-side approval of a pending management request. */
+export function activateManagedLink(manager: string, client: string): boolean {
+  const res = getDb()
+    .prepare(
+      "UPDATE managed_accounts SET status = 'active' WHERE manager_email = ? AND client_email = ? AND status = 'invited'"
+    )
+    .run(manager.toLowerCase(), client.toLowerCase());
+  return Number(res.changes) > 0;
+}
+
+/** Removes the link in whichever direction it exists (manager or client view). */
+export function deleteManagedLink(a: string, b: string): void {
+  const conn = getDb();
+  conn
+    .prepare("DELETE FROM managed_accounts WHERE manager_email = ? AND client_email = ?")
+    .run(a.toLowerCase(), b.toLowerCase());
+  conn
+    .prepare("DELETE FROM managed_accounts WHERE manager_email = ? AND client_email = ?")
+    .run(b.toLowerCase(), a.toLowerCase());
+}
+
+/** The auth-layer check: may `manager` currently act as `client`? */
+export function isActiveManager(manager: string, client: string): boolean {
+  const row = getDb()
+    .prepare(
+      "SELECT 1 FROM managed_accounts WHERE manager_email = ? AND client_email = ? AND status = 'active'"
+    )
+    .get(manager.toLowerCase(), client.toLowerCase());
+  return Boolean(row);
+}
+
+const PLAN_RANK: Record<string, number> = {
+  Free: 0,
+  Lite: 1,
+  Starter: 2,
+  "Creator Pro": 3,
+  Agency: 4,
+};
+
+/** Quota inheritance: a managed client rides the best plan among their own
+ *  and every active manager's — the agency's plan covers its clients. */
+export function bestPlanFor(email: string): string {
+  const own = findUser(email)?.plan ?? "Starter";
+  let best = own;
+  const managers = getDb()
+    .prepare(
+      `SELECT u.plan FROM managed_accounts m JOIN users u ON u.email = m.manager_email
+       WHERE m.client_email = ? AND m.status = 'active'`
+    )
+    .all(email.toLowerCase()) as { plan: string }[];
+  for (const m of managers) {
+    if ((PLAN_RANK[m.plan] ?? 0) > (PLAN_RANK[best] ?? 0)) best = m.plan;
+  }
+  return best;
 }
 
 // --- Weekly operator brief ---

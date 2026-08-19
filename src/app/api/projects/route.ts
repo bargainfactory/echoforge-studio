@@ -3,9 +3,9 @@ import path from "node:path";
 import fs from "node:fs";
 import { getSessionUser } from "@/lib/server/auth";
 import {
+  bestPlanFor,
   countProjectsSince,
   createProjectWithAssets,
-  findUser,
   getBrandVoice,
   getFlags,
   insertNotification,
@@ -72,8 +72,9 @@ export async function POST(req: NextRequest) {
   }
 
   // Plan quota: monthly project generations, checked against the live DB plan
-  // (the session's copy can be stale after a Stripe-webhook upgrade).
-  const plan = findUser(user.email)?.plan ?? "Starter";
+  // (the session's copy can be stale after a Stripe-webhook upgrade). Managed
+  // client accounts inherit their agency's plan while the link is active.
+  const plan = bestPlanFor(user.email);
   const cap = PLAN_MONTHLY_PROJECTS[plan] ?? PLAN_MONTHLY_PROJECTS.Starter;
   if (Number.isFinite(cap)) {
     const monthStart = new Date();
