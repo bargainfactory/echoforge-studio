@@ -426,7 +426,7 @@ async function renderScriptVideo(clip: Clip & { userEmail: string }): Promise<vo
   const tts = await synthesizeSpeech(clip.script);
   if (!tts) {
     throw new Error(
-      "no voiceover provider — connect an ElevenLabs or OpenAI key in the Operator Console"
+      "no voiceover provider — connect an ElevenLabs, xAI, or OpenAI key in the Operator Console"
     );
   }
 

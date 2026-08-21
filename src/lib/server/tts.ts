@@ -39,6 +39,30 @@ export async function synthesizeSpeech(
     }
   }
 
+  // xAI TTS: Grok voices at $15/1M chars on the key already connected.
+  const xaiKey = resolveField("llm", "xaiApiKey");
+  if (xaiKey) {
+    try {
+      const voice = resolveField("voiceover", "xaiVoiceId") || "eve";
+      const resp = await fetch("https://api.x.ai/v1/tts", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${xaiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ text: input, voice_id: voice }),
+      });
+      if (resp.ok) {
+        return {
+          bytes: Buffer.from(await resp.arrayBuffer()),
+          provider: `xai:tts:${voice}`,
+        };
+      }
+    } catch {
+      /* fall through to OpenAI */
+    }
+  }
+
   const openaiKey = resolveField("llm", "openaiApiKey");
   if (openaiKey) {
     try {

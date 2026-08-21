@@ -89,12 +89,13 @@ export const INTEGRATIONS: IntegrationDef[] = [
   },
   {
     name: "voiceover",
-    label: "Voiceover (ElevenLabs)",
+    label: "Voiceover (ElevenLabs / Grok / OpenAI)",
     description:
-      "Narrates script videos with a natural AI voice. Falls back to your OpenAI key (tts-1) when no ElevenLabs key is set.",
-    docsHint: "Add an ElevenLabs API key, or rely on your OpenAI key.",
+      "Narrates script videos with a natural AI voice. Priority: ElevenLabs, then your xAI key (Grok voices — eve, orion, helix…), then OpenAI tts-1. With an xAI key connected, this already works.",
+    docsHint: "Optional: an ElevenLabs key for premium voices, or pick a Grok voice below.",
     fields: [
       { key: "elevenlabsApiKey", label: "ElevenLabs API key", envVar: "ELEVENLABS_API_KEY", secret: true, placeholder: "sk_..." },
+      { key: "xaiVoiceId", label: "Grok voice", envVar: "XAI_VOICE_ID", placeholder: "eve — or orion, helix, luna, perseus…" },
     ],
   },
   {

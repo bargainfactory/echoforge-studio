@@ -26,9 +26,42 @@ const MAX_WORDS = 30_000;
 
 export interface TranscriptionResult {
   text: string;
-  provider: "deepgram:nova-2" | "openai:whisper-1";
+  provider: "deepgram:nova-2" | "xai:stt" | "openai:whisper-1";
   words: TranscriptWord[] | null;
   durationSec: number | null;
+}
+
+/** Defensive parse of xAI STT word timings — accepts the common shapes and
+ *  returns null (→ even-spacing estimator) when the format is unfamiliar. */
+function parseXaiWords(data: unknown): TranscriptWord[] | null {
+  const d = data as Record<string, unknown>;
+  const raw: unknown[] | null = Array.isArray(d?.words)
+    ? (d.words as unknown[])
+    : Array.isArray(d?.segments)
+      ? (d.segments as Record<string, unknown>[]).flatMap((s) =>
+          Array.isArray(s?.words) ? (s.words as unknown[]) : []
+        )
+      : null;
+  if (!raw?.length) return null;
+  const words = raw
+    .slice(0, MAX_WORDS)
+    .map((x) => {
+      const w = x as Record<string, unknown>;
+      const sp =
+        typeof w.speaker === "number"
+          ? w.speaker
+          : typeof w.speaker_id === "number"
+            ? w.speaker_id
+            : undefined;
+      return {
+        w: String(w.word ?? w.text ?? ""),
+        s: Number(w.start ?? w.start_time ?? 0),
+        e: Number(w.end ?? w.end_time ?? 0),
+        ...(sp !== undefined ? { sp } : {}),
+      };
+    })
+    .filter((x) => x.w);
+  return words.length ? words : null;
 }
 
 export async function transcribeMedia(
@@ -37,6 +70,7 @@ export async function transcribeMedia(
   mimeType: string
 ): Promise<TranscriptionResult | null> {
   const deepgramKey = resolveField("transcription", "deepgramApiKey");
+  const xaiKey = resolveField("llm", "xaiApiKey");
   const openaiKey = resolveField("llm", "openaiApiKey");
 
   if (deepgramKey) {
@@ -76,6 +110,44 @@ export async function transcribeMedia(
             text: text.trim().slice(0, MAX_TRANSCRIPT_CHARS),
             provider: "deepgram:nova-2",
             words: words?.length ? words : null,
+            durationSec,
+          };
+        }
+      }
+    } catch {
+      /* fall through to Whisper */
+    }
+  }
+
+  // xAI STT: word-level timestamps + diarization on the key most accounts
+  // already have; $0.10/hour batch, no small-file cap.
+  if (xaiKey) {
+    try {
+      const form = new FormData();
+      form.append(
+        "file",
+        new Blob([new Uint8Array(bytes)], { type: mimeType || "application/octet-stream" }),
+        fileName || "upload.mp4"
+      );
+      const resp = await fetch("https://api.x.ai/v1/stt", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${xaiKey}` },
+        body: form,
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        if (typeof data?.text === "string" && data.text.trim()) {
+          const words = parseXaiWords(data);
+          const durationSec =
+            typeof data?.duration === "number"
+              ? data.duration
+              : words?.length
+                ? words[words.length - 1].e
+                : null;
+          return {
+            text: data.text.trim().slice(0, MAX_TRANSCRIPT_CHARS),
+            provider: "xai:stt" as TranscriptionResult["provider"],
+            words,
             durationSec,
           };
         }
