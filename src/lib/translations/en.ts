@@ -813,6 +813,18 @@ export const en: Record<string, string> = {
   "watch.checked": "Checked",
   // URL sources
   "dash.sourceUrlLabel": "Or paste an article / blog URL",
+  // Storage retention + export
+  "dash.mediaRetention": "Storage policy: uploaded source videos are kept for 90 days for clipping; rendered videos for 30. Your generated content (scripts, posts, assets) is kept indefinitely, and you can download everything anytime from Settings → Your work.",
+  "clips.retentionNote": "Rendered videos are kept for 30 days — download the keepers (each card, or all at once in Settings → Your work). Every clip can be re-rendered in one click after it expires.",
+  "export.title": "Your work",
+  "export.desc": "Everything you make here is yours to keep. Export all written content as one document, or your complete account data as JSON.",
+  "export.md": "Download all content (.md)",
+  "export.json": "Download account data (.json)",
+  "export.videosTitle": "Rendered videos",
+  "export.retention": "Videos are stored for 30 days after rendering, then expire (one click re-renders them). Download the ones you want to keep permanently.",
+  "export.noVideos": "No rendered videos right now.",
+  "export.kindScript": "script video",
+  "export.kindClip": "clip",
   // Client accounts (agency delegated access)
   "clientsw.me": "My account",
   "clientsw.hint": "Switch which account you're working in",

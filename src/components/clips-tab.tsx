@@ -467,6 +467,7 @@ export default function ClipsTab({
           <Scissors className="w-5 h-5 text-neon-purple" /> {t("clips.title")}
         </h2>
         <p className="text-sm text-cyber-muted mt-1">{t("clips.sub")}</p>
+        <p className="text-[11px] text-warning mt-1.5">{t("clips.retentionNote")}</p>
       </div>
 
       {projects.length === 0 ? (

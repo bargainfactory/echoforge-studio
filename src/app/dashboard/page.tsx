@@ -60,6 +60,7 @@ import SetupChecklist from "@/components/setup-checklist";
 import WatchlistCard from "@/components/watchlist-card";
 import ClientSwitcher from "@/components/client-switcher";
 import ManagedClientsCard from "@/components/managed-clients-card";
+import ExportCard from "@/components/export-card";
 import {
   useConnections,
   isConnected,
@@ -649,6 +650,9 @@ export default function Dashboard() {
                 className="w-full px-3 py-2.5 bg-cyber-dark border border-cyber-border rounded-xl text-sm text-foreground placeholder:text-cyber-muted focus:outline-none focus:border-neon-purple/50 resize-y"
               />
               <p className="text-xs text-cyber-muted mt-1.5 mb-4">{t("dash.transcriptHint")}</p>
+
+              {/* Retention disclosure at the moment of upload */}
+              <p className="text-[11px] text-cyber-muted -mt-2 mb-4">{t("dash.mediaRetention")}</p>
 
               {/* Wider input mouth: article/blog URL as the source */}
               <label className="block text-sm font-medium text-foreground mb-1.5">
@@ -4049,6 +4053,8 @@ function SettingsTab({
       <ConnectedAccountsCard />
 
       <ManagedClientsCard />
+
+      <ExportCard />
 
       <IntegrationsPanel />
 
