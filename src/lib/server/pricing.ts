@@ -53,7 +53,7 @@ export interface PricingConfig {
  * the stored DB copy when the stored version differs, so pricing edits ship
  * with the deploy instead of being shadowed by the first-ever seeded config.
  */
-export const PRICING_VERSION = 2;
+export const PRICING_VERSION = 3;
 
 /** Checkout priceId → the plan name stored on users. */
 export const PRICE_ID_TO_PLAN: Record<string, string> = {
@@ -120,6 +120,8 @@ export const DEFAULT_PRICING: PricingConfig = {
         { key: "feat.smartSchedule", included: true },
         { key: "feat.trendRadar", included: true },
         { key: "feat.watchlist", included: true },
+        { key: "feat.abTesting", included: true },
+        { key: "feat.bioMediaKit", included: true },
         { key: "feat.emailSupport", included: true },
         { key: "feat.voiceClone", included: false, upgrade: true },
         { key: "feat.clientAccounts", included: false, upgrade: true },
@@ -140,8 +142,12 @@ export const DEFAULT_PRICING: PricingConfig = {
         { key: "feat.everythingLite", included: true },
         { key: "feat.voiceClone", included: true },
         { key: "feat.thumbsHighlights", included: true },
+        { key: "feat.sourcesAny", included: true },
+        { key: "feat.evergreen", included: true },
         { key: "feat.approvalLinks", included: true },
+        { key: "feat.revenueTracker", included: true },
         { key: "feat.exportPacks", included: true },
+        { key: "feat.emailSupport", included: true },
         { key: "feat.clientAccounts", included: false, upgrade: true },
       ],
     },
@@ -160,7 +166,10 @@ export const DEFAULT_PRICING: PricingConfig = {
         { key: "feat.everythingStarter", included: true },
         { key: "feat.2clients", included: true },
         { key: "feat.quotaShare", included: true },
+        { key: "feat.clientSwitch", included: true },
+        { key: "feat.allPlatforms", included: true },
         { key: "feat.weeklyBrief", included: true },
+        { key: "feat.provenance", included: true },
         { key: "feat.priority", included: true },
       ],
     },
@@ -179,7 +188,10 @@ export const DEFAULT_PRICING: PricingConfig = {
         { key: "feat.everythingPro", included: true },
         { key: "feat.10clients", included: true },
         { key: "feat.quotaShare", included: true },
+        { key: "feat.clientSwitch", included: true },
+        { key: "feat.approvalLinks", included: true },
         { key: "feat.allPlatforms", included: true },
+        { key: "feat.provenance", included: true },
         { key: "feat.dedicatedSupport", included: true },
       ],
     },
