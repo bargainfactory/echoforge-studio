@@ -12,7 +12,8 @@ const ELEVENLABS_VOICE = "21m00Tcm4TlvDq8ikWAM";
 const MAX_TTS_CHARS = 4800;
 
 export async function synthesizeSpeech(
-  text: string
+  text: string,
+  language = "en"
 ): Promise<{ bytes: Buffer; provider: string } | null> {
   const input = text.trim().slice(0, MAX_TTS_CHARS);
   if (!input) return null;
@@ -50,7 +51,7 @@ export async function synthesizeSpeech(
           Authorization: `Bearer ${xaiKey}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ text: input, voice_id: voice }),
+        body: JSON.stringify({ text: input, voice_id: voice, language }),
       });
       if (resp.ok) {
         return {
