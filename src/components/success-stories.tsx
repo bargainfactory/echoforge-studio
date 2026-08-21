@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Star, TrendingUp, Users, DollarSign } from "lucide-react";
+import { Star, Globe, Layers, Scissors, Gauge } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
 
 const stories = [
@@ -46,11 +46,13 @@ const stories = [
 export default function SuccessStories() {
   const { t } = useTranslation();
 
+  // Capability facts, not sample metrics — every number here is true of the
+  // product today.
   const stats = [
-    { icon: Users, value: "2,400+", label: t("stories.creatorsServed") },
-    { icon: TrendingUp, value: "50M+", label: t("stories.viewsGenerated") },
-    { icon: DollarSign, value: "$8M+", label: t("stories.revenueForClients") },
-    { icon: Star, value: "4.9/5", label: t("stories.clientRating") },
+    { icon: Layers, value: "30+", label: t("stories.statAssets") },
+    { icon: Globe, value: "19", label: t("stories.statLanguages") },
+    { icon: Scissors, value: "60s", label: t("stories.statClips") },
+    { icon: Gauge, value: "20s", label: t("stories.statAudit") },
   ];
 
   return (
