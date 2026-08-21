@@ -1,4 +1,5 @@
 import { DatabaseSync } from "node:sqlite";
+import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
 import path from "node:path";
 import fs from "node:fs";
 import type { Project, Asset, Notification, BrandVoice } from "@/lib/data";
@@ -8,7 +9,7 @@ import {
   defaultNotifications,
   DEFAULT_VOICE,
 } from "@/lib/data";
-import { DEFAULT_PRICING, type PricingConfig } from "./pricing";
+import { DEFAULT_PRICING, PRICING_VERSION, type PricingConfig } from "./pricing";
 
 /**
  * Durable backend store, backed by SQLite via Node's built-in `node:sqlite`
@@ -22,7 +23,7 @@ import { DEFAULT_PRICING, type PricingConfig } from "./pricing";
 
 let db: DatabaseSync | null = null;
 
-function getDb(): DatabaseSync {
+export function getDb(): DatabaseSync {
   if (db) return db;
 
   const dataDir = path.join(process.cwd(), "data");
@@ -252,6 +253,13 @@ function getDb(): DatabaseSync {
       created_at    TEXT NOT NULL,
       PRIMARY KEY (manager_email, client_email)
     );
+    CREATE TABLE IF NOT EXISTS error_log (
+      id      INTEGER PRIMARY KEY AUTOINCREMENT,
+      context TEXT NOT NULL,
+      message TEXT NOT NULL,
+      stack   TEXT,
+      ts      TEXT NOT NULL
+    );
     CREATE TABLE IF NOT EXISTS gen_images (
       id         TEXT PRIMARY KEY,
       user_email TEXT NOT NULL REFERENCES users(email) ON DELETE CASCADE,
@@ -283,6 +291,8 @@ function getDb(): DatabaseSync {
     "ALTER TABLE users ADD COLUMN trial_ends_at TEXT",
     "ALTER TABLE users ADD COLUMN trial_prev_plan TEXT",
     "ALTER TABLE users ADD COLUMN custom_voice_id TEXT",
+    "ALTER TABLE users ADD COLUMN email_verified INTEGER NOT NULL DEFAULT 1",
+    "ALTER TABLE users ADD COLUMN verify_token TEXT",
     "ALTER TABLE clips ADD COLUMN kind TEXT NOT NULL DEFAULT 'clip'",
     "ALTER TABLE clips ADD COLUMN script TEXT",
     "ALTER TABLE projects ADD COLUMN approve_token TEXT",
@@ -1315,21 +1325,31 @@ export function markAllNotificationsRead(email: string): void {
  */
 export function getPricingConfig(): PricingConfig {
   const conn = getDb();
+  const ver = conn
+    .prepare("SELECT value FROM pricing_config WHERE key = 'version'")
+    .get() as { value: string } | undefined;
   const row = conn
     .prepare("SELECT value FROM pricing_config WHERE key = 'config'")
     .get() as { value: string } | undefined;
-  if (row) {
+  if (row && ver?.value === String(PRICING_VERSION)) {
     try {
       return JSON.parse(row.value) as PricingConfig;
     } catch {
       /* fall through to reseed on corrupt JSON */
     }
   }
+  // First access, or DEFAULT_PRICING moved on since this DB was seeded — the
+  // shipped config wins over the stale stored copy.
   conn
     .prepare(
       "INSERT OR REPLACE INTO pricing_config (key, value) VALUES ('config', ?)"
     )
     .run(JSON.stringify(DEFAULT_PRICING));
+  conn
+    .prepare(
+      "INSERT OR REPLACE INTO pricing_config (key, value) VALUES ('version', ?)"
+    )
+    .run(String(PRICING_VERSION));
   return DEFAULT_PRICING;
 }
 
@@ -1349,9 +1369,46 @@ export function getIntegrationRaw(name: string): Record<string, string> {
     .get(name) as { config: string } | undefined;
   if (!row) return {};
   try {
-    return JSON.parse(row.config) as Record<string, string>;
+    return JSON.parse(decryptConfig(row.config)) as Record<string, string>;
   } catch {
     return {};
+  }
+}
+
+// Integration configs hold API keys — encrypted at rest with a key derived
+// from SESSION_SECRET. Legacy plaintext rows still read fine and upgrade to
+// ciphertext on their next save.
+const ENC_PREFIX = "enc1:";
+
+function integrationsKey(): Buffer | null {
+  const secret = process.env.SESSION_SECRET;
+  if (!secret || secret.length < 16) return null;
+  return createHash("sha256").update(`${secret}:integrations:v1`).digest();
+}
+
+function encryptConfig(json: string): string {
+  const key = integrationsKey();
+  if (!key) return json;
+  const iv = randomBytes(12);
+  const cipher = createCipheriv("aes-256-gcm", key, iv);
+  const ct = Buffer.concat([cipher.update(json, "utf8"), cipher.final()]);
+  return `${ENC_PREFIX}${iv.toString("base64")}:${cipher.getAuthTag().toString("base64")}:${ct.toString("base64")}`;
+}
+
+function decryptConfig(stored: string): string {
+  if (!stored.startsWith(ENC_PREFIX)) return stored;
+  const key = integrationsKey();
+  if (!key) return "{}";
+  try {
+    const [ivB, tagB, ctB] = stored.slice(ENC_PREFIX.length).split(":");
+    const decipher = createDecipheriv("aes-256-gcm", key, Buffer.from(ivB, "base64"));
+    decipher.setAuthTag(Buffer.from(tagB, "base64"));
+    return Buffer.concat([
+      decipher.update(Buffer.from(ctB, "base64")),
+      decipher.final(),
+    ]).toString("utf8");
+  } catch {
+    return "{}";
   }
 }
 
@@ -1363,7 +1420,7 @@ export function setIntegrationRaw(
     .prepare(
       "INSERT OR REPLACE INTO integrations (name, config) VALUES (?, ?)"
     )
-    .run(name, JSON.stringify(config));
+    .run(name, encryptConfig(JSON.stringify(config)));
 }
 
 // --- Provenance (signed per-asset manifests) ---
@@ -1469,6 +1526,112 @@ export function setUserPlan(email: string, plan: string): boolean {
     .prepare("UPDATE users SET plan = ? WHERE email = ?")
     .run(plan, email.toLowerCase());
   return Number(res.changes) > 0;
+}
+
+// --- Error log (observability) ---
+
+export function insertErrorLog(context: string, message: string, stack?: string): void {
+  try {
+    const conn = getDb();
+    conn
+      .prepare("INSERT INTO error_log (context, message, stack, ts) VALUES (?, ?, ?, ?)")
+      .run(context.slice(0, 300), message.slice(0, 1000), (stack ?? "").slice(0, 4000), new Date().toISOString());
+    // Ring buffer: keep the newest 500 rows.
+    conn.prepare(
+      "DELETE FROM error_log WHERE id NOT IN (SELECT id FROM error_log ORDER BY id DESC LIMIT 500)"
+    ).run();
+  } catch {
+    /* the error logger must never throw */
+  }
+}
+
+export function listErrorLogs(limit = 50): {
+  id: number;
+  context: string;
+  message: string;
+  ts: string;
+}[] {
+  return getDb()
+    .prepare("SELECT id, context, message, ts FROM error_log ORDER BY id DESC LIMIT ?")
+    .all(limit) as unknown as { id: number; context: string; message: string; ts: string }[];
+}
+
+// --- Email verification ---
+
+export function isEmailVerified(email: string): boolean {
+  const row = getDb()
+    .prepare("SELECT email_verified FROM users WHERE email = ?")
+    .get(email.toLowerCase()) as { email_verified: number } | undefined;
+  return row ? Boolean(row.email_verified) : true;
+}
+
+export function setVerifyToken(email: string, token: string): void {
+  getDb()
+    .prepare("UPDATE users SET email_verified = 0, verify_token = ? WHERE email = ?")
+    .run(token, email.toLowerCase());
+}
+
+export function consumeVerifyToken(token: string): string | null {
+  if (!token || token.length < 16) return null;
+  const row = getDb()
+    .prepare("SELECT email FROM users WHERE verify_token = ?")
+    .get(token) as { email: string } | undefined;
+  if (!row) return null;
+  getDb()
+    .prepare("UPDATE users SET email_verified = 1, verify_token = NULL WHERE email = ?")
+    .run(row.email);
+  return row.email;
+}
+
+// --- Account deletion (the user's right to leave completely) ---
+
+/** Removes every row and returns every stored file path for this account.
+ *  Explicit per-table deletes — never trusting cascade pragmas with a
+ *  person's right to be forgotten. */
+export function deleteAccount(email: string): { files: string[] } {
+  const conn = getDb();
+  const e = email.toLowerCase();
+  const files: string[] = [];
+  for (const row of conn
+    .prepare("SELECT storage_path AS p FROM projects WHERE user_email = ? AND storage_path IS NOT NULL")
+    .all(e) as { p: string }[]) {
+    files.push(row.p);
+  }
+  for (const row of conn
+    .prepare("SELECT output_path AS p FROM clips WHERE user_email = ? AND output_path IS NOT NULL")
+    .all(e) as { p: string }[]) {
+    files.push(row.p);
+  }
+  for (const row of conn
+    .prepare("SELECT path AS p FROM gen_images WHERE user_email = ?")
+    .all(e) as { p: string }[]) {
+    files.push(row.p);
+  }
+
+  for (const table of [
+    "projects",
+    "assets",
+    "notifications",
+    "ideas",
+    "subscribers",
+    "creator_pages",
+    "audits",
+    "platform_accounts",
+    "post_metrics",
+    "revenue_entries",
+    "deals",
+    "scheduled_posts",
+    "clips",
+    "watchlist",
+    "gen_images",
+    "brand_voice",
+  ]) {
+    conn.prepare(`DELETE FROM ${table} WHERE user_email = ?`).run(e);
+  }
+  conn.prepare("DELETE FROM managed_accounts WHERE manager_email = ? OR client_email = ?").run(e, e);
+  conn.prepare("DELETE FROM reset_tokens WHERE user_email = ?").run(e);
+  conn.prepare("DELETE FROM users WHERE email = ?").run(e);
+  return { files };
 }
 
 // --- Custom narration voice (xAI voice clone) ---

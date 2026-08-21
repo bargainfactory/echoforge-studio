@@ -13,8 +13,12 @@ import {
   getReferralInfo,
   seedUser,
   setReferredBy,
+  setVerifyToken,
 } from "@/lib/server/db";
 import { rateLimit, clientIp } from "@/lib/server/rate-limit";
+import { emailConfigured, sendEmail } from "@/lib/server/email";
+import { publicOrigin } from "@/lib/server/base-url";
+import { randomUUID } from "node:crypto";
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
@@ -73,6 +77,20 @@ export async function POST(req: NextRequest) {
   getReferralInfo(email);
   const ref = String(b?.ref ?? "").trim();
   if (ref) setReferredBy(email, ref);
+
+  // Email verification rides the email rail: with Resend configured, the
+  // account starts unverified and gets a confirmation link. Without it
+  // (self-hosted, no key) accounts stay verified so nothing blocks.
+  if (emailConfigured()) {
+    const verifyToken = randomUUID().replace(/-/g, "") + randomUUID().replace(/-/g, "");
+    setVerifyToken(email, verifyToken);
+    const link = `${publicOrigin(req)}/api/auth/verify?token=${verifyToken}`;
+    void sendEmail({
+      to: email,
+      subject: "Verify your Virafold email",
+      html: `<p>Hi ${name},</p><p>Welcome to Virafold! Confirm this email address to secure your account:</p><p><a href="${link}">Verify my email</a></p><p>If you didn't create this account, you can ignore this message.</p>`,
+    });
+  }
 
   const user = { name, email, initials: initialsFor(name), plan };
   const token = await createSessionToken(user);

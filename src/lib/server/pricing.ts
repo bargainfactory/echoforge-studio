@@ -48,6 +48,13 @@ export interface PricingConfig {
   comparison: ComparisonData[];
 }
 
+/**
+ * Bump when DEFAULT_PRICING changes shape or copy — getPricingConfig reseeds
+ * the stored DB copy when the stored version differs, so pricing edits ship
+ * with the deploy instead of being shadowed by the first-ever seeded config.
+ */
+export const PRICING_VERSION = 2;
+
 /** Checkout priceId → the plan name stored on users. */
 export const PRICE_ID_TO_PLAN: Record<string, string> = {
   free: "Free",
@@ -84,15 +91,15 @@ export const DEFAULT_PRICING: PricingConfig = {
       ctaKey: "pricing.startFree",
       features: [
         { key: "feat.1videoMonth", included: true },
-        { key: "feat.3clips", included: true },
-        { key: "feat.basicCaptions", included: true },
-        { key: "feat.1platform", included: true },
-        { key: "feat.720p", included: true },
+        { key: "feat.clipsScored", included: true },
+        { key: "feat.advancedCaptions", included: true },
+        { key: "feat.repurposePack", included: true },
+        { key: "feat.scriptVideo", included: true },
+        { key: "feat.freeTools", included: true },
         { key: "feat.watermark", included: true },
-        { key: "feat.7dayTurnaround", included: true },
-        { key: "feat.aiVoiceover", included: false, upgrade: true },
-        { key: "feat.customBranding", included: false, upgrade: true },
-        { key: "feat.dashboardAnalytics", included: false, upgrade: true },
+        { key: "feat.noWatermark", included: false, upgrade: true },
+        { key: "feat.voiceClone", included: false, upgrade: true },
+        { key: "feat.clientAccounts", included: false, upgrade: true },
       ],
     },
     {
@@ -107,14 +114,15 @@ export const DEFAULT_PRICING: PricingConfig = {
       ctaKey: "pricing.getStarted",
       features: [
         { key: "feat.2videos", included: true },
-        { key: "feat.12clips", included: true },
-        { key: "feat.advancedCaptions", included: true },
-        { key: "feat.2platforms", included: true },
-        { key: "feat.1080p", included: true },
+        { key: "feat.everythingFree", included: true },
         { key: "feat.noWatermark", included: true },
-        { key: "feat.72hTurnaround", included: true },
-        { key: "feat.aiVoiceover", included: false, upgrade: true },
-        { key: "feat.dashboard", included: false, upgrade: true },
+        { key: "feat.aiVoiceover", included: true },
+        { key: "feat.smartSchedule", included: true },
+        { key: "feat.trendRadar", included: true },
+        { key: "feat.watchlist", included: true },
+        { key: "feat.emailSupport", included: true },
+        { key: "feat.voiceClone", included: false, upgrade: true },
+        { key: "feat.clientAccounts", included: false, upgrade: true },
       ],
     },
     {
@@ -129,15 +137,12 @@ export const DEFAULT_PRICING: PricingConfig = {
       ctaKey: "pricing.getStarted",
       features: [
         { key: "feat.4videos", included: true },
-        { key: "feat.24clips", included: true },
-        { key: "feat.advancedCaptions", included: true },
-        { key: "feat.2platforms", included: true },
-        { key: "feat.1080p", included: true },
-        { key: "feat.noWatermark", included: true },
-        { key: "feat.48hTurnaround", included: true },
-        { key: "feat.emailSupport", included: true },
-        { key: "feat.aiVoiceover", included: false, upgrade: true },
-        { key: "feat.dashboard", included: false, upgrade: true },
+        { key: "feat.everythingLite", included: true },
+        { key: "feat.voiceClone", included: true },
+        { key: "feat.thumbsHighlights", included: true },
+        { key: "feat.approvalLinks", included: true },
+        { key: "feat.exportPacks", included: true },
+        { key: "feat.clientAccounts", included: false, upgrade: true },
       ],
     },
     {
@@ -152,14 +157,10 @@ export const DEFAULT_PRICING: PricingConfig = {
       ctaKey: "pricing.startCreating",
       features: [
         { key: "feat.8videos", included: true },
-        { key: "feat.52clips", included: true },
-        { key: "feat.aiVoiceover", included: true },
-        { key: "feat.allPlatforms", included: true },
-        { key: "feat.4k", included: true },
-        { key: "feat.carouselNewsletter", included: true },
-        { key: "feat.24hTurnaround", included: true },
-        { key: "feat.dashboard", included: true },
-        { key: "feat.slack", included: true },
+        { key: "feat.everythingStarter", included: true },
+        { key: "feat.2clients", included: true },
+        { key: "feat.quotaShare", included: true },
+        { key: "feat.weeklyBrief", included: true },
         { key: "feat.priority", included: true },
       ],
     },
@@ -175,15 +176,11 @@ export const DEFAULT_PRICING: PricingConfig = {
       ctaKey: "pricing.contactSales",
       features: [
         { key: "feat.unlimited", included: true },
-        { key: "feat.160clips", included: true },
-        { key: "feat.customTemplates", included: true },
+        { key: "feat.everythingPro", included: true },
+        { key: "feat.10clients", included: true },
+        { key: "feat.quotaShare", included: true },
         { key: "feat.allPlatforms", included: true },
-        { key: "feat.4k", included: true },
-        { key: "feat.fullSuite", included: true },
-        { key: "feat.sameDayTurnaround", included: true },
-        { key: "feat.whiteLabel", included: true },
-        { key: "feat.zapier", included: true },
-        { key: "feat.apiAccess", included: true },
+        { key: "feat.dedicatedSupport", included: true },
       ],
     },
   ],

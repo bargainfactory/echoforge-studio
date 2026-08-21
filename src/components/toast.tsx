@@ -31,6 +31,7 @@ export default function ToastContainer() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, x: 100, scale: 0.95 }}
               className={`flex items-center gap-3 px-4 py-3 rounded-xl border backdrop-blur-sm ${colors[toast.type]}`}
+              role="status"
             >
               <Icon className="w-4 h-4 shrink-0" />
               <span className="text-sm flex-1">{toast.message}</span>
@@ -45,7 +46,11 @@ export default function ToastContainer() {
                   {toast.action.label}
                 </button>
               )}
-              <button onClick={() => removeToast(toast.id)} className="shrink-0 opacity-60 hover:opacity-100">
+              <button
+                onClick={() => removeToast(toast.id)}
+                aria-label="Dismiss notification"
+                className="shrink-0 opacity-60 hover:opacity-100"
+              >
                 <X className="w-3.5 h-3.5" />
               </button>
             </motion.div>

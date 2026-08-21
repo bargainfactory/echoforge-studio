@@ -56,10 +56,13 @@ export default function LandingContent() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
+      <a href="#main" className="skip-link">
+        Skip to content
+      </a>
       <Navbar />
       {/* Narrative order: promise → how → feel it → see it → what's inside →
           why trust it → who wins with it → price → close. One CTA per beat. */}
-      <main>
+      <main id="main">
         <Hero />
         <HowItWorks />
         <TryGenerator />

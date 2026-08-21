@@ -9,7 +9,7 @@
  * "trends".
  */
 
-import { getBrandVoice, insertEvent, insertIdea, insertNotification } from "./db";
+import { bestPlanFor, getBrandVoice, insertEvent, insertIdea, insertNotification } from "./db";
 import { scoreHook } from "./generate";
 
 interface Trend {
@@ -37,6 +37,10 @@ function extractResponsesText(d: unknown): string {
 }
 
 export async function runTrendRadar(email: string): Promise<boolean> {
+  // Matches the pricing page: each scan is a live web_search spend, so the
+  // radar runs for paid plans only.
+  if (bestPlanFor(email) === "Free") return false;
+
   const { resolveField } = await import("./integrations");
   const key = resolveField("llm", "xaiApiKey");
   if (!key) return false;

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/server/auth";
-import { getCustomVoiceId, setCustomVoiceId } from "@/lib/server/db";
+import { bestPlanFor, getCustomVoiceId, setCustomVoiceId } from "@/lib/server/db";
 import { resolveField } from "@/lib/server/integrations";
 import { rateLimit } from "@/lib/server/rate-limit";
 
@@ -21,6 +21,14 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  // Matches the pricing page: voice cloning unlocks at Starter.
+  if (!["Starter", "Creator Pro", "Agency"].includes(bestPlanFor(user.email))) {
+    return NextResponse.json(
+      { error: "Voice cloning is a Starter-and-up feature — upgrade to clone your narration voice" },
+      { status: 402 }
+    );
+  }
 
   // Cloning is a paid call and voices persist provider-side — keep it rare.
   const gate = rateLimit(`clone:${user.email}`, 3, 24 * 60 * 60 * 1000);

@@ -87,3 +87,41 @@ body {
   background-size: 200% 100%;
   animation: shimmer 2s infinite;
 }
+
+/* --- Accessibility --- */
+
+/* Keyboard users get an unmissable focus ring; mouse clicks stay clean. */
+:focus-visible {
+  outline: 2px solid var(--color-neon-purple);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Hidden until focused: first Tab stop jumps past the nav. */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 200;
+  padding: 10px 16px;
+  border-radius: 0 0 12px 0;
+  background: var(--color-neon-purple);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+}
+.skip-link:focus {
+  left: 0;
+}
+
+/* Vestibular safety: one global damper instead of hunting every animation. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -402,6 +402,9 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background flex">
+      <a href="#main" className="skip-link">
+        Skip to content
+      </a>
       {/* Sidebar */}
       <aside className="hidden md:flex w-64 border-r border-cyber-border bg-cyber-dark flex-col">
         <div className="p-6 border-b border-cyber-border">
@@ -465,7 +468,7 @@ export default function Dashboard() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-auto">
+      <main id="main" className="flex-1 overflow-auto">
         <header className="border-b border-cyber-border bg-cyber-dark/50 backdrop-blur-sm px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
@@ -505,6 +508,7 @@ export default function Dashboard() {
         </header>
 
         <div className="p-6">
+          <VerifyEmailBanner />
           {activeTab === "Overview" && (
             <OverviewTab
               projects={projects}
@@ -721,7 +725,7 @@ export default function Dashboard() {
                     <p className="text-xs text-cyber-muted">{viewingAsset.type}</p>
                   </div>
                 </div>
-                <button onClick={() => setViewingAsset(null)} className="text-cyber-muted hover:text-foreground shrink-0">
+                <button onClick={() => setViewingAsset(null)} aria-label="Close" className="text-cyber-muted hover:text-foreground shrink-0">
                   <X className="w-5 h-5" />
                 </button>
               </div>
@@ -1895,7 +1899,7 @@ function ScheduleTab({ onNavigate }: { onNavigate: () => void }) {
             >
               <div className="flex items-center justify-between mb-5">
                 <h3 className="text-lg font-semibold text-foreground">{t("sched.new")}</h3>
-                <button onClick={() => setComposerOpen(false)} className="text-cyber-muted hover:text-foreground">
+                <button onClick={() => setComposerOpen(false)} aria-label="Close" className="text-cyber-muted hover:text-foreground">
                   <X className="w-5 h-5" />
                 </button>
               </div>
@@ -2010,7 +2014,7 @@ function ScheduleTab({ onNavigate }: { onNavigate: () => void }) {
                     </span>
                   </div>
                 </div>
-                <button onClick={() => setSelected(null)} className="text-cyber-muted hover:text-foreground shrink-0">
+                <button onClick={() => setSelected(null)} aria-label="Close" className="text-cyber-muted hover:text-foreground shrink-0">
                   <X className="w-5 h-5" />
                 </button>
               </div>
@@ -4065,6 +4069,99 @@ function SettingsTab({
         {saved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
         {saved ? t("dash.saved") : t("dash.saveSettings")}
       </button>
+
+      <DangerZoneCard />
+    </div>
+  );
+}
+
+/** Amber strip shown until the account's email is confirmed. Soft gate: the
+ *  product keeps working, this only nudges. */
+function VerifyEmailBanner() {
+  const { user, addToast } = useApp();
+  const { t } = useTranslation();
+  const [busy, setBusy] = useState(false);
+  if (!user || user.emailVerified !== false) return null;
+  return (
+    <div className="mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3">
+      <p className="flex-1 min-w-[220px] text-sm text-amber-200/90">
+        {t("verify.body", { email: user.email })}
+      </p>
+      <button
+        disabled={busy}
+        onClick={async () => {
+          setBusy(true);
+          try {
+            const res = await fetch("/api/auth/verify/resend", { method: "POST" });
+            const data = await res.json().catch(() => null);
+            addToast(
+              res.ok ? t("verify.sent") : String(data?.error ?? "Could not send the email"),
+              res.ok ? "success" : "error"
+            );
+          } finally {
+            setBusy(false);
+          }
+        }}
+        className="rounded-lg border border-amber-500/40 px-3 py-1.5 text-xs font-medium text-amber-300 hover:bg-amber-500/10 disabled:opacity-50"
+      >
+        {t("verify.resend")}
+      </button>
+    </div>
+  );
+}
+
+/** Type-to-confirm full account deletion — the GDPR counterpart to export. */
+function DangerZoneCard() {
+  const { user } = useApp();
+  const { t } = useTranslation();
+  const [confirm, setConfirm] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  if (!user) return null;
+  const match = confirm.trim().toLowerCase() === user.email.toLowerCase();
+  return (
+    <div className="bg-cyber-card border border-red-500/25 rounded-xl p-6">
+      <h3 className="font-semibold text-red-400 mb-1">{t("danger.title")}</h3>
+      <p className="text-xs text-cyber-muted mb-4">{t("danger.desc")}</p>
+      <label className="block text-sm text-cyber-muted mb-1.5" htmlFor="danger-confirm">
+        {t("danger.confirmLabel")}
+      </label>
+      <div className="flex flex-col sm:flex-row gap-3">
+        <input
+          id="danger-confirm"
+          type="email"
+          value={confirm}
+          onChange={(e) => setConfirm(e.target.value)}
+          placeholder={user.email}
+          className="flex-1 px-4 py-2.5 bg-cyber-dark border border-cyber-border rounded-xl text-sm text-foreground focus:outline-none focus:border-red-500/50"
+        />
+        <button
+          disabled={!match || busy}
+          onClick={async () => {
+            setBusy(true);
+            setError(null);
+            try {
+              const res = await fetch("/api/account", {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ confirm }),
+              });
+              if (res.ok) {
+                window.location.href = "/";
+                return;
+              }
+              const data = await res.json().catch(() => null);
+              setError(String(data?.error ?? "Deletion failed — try again"));
+            } finally {
+              setBusy(false);
+            }
+          }}
+          className="px-4 py-2.5 rounded-xl bg-red-500/15 border border-red-500/40 text-red-300 text-sm font-medium hover:bg-red-500/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          {busy ? "…" : t("danger.delete")}
+        </button>
+      </div>
+      {error && <p className="mt-2 text-xs text-red-400">{error}</p>}
     </div>
   );
 }

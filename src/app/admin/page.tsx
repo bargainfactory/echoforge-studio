@@ -66,6 +66,13 @@ interface LlmTierUsage {
   inTok: number;
   outTok: number;
 }
+interface ErrorLogRow {
+  id: number;
+  context: string;
+  message: string;
+  stack: string | null;
+  ts: string;
+}
 interface TierEvalRow {
   tier: string;
   engine: string | null;
@@ -87,6 +94,7 @@ export default function AdminPage() {
   const [audit, setAudit] = useState<AuditEntry[]>([]);
   const [pricing, setPricing] = useState<PricingConfig | null>(null);
   const [llm, setLlm] = useState<LlmTierUsage[]>([]);
+  const [errors, setErrors] = useState<ErrorLogRow[]>([]);
   const [evalRows, setEvalRows] = useState<TierEvalRow[] | null>(null);
   const [evalRunning, setEvalRunning] = useState(false);
 
@@ -119,6 +127,7 @@ export default function AdminPage() {
       setEvents(d.events);
       setFlagsState(d.flags);
       if (d.llm) setLlm(d.llm);
+      if (d.errors) setErrors(d.errors);
       setState("ready");
       const [u, a, p] = await Promise.all([
         fetch("/api/admin/users", { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)),
@@ -448,6 +457,33 @@ export default function AdminPage() {
                         {u.inTok.toLocaleString()} in · {u.outTok.toLocaleString()} out
                       </p>
                     </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div>
+              <p className="text-xs font-medium text-cyber-muted mb-2">
+                Recent server errors (uncaught route/process failures)
+              </p>
+              {errors.length === 0 ? (
+                <p className="text-sm text-success">No server errors logged — clean.</p>
+              ) : (
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {errors.map((e) => (
+                    <details key={e.id} className="bg-cyber-dark border border-red-400/25 rounded-lg px-3 py-2">
+                      <summary className="cursor-pointer text-xs text-foreground flex items-baseline gap-2 flex-wrap">
+                        <span className="font-mono text-red-400 shrink-0">{e.context}</span>
+                        <span className="text-cyber-muted truncate">{e.message.slice(0, 120)}</span>
+                        <span className="ml-auto text-[10px] text-cyber-muted shrink-0">
+                          {new Date(e.ts).toLocaleString()}
+                        </span>
+                      </summary>
+                      {e.stack && (
+                        <pre className="mt-2 text-[10px] text-cyber-muted whitespace-pre-wrap break-all max-h-40 overflow-y-auto">
+                          {e.stack}
+                        </pre>
+                      )}
+                    </details>
                   ))}
                 </div>
               )}

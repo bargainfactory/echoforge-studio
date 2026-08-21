@@ -17,6 +17,8 @@ export interface User {
   email: string;
   initials: string;
   plan: string;
+  /** false only when the account still has a pending verification email. */
+  emailVerified?: boolean;
 }
 
 export interface Toast {

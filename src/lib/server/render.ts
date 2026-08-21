@@ -16,6 +16,7 @@ import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import {
+  bestPlanFor,
   getProjectMedia,
   insertNotification,
   listQueuedClips,
@@ -29,6 +30,28 @@ export const CAPTION_STYLES = ["bold", "neon", "clean"] as const;
 export type CaptionStyle = (typeof CAPTION_STYLES)[number];
 
 const RENDERS_DIR = path.join(process.cwd(), "data", "renders");
+
+/** Brand watermark as an ASS style + full-length event — libass is proven on
+ *  every box we run on, unlike drawtext's fontconfig dependence. Free-plan
+ *  renders carry it; any paid plan removes it (the pricing page's promise). */
+function withWatermark(ass: string, dims: { w: number; h: number }, duration: number): string {
+  const wmSize = Math.max(14, Math.round(dims.h * 0.024));
+  const m = Math.max(10, Math.round(dims.h * 0.012));
+  const out = ass.replace(
+    "\n\n[Events]",
+    `\nStyle: WM,DejaVu Sans,${wmSize},&H50FFFFFF,&H50FFFFFF,&H60000000,&H00000000,0,0,0,0,100,100,0,0,1,2,0,3,${m},${m},${m},1\n\n[Events]`
+  );
+  return out + `Dialogue: 1,${fmtAssTime(0)},${fmtAssTime(duration)},WM,,0,0,0,,virafold.ai\n`;
+}
+
+/** Renders for Free-plan users carry the watermark. */
+function needsWatermark(email: string): boolean {
+  try {
+    return bestPlanFor(email) === "Free";
+  } catch {
+    return false;
+  }
+}
 
 function fmtAssTime(sec: number): string {
   const s = Math.max(0, sec);
@@ -232,17 +255,7 @@ export async function renderCaptionOnly(
   fs.mkdirSync(jobDir, { recursive: true });
   try {
     let ass = buildAss(words, 0, duration, style, position, dims);
-    if (opts.watermark) {
-      // Watermark as a second ASS style/event — libass is proven on every
-      // box we run on, unlike drawtext's fontconfig dependence.
-      const wmSize = Math.max(14, Math.round(dims.h * 0.024));
-      const m = Math.max(10, Math.round(dims.h * 0.012));
-      ass = ass.replace(
-        "\n\n[Events]",
-        `\nStyle: WM,DejaVu Sans,${wmSize},&H50FFFFFF,&H50FFFFFF,&H60000000,&H00000000,0,0,0,0,100,100,0,0,1,2,0,3,${m},${m},${m},1\n\n[Events]`
-      );
-      ass += `Dialogue: 1,${fmtAssTime(0)},${fmtAssTime(duration)},WM,,0,0,0,,virafold.ai\n`;
-    }
+    if (opts.watermark) ass = withWatermark(ass, dims, duration);
     fs.writeFileSync(path.join(jobDir, "subs.ass"), ass, "utf8");
     const vf = "ass=subs.ass";
     const res = await run(
@@ -345,13 +358,16 @@ async function renderOne(clip: Clip & { userEmail: string }): Promise<void> {
   const outAbs = path.join(RENDERS_DIR, `${clip.id}.mp4`);
 
   try {
-    const ass = buildAss(
+    let ass = buildAss(
       words,
       clip.startSec,
       clip.endSec,
       clip.style as CaptionStyle,
       clip.position as CaptionPosition
     );
+    if (needsWatermark(clip.userEmail)) {
+      ass = withWatermark(ass, { w: 1080, h: 1920 }, Math.max(1, clip.endSec - clip.startSec));
+    }
     fs.writeFileSync(path.join(jobDir, "subs.ass"), ass, "utf8");
 
     // Crop focus: where the subject sits in the source frame — left, center,
@@ -443,13 +459,16 @@ async function renderScriptVideo(clip: Clip & { userEmail: string }): Promise<vo
     if (!duration) throw new Error("could not read the narration's duration");
 
     const words = estimateWords(clip.script, duration);
-    const ass = buildAss(
+    let ass = buildAss(
       words,
       0,
       duration,
       clip.style as CaptionStyle,
       clip.position as CaptionPosition
     );
+    if (needsWatermark(clip.userEmail)) {
+      ass = withWatermark(ass, { w: 1080, h: 1920 }, duration);
+    }
     fs.writeFileSync(path.join(jobDir, "subs.ass"), ass, "utf8");
 
     // Visual mode: AI imagery per beat with a slow zoom, when an image
@@ -597,7 +616,8 @@ async function renderCaptionFull(clip: Clip & { userEmail: string }): Promise<vo
     words,
     clip.style as CaptionStyle,
     clip.position as CaptionPosition,
-    outAbs
+    outAbs,
+    { watermark: needsWatermark(clip.userEmail) }
   );
   if (!r.ok) throw new Error(r.error);
 

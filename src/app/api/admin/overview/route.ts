@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminUser } from "@/lib/server/auth";
-import { adminTotals, eventCounts, getFlags, llmUsage } from "@/lib/server/db";
+import { adminTotals, eventCounts, getFlags, listErrorLogs, llmUsage } from "@/lib/server/db";
 
 export const dynamic = "force-dynamic";
 
@@ -14,5 +14,6 @@ export async function GET() {
     events: eventCounts(),
     flags: getFlags(),
     llm: llmUsage(),
+    errors: listErrorLogs(20),
   });
 }

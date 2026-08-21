@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/server/auth";
-import { deleteWatch, insertWatch, listWatchlist } from "@/lib/server/db";
+import { bestPlanFor, deleteWatch, insertWatch, listWatchlist } from "@/lib/server/db";
 import { checkWatchEntry } from "@/lib/server/watch";
 import { rateLimit } from "@/lib/server/rate-limit";
 
@@ -18,6 +18,15 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  // Matches the pricing page: the watchlist polls YouTube on a schedule, so
+  // it unlocks with any paid plan.
+  if (bestPlanFor(user.email) === "Free") {
+    return NextResponse.json(
+      { error: "The channel watchlist is a paid-plan feature — upgrade to auto-track channels" },
+      { status: 402 }
+    );
+  }
 
   // Each check spends YouTube quota.
   const gate = rateLimit(`watch:${user.email}`, 10, 60 * 60 * 1000);
