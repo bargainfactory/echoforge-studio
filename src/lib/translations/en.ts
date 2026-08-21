@@ -891,6 +891,9 @@ export const en: Record<string, string> = {
   "dash.gPublish": "Publish",
   "dash.gGrow": "Grow",
   "dash.gManage": "Manage",
+  "hero.chip1": "Free plan — no card required",
+  "hero.chip2": "You approve every post",
+  "hero.chip3": "Tamper-proof provenance",
   // Hero transformation visual
   "tv.source": "Your recording",
   "tv.short": "YouTube Short",
