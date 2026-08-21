@@ -8,7 +8,7 @@
  */
 
 import { motion } from "framer-motion";
-import { Clock, Disc3, Mail, Play, Sparkles } from "lucide-react";
+import { Clock, Disc3, Mail, Music2, Play, Sparkles } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
 
 const WAVE = [
@@ -92,10 +92,14 @@ export default function TransformationVisual() {
           className="bg-cyber-card border border-cyber-border rounded-2xl p-3.5 flex flex-col gap-3"
         >
           <div className="flex items-center gap-2">
+            {/* One rendered vertical clip, two destinations */}
             <span className="w-6 h-6 rounded-md bg-red-600 flex items-center justify-center shrink-0">
               <Play className="w-3 h-3 text-white fill-white ml-0.5" />
             </span>
-            <p className="text-xs font-semibold text-foreground">{t("tv.short")}</p>
+            <span className="w-6 h-6 rounded-md bg-black border border-cyan-400/50 flex items-center justify-center shrink-0">
+              <Music2 className="w-3 h-3 text-cyan-300" />
+            </span>
+            <p className="text-xs font-semibold text-foreground">{t("tv.shortDual")}</p>
           </div>
           <div className="relative flex-1 min-h-[110px] rounded-xl overflow-hidden bg-gradient-to-b from-neon-purple/50 via-purple-900/40 to-cyber-dark">
             <div className="absolute inset-0 flex items-center justify-center">

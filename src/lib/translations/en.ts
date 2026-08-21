@@ -901,6 +901,7 @@ export const en: Record<string, string> = {
   // Hero transformation visual
   "tv.source": "Your recording",
   "tv.short": "YouTube Short",
+  "tv.shortDual": "Shorts · TikTok",
   "tv.carousel": "Carousel",
   "tv.newsletter": "Newsletter",
   "tv.thread": "X Thread",
