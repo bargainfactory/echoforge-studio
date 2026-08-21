@@ -18,6 +18,24 @@ interface Trend {
   hook: string;
 }
 
+/** Pulls the assistant text out of a /v1/responses payload, tolerating both
+ *  the convenience field and the structured output array. */
+function extractResponsesText(d: unknown): string {
+  const data = d as Record<string, unknown>;
+  if (typeof data?.output_text === "string") return data.output_text;
+  const out = Array.isArray(data?.output) ? (data.output as Record<string, unknown>[]) : [];
+  const parts: string[] = [];
+  for (const item of out) {
+    const content = Array.isArray(item?.content)
+      ? (item.content as Record<string, unknown>[])
+      : [];
+    for (const c of content) {
+      if (typeof c?.text === "string") parts.push(c.text);
+    }
+  }
+  return parts.join("\n");
+}
+
 export async function runTrendRadar(email: string): Promise<boolean> {
   const { resolveField } = await import("./integrations");
   const key = resolveField("llm", "xaiApiKey");
@@ -28,19 +46,19 @@ export async function runTrendRadar(email: string): Promise<boolean> {
   if (!niche) return false; // no niche context → nothing meaningful to scan
 
   try {
-    const resp = await fetch("https://api.x.ai/v1/chat/completions", {
+    // Agent Tools API: server-side web_search on /v1/responses (the old
+    // chat-completions search_parameters returns 410 Gone).
+    const resp = await fetch("https://api.x.ai/v1/responses", {
       method: "POST",
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "grok-4",
-        response_format: { type: "json_object" },
-        // xAI Live Search: pull current X/web signal instead of model memory.
-        search_parameters: { mode: "on" },
-        messages: [
+        model: "grok-4.6",
+        tools: [{ type: "web_search" }],
+        input: [
           {
             role: "system",
             content:
-              'You are a trend scout for content creators. Using CURRENT web and X search results only, find 3 topics or hook patterns trending THIS WEEK relevant to the creator\'s audience. For each: "topic" (what is trending), "why" (one sentence, cite what you saw), "hook" (a ready-to-use video title riding the trend, 6-14 words). Respond as {"trends":[{"topic","why","hook"}]}. If you cannot find genuinely current signals, return {"trends":[]}.',
+              'You are a trend scout for content creators. Using CURRENT web and X search results only, find 3 topics or hook patterns trending THIS WEEK relevant to the creator\'s audience. For each: "topic" (what is trending), "why" (one sentence, cite what you saw), "hook" (a ready-to-use video title riding the trend, 6-14 words). Respond ONLY with a JSON object: {"trends":[{"topic","why","hook"}]}. If you cannot find genuinely current signals, return {"trends":[]}.',
           },
           {
             role: "user",
@@ -54,7 +72,7 @@ export async function runTrendRadar(email: string): Promise<boolean> {
       return false;
     }
     const data = await resp.json();
-    const text = data?.choices?.[0]?.message?.content ?? "";
+    const text = extractResponsesText(data);
     const parsed = JSON.parse(text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1)) as {
       trends?: Trend[];
     };
