@@ -1,0 +1,229 @@
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import Link from "next/link";
+import Navbar from "@/components/navbar";
+import Footer from "@/components/footer";
+import FreeToolClient from "@/components/free-tools";
+
+/**
+ * Free-tool pages: six zero-signup utilities, each targeting its own
+ * tool-seeker search intent, each funneling to the product surface it
+ * naturally upsells. Deterministic/client-side wherever possible.
+ */
+
+interface ToolDef {
+  name: string;
+  h1: string;
+  sub: string;
+  faq: { q: string; a: string }[];
+}
+
+const TOOLS: Record<string, ToolDef> = {
+  "hook-analyzer": {
+    name: "Hook Analyzer",
+    h1: "Free Hook & Title Analyzer",
+    sub: "Paste a hook or video title and get a score out of 100 — with the exact factors that help or hurt it, and three stronger patterns for the same idea. No signup.",
+    faq: [
+      {
+        q: "How is the score calculated?",
+        a: "The same deterministic scoring Virafold uses in production: questions, concrete numbers, proven power words, and the 6–26 word sweet spot. No AI black box — you see every factor.",
+      },
+      {
+        q: "Is it really free?",
+        a: "Yes — no signup, no card, a fair-use rate limit. It runs pure code, so we can afford to keep it free forever.",
+      },
+      {
+        q: "Can Virafold write hooks for me?",
+        a: "Yes — the free generators produce hook-first scripts from any idea, and signed in, Virafold learns from the hooks that actually win on your channel.",
+      },
+    ],
+  },
+  "engagement-calculator": {
+    name: "Engagement Calculator",
+    h1: "Free Engagement Rate Calculator",
+    sub: "Followers, average likes, average comments — get your engagement rate and an honest verdict benchmarked to your audience size.",
+    faq: [
+      {
+        q: "What's a good engagement rate?",
+        a: "It depends on size: under 10k followers, 5%+ is good; 10k–100k, 3.5%+; over 100k, 2.5%+. Small audiences engage more — benchmarks tighten as you grow.",
+      },
+      {
+        q: "Which platforms does this work for?",
+        a: "The formula (likes + comments ÷ followers) applies to TikTok, Instagram, YouTube, X, and LinkedIn alike; the size-band verdicts are cross-platform averages.",
+      },
+      {
+        q: "How do I improve a low rate?",
+        a: "Usually hooks and format, not ideas. The free channel audit grades both on your actual videos in 20 seconds.",
+      },
+    ],
+  },
+  "hashtag-generator": {
+    name: "Hashtag Generator",
+    h1: "Free Hashtag Generator",
+    sub: "Type your topic, pick a platform, get a ready-to-paste tag set — topic-specific tags plus each platform's proven staples.",
+    faq: [
+      {
+        q: "How many hashtags should I use?",
+        a: "3–6 relevant tags typically beat tag walls on TikTok and Instagram; LinkedIn rewards 3 or fewer. Relevance beats volume everywhere.",
+      },
+      {
+        q: "Are these tags researched?",
+        a: "Topic tags are generated from your words; platform staples are widely-used evergreen tags. For tags tuned to your niche's winners, the watchlist inside Virafold studies your competitors weekly.",
+      },
+      {
+        q: "Is it free?",
+        a: "Completely — it runs in your browser. No signup, no limit.",
+      },
+    ],
+  },
+  "channel-compare": {
+    name: "Channel Compare",
+    h1: "Free YouTube Channel Comparison",
+    sub: "Two channels in, two virality grades out — hooks, consistency, timing, format, and engagement, side by side. You vs. anyone.",
+    faq: [
+      {
+        q: "Which channels can I compare?",
+        a: "Any two public YouTube channels — yours against a competitor, or two creators you study. Grades come from their recent public videos.",
+      },
+      {
+        q: "Why is there an hourly limit?",
+        a: "Each comparison reads two channels' data from YouTube's API. Three comparisons per hour keeps the tool free for everyone.",
+      },
+      {
+        q: "Can I track competitors over time?",
+        a: "Yes — inside Virafold, the watchlist re-audits pinned channels weekly, alerts you to their breakouts, and feeds their winning patterns into your own generations.",
+      },
+    ],
+  },
+  "best-time-to-post": {
+    name: "Best Time to Post",
+    h1: "Best Times to Post — Free Checker",
+    sub: "Audience-wide best posting windows for TikTok, YouTube, Instagram, LinkedIn, and X — with a downloadable weekly schedule.",
+    faq: [
+      {
+        q: "Are these times exact?",
+        a: "They're honest averages across audiences — a strong starting point, not a personal answer. Your audience has its own rhythm, which only your own results reveal.",
+      },
+      {
+        q: "What timezone are the times in?",
+        a: "Your audience's local time. If your viewers are mostly in one region, schedule in that region's time.",
+      },
+      {
+        q: "Can this be personalized?",
+        a: "Yes — Virafold learns your actual best hours from your measured post results and fills your week at those times with one click.",
+      },
+    ],
+  },
+  "media-kit": {
+    name: "Media Kit Maker",
+    h1: "Free Media Kit Maker",
+    sub: "Type your name, niche, audience size, and rate — get a clean, screenshot-ready media kit card sponsors can actually read.",
+    faq: [
+      {
+        q: "What goes in a media kit?",
+        a: "Who you are, your niche, audience size, engagement, and your rates. Sponsors decide in seconds — clarity beats decoration.",
+      },
+      {
+        q: "How do I share it?",
+        a: "Screenshot the card, or sign up free and Virafold hosts it as a live page at virafold.ai/kit/yourname with real metrics from your connected accounts.",
+      },
+      {
+        q: "How do I price sponsored posts?",
+        a: "A common floor is $10–25 per 1,000 followers for a dedicated post, adjusted by engagement and niche. Track what you actually close in Virafold's deal pipeline.",
+      },
+    ],
+  },
+};
+
+export function generateStaticParams() {
+  return Object.keys(TOOLS).map((tool) => ({ tool }));
+}
+
+export const dynamicParams = false;
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ tool: string }>;
+}): Promise<Metadata> {
+  const { tool } = await params;
+  const def = TOOLS[tool];
+  if (!def) return {};
+  const title = `${def.h1} | Virafold`;
+  return {
+    title,
+    description: def.sub,
+    alternates: { canonical: `/tools/${tool}` },
+    openGraph: {
+      type: "website",
+      url: `https://virafold.ai/tools/${tool}`,
+      siteName: "Virafold",
+      title,
+      description: def.sub,
+    },
+  };
+}
+
+export default async function ToolPage({
+  params,
+}: {
+  params: Promise<{ tool: string }>;
+}) {
+  const { tool } = await params;
+  const def = TOOLS[tool];
+  if (!def) notFound();
+
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: def.faq.map((x) => ({
+      "@type": "Question",
+      name: x.q,
+      acceptedAnswer: { "@type": "Answer", text: x.a },
+    })),
+  };
+
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+      <Navbar />
+      <main className="pt-28 pb-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-3xl mx-auto">
+          <p className="text-sm font-medium text-neon-purple mb-3">Free tool · no signup</p>
+          <h1 className="text-3xl sm:text-4xl font-bold text-foreground leading-tight mb-4">
+            {def.h1}
+          </h1>
+          <p className="text-lg text-cyber-muted leading-relaxed mb-8">{def.sub}</p>
+
+          <FreeToolClient tool={tool} />
+
+          <h2 className="text-xl font-bold text-foreground mt-14 mb-4">Common questions</h2>
+          <div className="space-y-4 mb-14">
+            {def.faq.map((x) => (
+              <div key={x.q} className="bg-cyber-card border border-cyber-border rounded-xl p-5">
+                <p className="text-sm font-semibold text-foreground mb-1.5">{x.q}</p>
+                <p className="text-sm text-cyber-muted leading-relaxed">{x.a}</p>
+              </div>
+            ))}
+          </div>
+
+          <p className="text-sm text-cyber-muted">
+            More free tools:{" "}
+            <Link href="/tools" className="text-neon-purple hover:underline">
+              see the whole toolbox
+            </Link>{" "}
+            — or{" "}
+            <Link href="/audit" className="text-neon-purple hover:underline">
+              run the free channel audit
+            </Link>
+            .
+          </p>
+        </div>
+      </main>
+      <Footer />
+    </>
+  );
+}

@@ -866,6 +866,7 @@ export const en: Record<string, string> = {
   "ideas.ctaS3d": "Folds the script into a complete asset set — shorts, carousel, newsletter, and thread — in your brand voice, ready to review and schedule.",
   // Persona pages
   "footer.solutions": "Solutions",
+  "footer.freeTools": "Free Tools",
   "footer.forPodcasters": "For Podcasters",
   "footer.forCoaches": "For Coaches",
   "footer.forCourses": "For Course Creators",

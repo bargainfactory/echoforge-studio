@@ -34,6 +34,7 @@ export default function Footer() {
       { label: t("footer.contact"), href: "/contact" },
     ],
     [t("footer.resources")]: [
+      { label: t("footer.freeTools"), href: "/tools" },
       { label: t("footer.howItWorks"), href: "/how-it-works" },
       { label: t("footer.pricing"), href: "/pricing" },
       { label: t("footer.successStories"), href: "/examples" },
