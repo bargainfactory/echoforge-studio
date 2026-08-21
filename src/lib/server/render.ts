@@ -423,7 +423,8 @@ async function renderScriptVideo(clip: Clip & { userEmail: string }): Promise<vo
   if (!clip.script?.trim()) throw new Error("script text is missing");
 
   const { synthesizeSpeech } = await import("./tts");
-  const tts = await synthesizeSpeech(clip.script);
+  const { getCustomVoiceId } = await import("./db");
+  const tts = await synthesizeSpeech(clip.script, "en", getCustomVoiceId(clip.userEmail));
   if (!tts) {
     throw new Error(
       "no voiceover provider — connect an ElevenLabs, xAI, or OpenAI key in the Operator Console"

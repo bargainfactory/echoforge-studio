@@ -13,7 +13,8 @@ const MAX_TTS_CHARS = 4800;
 
 export async function synthesizeSpeech(
   text: string,
-  language = "en"
+  language = "en",
+  customVoiceId?: string | null
 ): Promise<{ bytes: Buffer; provider: string } | null> {
   const input = text.trim().slice(0, MAX_TTS_CHARS);
   if (!input) return null;
@@ -44,7 +45,8 @@ export async function synthesizeSpeech(
   const xaiKey = resolveField("llm", "xaiApiKey");
   if (xaiKey) {
     try {
-      const voice = resolveField("voiceover", "xaiVoiceId") || "eve";
+      // The creator's cloned voice wins; then the operator's pick; then eve.
+      const voice = customVoiceId || resolveField("voiceover", "xaiVoiceId") || "eve";
       const resp = await fetch("https://api.x.ai/v1/tts", {
         method: "POST",
         headers: {

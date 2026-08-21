@@ -320,6 +320,11 @@ export async function sendWeeklyBriefs(): Promise<void> {
             .join("")}</ul><p style="font-family:sans-serif"><a href="https://virafold.ai/dashboard">Open your dashboard →</a></p>`,
         });
       }
+      // Trend Radar rides the same weekly cadence — current niche signal
+      // from Grok live search, landing as scored ideas.
+      const { runTrendRadar } = await import("./trends");
+      await runTrendRadar(u.email).catch(() => {});
+
       setLastBriefAt(u.email);
     } catch {
       /* one bad brief must not block the rest */

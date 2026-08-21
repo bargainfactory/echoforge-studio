@@ -282,6 +282,7 @@ function getDb(): DatabaseSync {
     "ALTER TABLE clips ADD COLUMN focus TEXT NOT NULL DEFAULT 'center'",
     "ALTER TABLE users ADD COLUMN trial_ends_at TEXT",
     "ALTER TABLE users ADD COLUMN trial_prev_plan TEXT",
+    "ALTER TABLE users ADD COLUMN custom_voice_id TEXT",
     "ALTER TABLE clips ADD COLUMN kind TEXT NOT NULL DEFAULT 'clip'",
     "ALTER TABLE clips ADD COLUMN script TEXT",
     "ALTER TABLE projects ADD COLUMN approve_token TEXT",
@@ -1468,6 +1469,21 @@ export function setUserPlan(email: string, plan: string): boolean {
     .prepare("UPDATE users SET plan = ? WHERE email = ?")
     .run(plan, email.toLowerCase());
   return Number(res.changes) > 0;
+}
+
+// --- Custom narration voice (xAI voice clone) ---
+
+export function setCustomVoiceId(email: string, voiceId: string | null): void {
+  getDb()
+    .prepare("UPDATE users SET custom_voice_id = ? WHERE email = ?")
+    .run(voiceId, email.toLowerCase());
+}
+
+export function getCustomVoiceId(email: string): string | null {
+  const row = getDb()
+    .prepare("SELECT custom_voice_id FROM users WHERE email = ?")
+    .get(email.toLowerCase()) as { custom_voice_id: string | null } | undefined;
+  return row?.custom_voice_id ?? null;
 }
 
 // --- Timed free trials (operator-granted) ---

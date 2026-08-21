@@ -657,7 +657,7 @@ export async function generateAssets(
  * the best same-type candidate is returned (feedback cannot be honored there —
  * the UI labels that mode accordingly).
  */
-const SCRIPT_SYSTEM = `You are Virafold's long-form script writer. Given a content idea (title + optional notes), write a complete, ready-to-record long-form video/podcast script: a strong cold-open hook, a short intro, 4-6 clearly structured sections with concrete substance (specific examples, numbers, actionable steps — never generic filler), a recap, and a closing call to action. Write in a natural spoken voice, plain text with paragraph breaks, no markdown headers. Respond as {"script": "..."}.`;
+const SCRIPT_SYSTEM = `You are Virafold's long-form script writer. Given a content idea (title + optional notes), write a complete, ready-to-record long-form video/podcast script: a strong cold-open hook, a short intro, 4-6 clearly structured sections with concrete substance (specific examples, numbers, actionable steps — never generic filler), a recap, and a closing call to action. Write in a natural spoken voice, plain text with paragraph breaks, no markdown headers. Write for the ear: vary sentence length, and use em-dashes and ellipses to mark natural pauses and emphasis — the script may be narrated aloud by a human or by TTS. Respond as {"script": "..."}.`;
 
 const SCRIPT_SCHEMA = {
   type: "object",

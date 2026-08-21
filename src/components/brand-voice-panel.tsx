@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Check, Loader2, Mic2, Save } from "lucide-react";
+// Mic2 doubles as the narration-voice clone affordance below.
 import { useApp } from "@/lib/context";
 import { useTranslation } from "@/lib/i18n";
 import { DEFAULT_VOICE, type BrandVoice } from "@/lib/data";
@@ -131,6 +132,9 @@ export default function BrandVoicePanel() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [cloneId, setCloneId] = useState<string | null>(null);
+  const [cloneFile, setCloneFile] = useState<File | null>(null);
+  const [cloning, setCloning] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -139,10 +143,40 @@ export default function BrandVoicePanel() {
       .then((d) => active && d?.voice && setVoice(d.voice))
       .catch(() => {})
       .finally(() => active && setLoading(false));
+    fetch("/api/voice/clone", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => active && setCloneId(d?.voiceId ?? null))
+      .catch(() => {});
     return () => {
       active = false;
     };
   }, []);
+
+  const doClone = async () => {
+    if (!cloneFile || cloning) return;
+    setCloning(true);
+    try {
+      const form = new FormData();
+      form.append("file", cloneFile);
+      const res = await fetch("/api/voice/clone", { method: "POST", body: form });
+      const d = await res.json().catch(() => null);
+      if (res.ok && d?.voiceId) {
+        setCloneId(d.voiceId);
+        setCloneFile(null);
+        addToast(t("voice.cloneDone"));
+      } else {
+        addToast(d?.error ?? t("voice.cloneFailed"), "error");
+      }
+    } finally {
+      setCloning(false);
+    }
+  };
+
+  const removeClone = async () => {
+    await fetch("/api/voice/clone", { method: "DELETE" }).catch(() => {});
+    setCloneId(null);
+    addToast(t("voice.cloneRemoved"), "info");
+  };
 
   const save = async () => {
     setSaving(true);
@@ -239,6 +273,42 @@ export default function BrandVoicePanel() {
           />
         </button>
       </label>
+
+      {/* Narration voice: clone once, every script video speaks as you */}
+      <div className="mt-5 pt-5 border-t border-cyber-border/60">
+        <p className="text-sm text-foreground font-medium">{t("voice.cloneTitle")}</p>
+        <p className="text-xs text-cyber-muted mt-0.5 mb-3">{t("voice.cloneDesc")}</p>
+        {cloneId ? (
+          <div className="flex items-center gap-3">
+            <span className="text-xs px-3 py-1.5 rounded-full bg-success/10 border border-success/40 text-success">
+              {t("voice.cloneActive")}
+            </span>
+            <button
+              onClick={removeClone}
+              className="text-xs text-red-400 hover:underline"
+            >
+              {t("voice.cloneRemove")}
+            </button>
+          </div>
+        ) : (
+          <div className="flex flex-wrap items-center gap-3">
+            <input
+              type="file"
+              accept="audio/*,video/*"
+              onChange={(e) => setCloneFile(e.target.files?.[0] ?? null)}
+              className="text-sm text-cyber-muted file:mr-3 file:px-4 file:py-2 file:rounded-lg file:border-0 file:bg-cyber-dark file:text-foreground file:text-xs file:cursor-pointer"
+            />
+            <button
+              onClick={doClone}
+              disabled={cloning || !cloneFile}
+              className="px-4 py-2 rounded-lg bg-cyber-dark border border-neon-purple/40 text-neon-purple text-xs font-medium hover:bg-neon-purple/10 transition-colors disabled:opacity-50 flex items-center gap-1.5"
+            >
+              {cloning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mic2 className="w-3.5 h-3.5" />}
+              {cloning ? t("voice.cloning") : t("voice.cloneBtn")}
+            </button>
+          </div>
+        )}
+      </div>
 
       <button
         onClick={save}
