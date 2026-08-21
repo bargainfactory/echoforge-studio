@@ -437,7 +437,30 @@ export default function ClipsTab({
   const projClips = clips.filter(
     (c) => c.kind !== "script" && (!selProject || c.projectId === selProject)
   );
-  const svClips = clips.filter((c) => c.kind === "script");
+  const svClips = clips.filter((c) => c.kind === "script" || c.kind === "caption");
+
+  // Caption-only render of the selected project's full source video.
+  const [captioning, setCaptioning] = useState(false);
+  const captionFull = useCallback(async () => {
+    if (!selProject || captioning) return;
+    setCaptioning(true);
+    try {
+      const res = await fetch(`/api/projects/${selProject}/caption`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const d = await res.json().catch(() => null);
+      if (res.ok) {
+        addToast(t("clips.captionQueued"));
+        load();
+      } else {
+        addToast(d?.error ?? t("clips.renderFailed"), "error");
+      }
+    } finally {
+      setCaptioning(false);
+    }
+  }, [selProject, captioning, addToast, t, load]);
 
   // AI thumbnails for ready videos: background art + title overlay.
   const [thumbs, setThumbs] = useState<Record<string, { id?: string; busy: boolean }>>({});
@@ -582,6 +605,15 @@ export default function ClipsTab({
               <Sparkles className="w-4 h-4" />
             )}
             {detecting ? t("clips.detecting") : t("clips.detect")}
+          </button>
+          <button
+            onClick={captionFull}
+            disabled={captioning || !selProject}
+            title={t("clips.captionHint")}
+            className="px-4 py-2.5 rounded-xl bg-cyber-dark border border-electric-blue/40 text-electric-blue text-sm font-medium hover:bg-electric-blue/10 transition-colors disabled:opacity-50 flex items-center gap-2"
+          >
+            {captioning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Film className="w-4 h-4" />}
+            {t("clips.captionFull")}
           </button>
         </div>
         </div>

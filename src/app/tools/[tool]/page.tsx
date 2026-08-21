@@ -135,6 +135,83 @@ const TOOLS: Record<string, ToolDef> = {
   },
 };
 
+TOOLS["caption-generator"] = {
+  name: "Caption Generator",
+  h1: "Free Auto-Subtitle Generator",
+  sub: "Upload a short video, get it back with word-timed captions burned in — three styles, three positions, no editing software. Free up to 90 seconds.",
+  faq: [
+    {
+      q: "What are the free limits?",
+      a: "Up to 25 MB / ~90 seconds per video, three per hour, with a small watermark. Signed in, captioning is full-length and watermark-free.",
+    },
+    {
+      q: "How accurate are the captions?",
+      a: "The video is transcribed automatically and captions are timed to the speech. You pick the style (Bold, Neon, Clean) and position so they never cover the wrong part of the frame.",
+    },
+    {
+      q: "Does it work with any aspect ratio?",
+      a: "Yes — your video comes back at its own size and shape, uncut. Only the captions are added.",
+    },
+  ],
+};
+TOOLS["thumbnail-tester"] = {
+  name: "Thumbnail Tester",
+  h1: "Free Thumbnail Tester",
+  sub: "See your thumbnail the way viewers actually meet it: in a feed next to competitors, and at the tiny sizes where clicks are really decided. Runs entirely in your browser.",
+  faq: [
+    {
+      q: "Is my image uploaded anywhere?",
+      a: "No — the preview renders entirely in your browser. The file never leaves your device.",
+    },
+    {
+      q: "What should I look for?",
+      a: "Readability at the smallest size, one clear focal point, and contrast against neighboring thumbnails. If you squint and it turns to mush, so will the click-through.",
+    },
+    {
+      q: "Can Virafold make thumbnails too?",
+      a: "Yes — signed in, every rendered clip can generate AI thumbnail art with your title burned on.",
+    },
+  ],
+};
+TOOLS["video-ideas"] = {
+  name: "Video Ideas",
+  h1: "Free Video Ideas Generator",
+  sub: "Type your niche, get ten video ideas built on proven title shapes — each scored for hook potential so you know which to make first.",
+  faq: [
+    {
+      q: "Where do the ideas come from?",
+      a: "Twelve title patterns that consistently perform across niches, filled with your topic and ranked by the same hook scoring Virafold uses in production.",
+    },
+    {
+      q: "Are these unique to me?",
+      a: "The shapes are shared; your niche and execution make them yours. Signed in, Virafold generates ideas from your actual content and learns from your winners.",
+    },
+    {
+      q: "What do I do with a good idea?",
+      a: "In Virafold, one click writes the full script and another folds it into 30+ posts — the idea is step one of a pipeline.",
+    },
+  ],
+};
+TOOLS["podcast-chapters"] = {
+  name: "Podcast Chapters",
+  h1: "Free Podcast Chapters & Show Notes Generator",
+  sub: "Paste an episode transcript, get timestamped chapters, takeaway show notes, and pull-quotes — ready for YouTube descriptions and podcast platforms.",
+  faq: [
+    {
+      q: "How are timestamps calculated?",
+      a: "From each chapter's share of the transcript, scaled to your episode length (or a ~150-words-per-minute estimate if you skip it). Add the real duration for tighter stamps.",
+    },
+    {
+      q: "Where do I get a transcript?",
+      a: "Most recorders and hosts export one; otherwise, upload the episode to Virafold and it's transcribed automatically — with word-level timing.",
+    },
+    {
+      q: "Can this whole episode become content?",
+      a: "That's Virafold's actual job: the same transcript becomes clips, threads, a newsletter, and carousels — see the podcasters page.",
+    },
+  ],
+};
+
 export function generateStaticParams() {
   return Object.keys(TOOLS).map((tool) => ({ tool }));
 }

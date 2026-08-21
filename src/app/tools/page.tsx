@@ -1,17 +1,54 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, Calculator, Clock3, Gauge, Hash, IdCard, Swords, Type } from "lucide-react";
+import {
+  ArrowRight,
+  Calculator,
+  Captions,
+  Clock3,
+  Gauge,
+  Hash,
+  IdCard,
+  Image,
+  Lightbulb,
+  ListOrdered,
+  Swords,
+  Type,
+} from "lucide-react";
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
 
 export const metadata: Metadata = {
   title: "Free Creator Tools | Virafold",
   description:
-    "Free, no-signup tools for creators: hook analyzer, engagement calculator, hashtag generator, channel comparison, best posting times, and a media kit maker.",
+    "Free, no-signup tools for creators: auto-subtitles, thumbnail tester, video ideas, podcast chapters, hook analyzer, engagement calculator, hashtag generator, channel comparison, posting times, and a media kit maker.",
   alternates: { canonical: "/tools" },
 };
 
 const TOOLS = [
+  {
+    href: "/tools/caption-generator",
+    icon: Captions,
+    name: "Auto-Subtitle Generator",
+    desc: "Your video back with word-timed captions burned in.",
+  },
+  {
+    href: "/tools/thumbnail-tester",
+    icon: Image,
+    name: "Thumbnail Tester",
+    desc: "Your thumbnail in a real feed, at real sizes.",
+  },
+  {
+    href: "/tools/video-ideas",
+    icon: Lightbulb,
+    name: "Video Ideas Generator",
+    desc: "Ten scored ideas for your niche, built on proven shapes.",
+  },
+  {
+    href: "/tools/podcast-chapters",
+    icon: ListOrdered,
+    name: "Podcast Chapters & Notes",
+    desc: "Transcript in — chapters, show notes, and quotes out.",
+  },
   {
     href: "/tools/hook-analyzer",
     icon: Type,
@@ -68,7 +105,7 @@ export default function ToolsHub() {
             The free creator toolbox
           </h1>
           <p className="text-lg text-cyber-muted leading-relaxed mb-10 max-w-2xl">
-            Seven working tools, no account, no card. Each one is a small piece of the same
+            Eleven working tools, no account, no card. Each one is a small piece of the same
             engine that powers Virafold — free because they cost us almost nothing to run.
           </p>
 

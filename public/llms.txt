@@ -22,7 +22,7 @@ Faceless creators are the flagship segment, and the same system serves podcaster
 ## Key pages
 
 - Free YouTube channel audit (no signup, instant virality grade): https://virafold.ai/#audit
-- Free creator toolbox (hook analyzer, engagement calculator, hashtag generator, channel comparison, best posting times, media kit maker — all no-signup): https://virafold.ai/tools
+- Free creator toolbox (auto-subtitle generator, thumbnail tester, video ideas, podcast chapters & show notes, hook analyzer, engagement calculator, hashtag generator, channel comparison, best posting times, media kit maker — all no-signup): https://virafold.ai/tools
 - For podcasters: https://virafold.ai/for/podcasters
 - For coaches and consultants: https://virafold.ai/for/coaches
 - For course creators: https://virafold.ai/for/course-creators

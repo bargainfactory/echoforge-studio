@@ -1927,6 +1927,39 @@ function mapClip(row: Record<string, unknown>): Clip {
   };
 }
 
+/** Caption-only job: the whole source video re-rendered with captions. */
+export function insertCaptionJob(
+  email: string,
+  v: { id: string; title: string; projectId: string; style: string; position: string }
+): Clip {
+  const now = new Date().toISOString();
+  getDb()
+    .prepare(
+      `INSERT INTO clips (id, user_email, project_id, title, start_sec, end_sec, score, reason, matched, status, style, position, created_at, kind)
+       VALUES (?, ?, ?, ?, 0, 0, 0, '', NULL, 'queued', ?, ?, ?, 'caption')`
+    )
+    .run(v.id, email.toLowerCase(), v.projectId, v.title, v.style, v.position, now);
+  return {
+    id: v.id,
+    projectId: v.projectId,
+    title: v.title,
+    startSec: 0,
+    endSec: 0,
+    score: 0,
+    reason: "",
+    matched: null,
+    status: "queued",
+    style: v.style,
+    position: v.position,
+    focus: "center",
+    kind: "caption",
+    script: null,
+    outputPath: null,
+    error: null,
+    createdAt: now,
+  };
+}
+
 /** A TTS-narrated script video: enters the same render queue as clips. */
 export function insertScriptVideo(
   email: string,

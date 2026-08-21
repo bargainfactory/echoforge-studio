@@ -12,7 +12,7 @@ import { resolveField } from "./integrations";
 
 const RENDERS_DIR = path.join(process.cwd(), "data", "renders");
 
-async function generateBackground(prompt: string): Promise<Buffer | null> {
+export async function generateBackground(prompt: string): Promise<Buffer | null> {
   const xaiKey = resolveField("llm", "xaiApiKey");
   if (xaiKey) {
     try {

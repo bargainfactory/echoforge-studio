@@ -538,6 +538,387 @@ function MediaKitTool() {
   );
 }
 
+/* ---------- 7. Auto-Subtitle Generator ---------- */
+function CaptionTool() {
+  const [file, setFile] = useState<File | null>(null);
+  const [style, setStyle] = useState("bold");
+  const [position, setPosition] = useState("bottom");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const [doneId, setDoneId] = useState<string | null>(null);
+
+  const run = async () => {
+    if (!file || busy) return;
+    setBusy(true);
+    setErr(null);
+    setDoneId(null);
+    track("tool_caption_run");
+    const form = new FormData();
+    form.append("file", file);
+    form.append("style", style);
+    form.append("position", position);
+    const res = await fetch("/api/tools/caption", { method: "POST", body: form }).catch(
+      () => null
+    );
+    setBusy(false);
+    const d = await res?.json().catch(() => null);
+    if (res?.ok && d?.id) setDoneId(d.id);
+    else setErr(d?.error ?? "Could not caption that video");
+  };
+
+  return (
+    <div>
+      <div className="space-y-3">
+        <label className="block">
+          <span className="block text-xs text-cyber-muted mb-1.5">
+            Video file (MP4/MOV, up to 25 MB / ~90 seconds)
+          </span>
+          <input
+            type="file"
+            accept="video/*"
+            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+            className="block w-full text-sm text-cyber-muted file:mr-3 file:px-4 file:py-2.5 file:rounded-xl file:border-0 file:bg-cyber-dark file:text-foreground file:text-sm file:cursor-pointer"
+          />
+        </label>
+        <div className="flex flex-wrap gap-3">
+          <select
+            value={style}
+            onChange={(e) => setStyle(e.target.value)}
+            className="px-4 py-3 bg-cyber-dark border border-cyber-border rounded-xl text-sm text-foreground focus:outline-none focus:border-neon-purple/50"
+          >
+            {["bold", "neon", "clean"].map((s) => (
+              <option key={s} value={s}>
+                Captions: {s[0].toUpperCase() + s.slice(1)}
+              </option>
+            ))}
+          </select>
+          <select
+            value={position}
+            onChange={(e) => setPosition(e.target.value)}
+            className="px-4 py-3 bg-cyber-dark border border-cyber-border rounded-xl text-sm text-foreground focus:outline-none focus:border-neon-purple/50"
+          >
+            {["bottom", "middle", "top"].map((p) => (
+              <option key={p} value={p}>
+                Position: {p[0].toUpperCase() + p.slice(1)}
+              </option>
+            ))}
+          </select>
+          <button onClick={run} disabled={busy || !file} className={btnCls}>
+            {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+            {busy ? "Transcribing & burning…" : "Caption my video"}
+          </button>
+        </div>
+        {busy && (
+          <p className="text-xs text-cyber-muted">
+            Usually 30–90 seconds — transcription plus a full re-render.
+          </p>
+        )}
+        {err && <p className="text-sm text-red-400">{err}</p>}
+      </div>
+
+      {doneId && (
+        <div className="mt-8">
+          <div className={cardCls}>
+            <video
+              src={`/api/tools/caption/${doneId}`}
+              controls
+              className="w-full max-w-sm rounded-lg border border-cyber-border mx-auto"
+            />
+            <a
+              href={`/api/tools/caption/${doneId}`}
+              download="captioned.mp4"
+              className="mt-4 inline-flex items-center gap-1.5 text-sm text-electric-blue hover:underline"
+            >
+              <Download className="w-4 h-4" /> Download captioned video
+            </a>
+          </div>
+          <UpgradeCard
+            text="Free renders carry a small watermark and cap at 90 seconds. Signed in: full-length videos, no watermark, word-accurate timing, and clips cut from the same upload."
+            href="/signup"
+            cta="Caption full videos"
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ---------- 8. Thumbnail Tester ---------- */
+function ThumbTesterTool() {
+  const [img, setImg] = useState<string | null>(null);
+
+  const onFile = (f: File | null) => {
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = () => setImg(String(reader.result));
+    reader.readAsDataURL(f);
+  };
+
+  const Fake = ({ title }: { title: string }) => (
+    <div>
+      <div className="aspect-video rounded-lg bg-cyber-dark border border-cyber-border" />
+      <div className="mt-2 space-y-1">
+        <div className="h-2 rounded-full bg-foreground/25 w-full" />
+        <p className="text-[10px] text-cyber-muted">{title}</p>
+      </div>
+    </div>
+  );
+
+  return (
+    <div>
+      <label className="block">
+        <span className="block text-xs text-cyber-muted mb-1.5">
+          Your thumbnail (JPG/PNG — stays in your browser, never uploaded)
+        </span>
+        <input
+          type="file"
+          accept="image/*"
+          onChange={(e) => onFile(e.target.files?.[0] ?? null)}
+          className="block w-full text-sm text-cyber-muted file:mr-3 file:px-4 file:py-2.5 file:rounded-xl file:border-0 file:bg-cyber-dark file:text-foreground file:text-sm file:cursor-pointer"
+        />
+      </label>
+
+      {img && (
+        <div className="mt-8 space-y-6">
+          <div className={cardCls}>
+            <p className="text-xs font-semibold text-foreground mb-3">
+              In the feed, next to everyone else:
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+              <Fake title="Competitor video" />
+              <div>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={img} alt="" className="aspect-video w-full object-cover rounded-lg border border-neon-purple/50" />
+                <div className="mt-2 space-y-1">
+                  <div className="h-2 rounded-full bg-foreground/40 w-full" />
+                  <p className="text-[10px] text-neon-purple">Your video</p>
+                </div>
+              </div>
+              <Fake title="Competitor video" />
+            </div>
+          </div>
+          <div className={cardCls}>
+            <p className="text-xs font-semibold text-foreground mb-3">
+              At real sizes — most viewers see the smallest:
+            </p>
+            <div className="flex items-end gap-4 flex-wrap">
+              {[240, 160, 100].map((w) => (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img key={w} src={img} alt="" style={{ width: w }} className="aspect-video object-cover rounded border border-cyber-border" />
+              ))}
+            </div>
+            <p className="text-[11px] text-cyber-muted mt-3">
+              Still readable at the smallest size? That's the one that decides your click-through.
+            </p>
+          </div>
+          <UpgradeCard
+            text="Need the thumbnail itself? Virafold generates AI thumbnail art with your title burned on, for every rendered clip."
+            href="/signup"
+            cta="Generate thumbnails"
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ---------- 9. Video Ideas Generator ---------- */
+function IdeasTool() {
+  const [niche, setNiche] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [ideas, setIdeas] = useState<{ title: string; score: number }[] | null>(null);
+  const [copied, setCopied] = useState<number | null>(null);
+
+  const run = async () => {
+    if (!niche.trim() || busy) return;
+    setBusy(true);
+    track("tool_ideas_run");
+    const res = await fetch("/api/tools/ideas", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ niche: niche.trim() }),
+    }).catch(() => null);
+    setBusy(false);
+    const d = await res?.json().catch(() => null);
+    if (res?.ok && d?.ideas) setIdeas(d.ideas);
+  };
+
+  return (
+    <div>
+      <div className="flex flex-col sm:flex-row gap-3">
+        <input
+          className={inputCls}
+          value={niche}
+          onChange={(e) => setNiche(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && run()}
+          placeholder='e.g. "personal finance" or "home coffee"'
+          maxLength={80}
+        />
+        <button onClick={run} disabled={busy || !niche.trim()} className={btnCls}>
+          {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+          Get 10 ideas
+        </button>
+      </div>
+
+      {ideas && (
+        <div className="mt-8">
+          <div className={cardCls}>
+            <div className="space-y-2.5">
+              {ideas.map((i, idx) => (
+                <div key={idx} className="flex items-center gap-3">
+                  <span
+                    className={`shrink-0 w-9 text-center text-xs font-bold tabular-nums px-1.5 py-1 rounded-lg border ${gradeColor(i.score)} border-current/40`}
+                  >
+                    {i.score}
+                  </span>
+                  <p className="flex-1 text-sm text-foreground">{i.title}</p>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard?.writeText(i.title);
+                      setCopied(idx);
+                      setTimeout(() => setCopied(null), 1500);
+                    }}
+                    className="shrink-0 text-xs text-neon-purple hover:underline flex items-center gap-1"
+                  >
+                    {copied === idx ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+          <UpgradeCard
+            text="Any of these can become a full script and 30+ posts. Drop it in Virafold's Ideas tab — one click writes the script, another folds it into everything."
+            href="/signup"
+            cta="Turn ideas into content"
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ---------- 10. Podcast Chapters & Show Notes ---------- */
+function ChaptersTool() {
+  const [transcript, setTranscript] = useState("");
+  const [durationMin, setDurationMin] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const [result, setResult] = useState<{
+    chapters: { time: string; title: string }[];
+    notes: string[];
+    quotes: string[];
+  } | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const run = async () => {
+    if (!transcript.trim() || busy) return;
+    setBusy(true);
+    setErr(null);
+    track("tool_chapters_run");
+    const res = await fetch("/api/tools/chapters", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ transcript, durationMin: Number(durationMin) || 0 }),
+    }).catch(() => null);
+    setBusy(false);
+    const d = await res?.json().catch(() => null);
+    if (res?.ok && d?.chapters) setResult(d);
+    else setErr(d?.error ?? "Could not process that transcript");
+  };
+
+  const copyAll = () => {
+    if (!result) return;
+    const text = [
+      "CHAPTERS",
+      ...result.chapters.map((c) => `${c.time} ${c.title}`),
+      "",
+      "SHOW NOTES",
+      ...result.notes.map((noteLine) => `- ${noteLine}`),
+      "",
+      "QUOTES",
+      ...result.quotes,
+    ].join("\n");
+    navigator.clipboard?.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+
+  return (
+    <div>
+      <textarea
+        className={`${inputCls} resize-y`}
+        rows={6}
+        value={transcript}
+        onChange={(e) => setTranscript(e.target.value)}
+        placeholder="Paste your episode transcript here (100+ words)…"
+        maxLength={60000}
+      />
+      <div className="flex flex-wrap gap-3 mt-3">
+        <input
+          type="number"
+          min={0}
+          value={durationMin}
+          onChange={(e) => setDurationMin(e.target.value)}
+          placeholder="Episode length (min, optional)"
+          className="px-4 py-3 bg-cyber-dark border border-cyber-border rounded-xl text-sm text-foreground placeholder:text-cyber-muted focus:outline-none focus:border-neon-purple/50 w-56"
+        />
+        <button onClick={run} disabled={busy || !transcript.trim()} className={btnCls}>
+          {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+          Generate chapters & notes
+        </button>
+      </div>
+      {err && <p className="text-sm text-red-400 mt-3">{err}</p>}
+
+      {result && (
+        <div className="mt-8 space-y-4">
+          <div className={cardCls}>
+            <p className="text-xs font-semibold text-foreground mb-3">Chapters</p>
+            <div className="space-y-1.5">
+              {result.chapters.map((c) => (
+                <p key={c.time} className="text-sm text-cyber-muted">
+                  <span className="text-electric-blue tabular-nums">{c.time}</span>{" "}
+                  <span className="text-foreground">{c.title}</span>
+                </p>
+              ))}
+            </div>
+          </div>
+          <div className={cardCls}>
+            <p className="text-xs font-semibold text-foreground mb-3">Show notes</p>
+            <ul className="space-y-1.5 list-disc pl-4">
+              {result.notes.map((noteLine, i) => (
+                <li key={i} className="text-sm text-cyber-muted">
+                  {noteLine}
+                </li>
+              ))}
+            </ul>
+            {result.quotes.length > 0 && (
+              <div className="mt-4 space-y-1.5">
+                {result.quotes.map((q, i) => (
+                  <p key={i} className="text-sm text-neon-purple italic">
+                    {q}
+                  </p>
+                ))}
+              </div>
+            )}
+          </div>
+          <button
+            onClick={copyAll}
+            className="text-xs text-electric-blue hover:underline flex items-center gap-1.5"
+          >
+            {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+            {copied ? "Copied everything" : "Copy everything"}
+          </button>
+          <UpgradeCard
+            text="This episode is also 30+ posts. Upload it to Virafold and the same transcript becomes clips, threads, a newsletter, and carousels — automatically."
+            href="/for/podcasters"
+            cta="See Virafold for podcasters"
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function FreeToolClient({ tool }: { tool: string }) {
   switch (tool) {
     case "hook-analyzer":
@@ -552,6 +933,14 @@ export default function FreeToolClient({ tool }: { tool: string }) {
       return <BestTimeTool />;
     case "media-kit":
       return <MediaKitTool />;
+    case "caption-generator":
+      return <CaptionTool />;
+    case "thumbnail-tester":
+      return <ThumbTesterTool />;
+    case "video-ideas":
+      return <IdeasTool />;
+    case "podcast-chapters":
+      return <ChaptersTool />;
     default:
       return null;
   }

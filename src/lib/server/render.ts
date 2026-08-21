@@ -51,37 +51,74 @@ export type CropFocus = (typeof CROP_FOCUSES)[number];
 // &HAABBGGRR — libass color order. DejaVu Sans ships with the server's ffmpeg
 // (fontconfig falls back sensibly where it doesn't exist). MarginV/Alignment
 // are composed per caption position — talking-head clips want captions off
-// the speaker's face.
+// the speaker's face. Sizes are authored for a 1080x1920 canvas and scaled
+// by PlayRes height for other frames (the caption-only mode keeps the
+// source's own dimensions).
 const STYLE_BASE: Record<
   CaptionStyle,
-  { face: string; bottomMarginV: number; wordsPerChunk: number; upper: boolean }
+  {
+    size: number;
+    colors: string;
+    bold: number;
+    outline: number;
+    shadow: number;
+    bottomMarginV: number;
+    wordsPerChunk: number;
+    upper: boolean;
+  }
 > = {
   bold: {
-    face: "DejaVu Sans,96,&H00FFFFFF,&H00FFFFFF,&H00000000,&H80000000,1,0,0,0,100,100,0,0,1,7,0",
+    size: 96,
+    colors: "&H00FFFFFF,&H00FFFFFF,&H00000000,&H80000000",
+    bold: 1,
+    outline: 7,
+    shadow: 0,
     bottomMarginV: 640,
     wordsPerChunk: 3,
     upper: true,
   },
   neon: {
-    face: "DejaVu Sans,88,&H00FFFFFF,&H00FFFFFF,&H00F755A8,&H80000000,1,0,0,0,100,100,0,0,1,5,2",
+    size: 88,
+    colors: "&H00FFFFFF,&H00FFFFFF,&H00F755A8,&H80000000",
+    bold: 1,
+    outline: 5,
+    shadow: 2,
     bottomMarginV: 640,
     wordsPerChunk: 3,
     upper: false,
   },
   clean: {
-    face: "DejaVu Sans,64,&H00FFFFFF,&H00FFFFFF,&H00000000,&H80000000,0,0,0,0,100,100,0,0,1,3,0",
+    size: 64,
+    colors: "&H00FFFFFF,&H00FFFFFF,&H00000000,&H80000000",
+    bold: 0,
+    outline: 3,
+    shadow: 0,
     bottomMarginV: 260,
     wordsPerChunk: 4,
     upper: false,
   },
 };
 
-function styleLine(style: CaptionStyle, position: CaptionPosition): string {
+export interface PlayRes {
+  w: number;
+  h: number;
+}
+
+function styleLine(style: CaptionStyle, position: CaptionPosition, res: PlayRes): string {
   const base = STYLE_BASE[style] ?? STYLE_BASE.bold;
+  const k = res.h / 1920;
+  const size = Math.max(18, Math.round(base.size * k));
+  const outline = Math.max(1, Math.round(base.outline * k));
+  const shadow = Math.round(base.shadow * k);
+  const marginLR = Math.round(60 * k);
   // ASS numpad alignment: 8 = top-center, 5 = middle-center, 2 = bottom-center.
   const [align, marginV] =
-    position === "top" ? [8, 140] : position === "middle" ? [5, 0] : [2, base.bottomMarginV];
-  return `Style: Default,${base.face},${align},60,60,${marginV},1`;
+    position === "top"
+      ? [8, Math.round(140 * k)]
+      : position === "middle"
+        ? [5, 0]
+        : [2, Math.round(base.bottomMarginV * k)];
+  return `Style: Default,DejaVu Sans,${size},${base.colors},${base.bold},0,0,0,100,100,0,0,1,${outline},${shadow},${align},${marginLR},${marginLR},${marginV},1`;
 }
 
 /** Build the .ass subtitle document for one clip window. */
@@ -90,7 +127,8 @@ export function buildAss(
   clipStart: number,
   clipEnd: number,
   style: CaptionStyle,
-  position: CaptionPosition = "bottom"
+  position: CaptionPosition = "bottom",
+  res: PlayRes = { w: 1080, h: 1920 }
 ): string {
   const cfg = STYLE_BASE[style] ?? STYLE_BASE.bold;
   const inRange = words.filter((w) => w.e > clipStart && w.s < clipEnd);
@@ -122,20 +160,125 @@ export function buildAss(
   return [
     "[Script Info]",
     "ScriptType: v4.00+",
-    "PlayResX: 1080",
-    "PlayResY: 1920",
+    `PlayResX: ${res.w}`,
+    `PlayResY: ${res.h}`,
     "WrapStyle: 0",
     "ScaledBorderAndShadow: yes",
     "",
     "[V4+ Styles]",
     "Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding",
-    styleLine(style, position),
+    styleLine(style, position, res),
     "",
     "[Events]",
     "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text",
     ...events,
     "",
   ].join("\n");
+}
+
+/** Video frame dimensions via ffprobe; null when unreadable. */
+export async function probeDims(absPath: string): Promise<PlayRes | null> {
+  return new Promise((resolve) => {
+    let out = "";
+    let child;
+    try {
+      child = spawn(
+        "ffprobe",
+        [
+          "-v",
+          "error",
+          "-select_streams",
+          "v:0",
+          "-show_entries",
+          "stream=width,height",
+          "-of",
+          "csv=p=0",
+          absPath,
+        ],
+        { windowsHide: true }
+      );
+    } catch {
+      resolve(null);
+      return;
+    }
+    child.stdout?.on("data", (d) => (out += String(d)));
+    child.on("error", () => resolve(null));
+    child.on("close", () => {
+      const [w, h] = out.trim().split(",").map((n) => parseInt(n, 10));
+      resolve(Number.isFinite(w) && Number.isFinite(h) && w > 0 && h > 0 ? { w, h } : null);
+    });
+  });
+}
+
+/**
+ * Caption-only render: the source video returned uncut at its own size with
+ * captions burned in — the most-searched feature in the space, and for this
+ * pipeline just a render mode that skips the crop. Optional watermark for
+ * the anonymous free tool.
+ */
+export async function renderCaptionOnly(
+  srcAbs: string,
+  words: TranscriptWord[],
+  style: CaptionStyle,
+  position: CaptionPosition,
+  outAbs: string,
+  opts: { watermark?: boolean } = {}
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const dims = (await probeDims(srcAbs)) ?? { w: 1920, h: 1080 };
+  const duration = (await probeDuration(srcAbs)) ?? 0;
+  if (!duration) return { ok: false, error: "could not read the video" };
+
+  const jobDir = path.join(RENDERS_DIR, `tmp-cap-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
+  fs.mkdirSync(jobDir, { recursive: true });
+  try {
+    let ass = buildAss(words, 0, duration, style, position, dims);
+    if (opts.watermark) {
+      // Watermark as a second ASS style/event — libass is proven on every
+      // box we run on, unlike drawtext's fontconfig dependence.
+      const wmSize = Math.max(14, Math.round(dims.h * 0.024));
+      const m = Math.max(10, Math.round(dims.h * 0.012));
+      ass = ass.replace(
+        "\n\n[Events]",
+        `\nStyle: WM,DejaVu Sans,${wmSize},&H50FFFFFF,&H50FFFFFF,&H60000000,&H00000000,0,0,0,0,100,100,0,0,1,2,0,3,${m},${m},${m},1\n\n[Events]`
+      );
+      ass += `Dialogue: 1,${fmtAssTime(0)},${fmtAssTime(duration)},WM,,0,0,0,,virafold.ai\n`;
+    }
+    fs.writeFileSync(path.join(jobDir, "subs.ass"), ass, "utf8");
+    const vf = "ass=subs.ass";
+    const res = await run(
+      "ffmpeg",
+      [
+        "-y",
+        "-i",
+        srcAbs,
+        "-vf",
+        vf,
+        "-c:v",
+        "libx264",
+        "-preset",
+        "veryfast",
+        "-crf",
+        "23",
+        "-c:a",
+        "copy",
+        "-movflags",
+        "+faststart",
+        outAbs,
+      ],
+      jobDir
+    );
+    if (res.code !== 0 || !fs.existsSync(outAbs) || fs.statSync(outAbs).size === 0) {
+      return {
+        ok: false,
+        error: res.err.includes("ENOENT")
+          ? "ffmpeg is not installed on this server"
+          : `render failed: ${res.err.slice(-200)}`,
+      };
+    }
+    return { ok: true };
+  } finally {
+    fs.rmSync(jobDir, { recursive: true, force: true });
+  }
 }
 
 function run(cmd: string, args: string[], cwd?: string): Promise<{ code: number; err: string }> {
@@ -308,35 +451,100 @@ async function renderScriptVideo(clip: Clip & { userEmail: string }): Promise<vo
     );
     fs.writeFileSync(path.join(jobDir, "subs.ass"), ass, "utf8");
 
-    const args = [
-      "-y",
-      "-f",
-      "lavfi",
-      "-i",
-      "color=c=0x140a24:s=1080x1920:r=30",
-      "-i",
-      "voice.mp3",
-      "-filter_complex",
-      "[1:a]showwaves=s=1080x220:mode=cline:rate=30:colors=0xa855f7|0x3b82f6[w];[0:v][w]overlay=0:1520[bg];[bg]ass=subs.ass[v]",
-      "-map",
-      "[v]",
-      "-map",
-      "1:a",
-      "-shortest",
-      "-c:v",
-      "libx264",
-      "-preset",
-      "veryfast",
-      "-crf",
-      "23",
-      "-c:a",
-      "aac",
-      "-b:a",
-      "128k",
-      "-movflags",
-      "+faststart",
-      outAbs,
-    ];
+    // Visual mode: AI imagery per beat with a slow zoom, when an image
+    // provider is connected. Any failure falls back to the waveform canvas.
+    const beats = splitBeats(clip.script, duration);
+    const images: string[] = [];
+    if (beats.length >= 3) {
+      try {
+        const { generateBackground } = await import("./images");
+        for (let i = 0; i < beats.length; i++) {
+          const bg = await generateBackground(
+            `Cinematic abstract vertical background illustrating: "${beats[i].text.slice(0, 140)}". Moody dark scene, purple and electric blue accents, atmospheric depth, absolutely no text or letters or words, no watermark.`
+          );
+          if (!bg) {
+            images.length = 0;
+            break;
+          }
+          const name = `beat${i}.png`;
+          fs.writeFileSync(path.join(jobDir, name), bg);
+          images.push(name);
+        }
+      } catch {
+        images.length = 0;
+      }
+    }
+
+    let args: string[];
+    if (images.length && images.length === beats.length) {
+      // Slideshow: each still becomes dur*30 zooming frames, concatenated,
+      // captions on top.
+      const inputs = images.flatMap((name) => ["-i", name]);
+      const segs = images
+        .map((_, i) => {
+          const frames = Math.max(30, Math.round(beats[i].dur * 30));
+          return `[${i}:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,zoompan=z='min(zoom+0.0012,1.12)':d=${frames}:s=1080x1920:fps=30,setsar=1[v${i}]`;
+        })
+        .join(";");
+      const concatIn = images.map((_, i) => `[v${i}]`).join("");
+      const fc = `${segs};${concatIn}concat=n=${images.length}:v=1:a=0[vc];[vc]ass=subs.ass[v]`;
+      args = [
+        "-y",
+        ...inputs,
+        "-i",
+        "voice.mp3",
+        "-filter_complex",
+        fc,
+        "-map",
+        "[v]",
+        "-map",
+        `${images.length}:a`,
+        "-shortest",
+        "-c:v",
+        "libx264",
+        "-preset",
+        "veryfast",
+        "-crf",
+        "23",
+        "-c:a",
+        "aac",
+        "-b:a",
+        "128k",
+        "-movflags",
+        "+faststart",
+        outAbs,
+      ];
+    } else {
+      args = [
+        "-y",
+        "-f",
+        "lavfi",
+        "-i",
+        "color=c=0x140a24:s=1080x1920:r=30",
+        "-i",
+        "voice.mp3",
+        "-filter_complex",
+        "[1:a]showwaves=s=1080x220:mode=cline:rate=30:colors=0xa855f7|0x3b82f6[w];[0:v][w]overlay=0:1520[bg];[bg]ass=subs.ass[v]",
+        "-map",
+        "[v]",
+        "-map",
+        "1:a",
+        "-shortest",
+        "-c:v",
+        "libx264",
+        "-preset",
+        "veryfast",
+        "-crf",
+        "23",
+        "-c:a",
+        "aac",
+        "-b:a",
+        "128k",
+        "-movflags",
+        "+faststart",
+        outAbs,
+      ];
+    }
     const res = await run("ffmpeg", args, jobDir);
     if (res.code !== 0) {
       throw new Error(
@@ -366,6 +574,72 @@ async function renderScriptVideo(clip: Clip & { userEmail: string }): Promise<vo
   }
 }
 
+/** In-app caption-only job: the whole source video, captioned, uncut. */
+async function renderCaptionFull(clip: Clip & { userEmail: string }): Promise<void> {
+  const media = getProjectMedia(clip.userEmail, clip.projectId);
+  if (!media?.storagePath) throw new Error("source video is no longer stored for this project");
+  const srcAbs = path.join(process.cwd(), media.storagePath);
+  if (!fs.existsSync(srcAbs)) throw new Error("source video file is missing on disk");
+
+  const duration = media.durationSec ?? (await probeDuration(srcAbs));
+  const words =
+    media.words ??
+    (media.transcript && duration ? estimateWords(media.transcript, duration) : []);
+  if (!words.length) {
+    throw new Error("no transcript for captions — connect a transcription key and re-upload");
+  }
+
+  fs.mkdirSync(RENDERS_DIR, { recursive: true });
+  const outAbs = path.join(RENDERS_DIR, `${clip.id}.mp4`);
+  const r = await renderCaptionOnly(
+    srcAbs,
+    words,
+    clip.style as CaptionStyle,
+    clip.position as CaptionPosition,
+    outAbs
+  );
+  if (!r.ok) throw new Error(r.error);
+
+  updateClip(clip.userEmail, clip.id, {
+    status: "ready",
+    outputPath: path.relative(process.cwd(), outAbs),
+    error: null,
+  });
+  insertNotification(clip.userEmail, {
+    id: `n-${crypto.randomUUID()}`,
+    title: "Captioned Video Ready",
+    message: `"${clip.title}" is captioned end-to-end — download or schedule it from the Clips tab.`,
+    time: "Just now",
+    read: false,
+    type: "success",
+  });
+}
+
+/** Split a script into visual beats, durations proportional to text length. */
+function splitBeats(script: string, duration: number): { text: string; dur: number }[] {
+  const sents = script
+    .split(/(?<=[.!?])\s+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const n = Math.max(3, Math.min(8, Math.round(duration / 7)));
+  if (sents.length < n) return [];
+  const perBeat = Math.ceil(sents.length / n);
+  const beats: { text: string; dur: number }[] = [];
+  for (let i = 0; i < sents.length; i += perBeat) {
+    beats.push({ text: sents.slice(i, i + perBeat).join(" "), dur: 0 });
+  }
+  const totalChars = beats.reduce((a, b) => a + b.text.length, 0) || 1;
+  let allocated = 0;
+  beats.forEach((b, i) => {
+    b.dur =
+      i === beats.length - 1
+        ? Math.max(1, duration - allocated)
+        : Math.max(2, (b.text.length / totalChars) * duration);
+    allocated += b.dur;
+  });
+  return beats;
+}
+
 declare global {
   // One render at a time, surviving dev-mode module reloads.
   var __virafoldRenderBusy: boolean | undefined;
@@ -384,6 +658,7 @@ export function kickRenderWorker(): void {
         updateClip(next.userEmail, next.id, { status: "rendering" });
         try {
           if (next.kind === "script") await renderScriptVideo(next);
+          else if (next.kind === "caption") await renderCaptionFull(next);
           else await renderOne(next);
         } catch (e) {
           updateClip(next.userEmail, next.id, {
