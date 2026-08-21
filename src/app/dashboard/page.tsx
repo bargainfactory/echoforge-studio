@@ -867,7 +867,7 @@ export default function Dashboard() {
                       onChange={(e) => setSchedulePlatform(e.target.value)}
                       className="w-full px-3 py-2 bg-cyber-dark border border-cyber-border rounded-lg text-sm text-foreground focus:outline-none focus:border-neon-purple/50"
                     >
-                      {["TikTok", "YouTube", "Instagram", "LinkedIn", "X"].map((p) => (
+                      {["TikTok", "YouTube", "LinkedIn", "X"].map((p) => (
                         <option key={p} value={p}>{p}</option>
                       ))}
                     </select>
@@ -1467,7 +1467,7 @@ interface SchedPost {
   status: "scheduled" | "published" | "canceled";
 }
 
-const SCHED_PLATFORMS = ["TikTok", "YouTube", "Instagram", "LinkedIn", "X"];
+const SCHED_PLATFORMS = ["TikTok", "YouTube", "LinkedIn", "X"];
 
 const schedStatusColor: Record<string, string> = {
   scheduled: "text-warning bg-warning/10",

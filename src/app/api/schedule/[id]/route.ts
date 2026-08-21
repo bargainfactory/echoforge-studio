@@ -13,7 +13,7 @@ import { deliverPost } from "@/lib/server/connect";
 
 export const dynamic = "force-dynamic";
 
-const PLATFORMS = new Set(["TikTok", "YouTube", "Instagram", "LinkedIn", "X"]);
+const PLATFORMS = new Set(["TikTok", "YouTube", "LinkedIn", "X"]);
 
 /** Reschedule a pending post: change its platform and/or publish time. */
 export async function PATCH(

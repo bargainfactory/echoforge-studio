@@ -9,14 +9,12 @@ export interface ConnRow {
   handle: string | null;
 }
 
-/** Scheduler platform labels → connectable platform keys. Instagram has no
- *  connector yet, so it maps to null (always demo mode). */
+/** Scheduler platform labels → connectable platform keys. */
 export const PLATFORM_KEYS: Record<string, string | null> = {
   X: "x",
   LinkedIn: "linkedin",
   YouTube: "youtube",
   TikTok: "tiktok",
-  Instagram: null,
 };
 
 /** One fetch of the creator's platform-connection status per mount — powers

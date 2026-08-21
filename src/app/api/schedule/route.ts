@@ -7,7 +7,6 @@ export const dynamic = "force-dynamic";
 const PLATFORMS = new Set([
   "TikTok",
   "YouTube",
-  "Instagram",
   "LinkedIn",
   "X",
 ]);

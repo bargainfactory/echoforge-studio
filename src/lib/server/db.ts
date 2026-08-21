@@ -2300,6 +2300,56 @@ export function getGenImage(email: string, id: string): { path: string } | null 
   return row ?? null;
 }
 
+// --- Storage retention (maintenance sweeps) ---
+
+/** Every clip that still points at a rendered file, across users. */
+export function listRenderedClips(): {
+  id: string;
+  userEmail: string;
+  outputPath: string;
+  kind: string;
+}[] {
+  return getDb()
+    .prepare(
+      "SELECT id, user_email AS userEmail, output_path AS outputPath, kind FROM clips WHERE output_path IS NOT NULL"
+    )
+    .all() as unknown as { id: string; userEmail: string; outputPath: string; kind: string }[];
+}
+
+/** Clears an expired render: metadata survives, re-render is one click. */
+export function clearClipOutput(email: string, id: string, status: Clip["status"]): void {
+  getDb()
+    .prepare(
+      "UPDATE clips SET output_path = NULL, status = ?, error = ? WHERE id = ? AND user_email = ?"
+    )
+    .run(status, "expired after 30 days — render again anytime", id, email.toLowerCase());
+}
+
+/** All stored source-video paths — the uploads the sweeper must not touch. */
+export function listAllStoragePaths(): { email: string; id: string; storagePath: string }[] {
+  return getDb()
+    .prepare(
+      "SELECT user_email AS email, id, storage_path AS storagePath FROM projects WHERE storage_path IS NOT NULL"
+    )
+    .all() as unknown as { email: string; id: string; storagePath: string }[];
+}
+
+export function clearProjectStorage(email: string, id: string): void {
+  getDb()
+    .prepare("UPDATE projects SET storage_path = NULL WHERE id = ? AND user_email = ?")
+    .run(id, email.toLowerCase());
+}
+
+/** Generated images older than the cutoff; rows are deleted, paths returned. */
+export function purgeOldGenImages(cutoffIso: string): string[] {
+  const conn = getDb();
+  const rows = conn
+    .prepare("SELECT path FROM gen_images WHERE created_at < ?")
+    .all(cutoffIso) as { path: string }[];
+  conn.prepare("DELETE FROM gen_images WHERE created_at < ?").run(cutoffIso);
+  return rows.map((r) => r.path);
+}
+
 // --- Client approval links (agency workflow) ---
 
 export function getOrCreateApproveToken(email: string, projectId: string): string | null {

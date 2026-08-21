@@ -327,6 +327,8 @@ export async function sendWeeklyBriefs(): Promise<void> {
   }
 }
 
+let lastSweepDay = "";
+
 export function startScheduler(): void {
   if (globalThis.__virafoldSchedulerStarted) return;
   globalThis.__virafoldSchedulerStarted = true;
@@ -354,6 +356,14 @@ export function startScheduler(): void {
     }
     if (tick % BRIEF_CHECK_EVERY_TICKS === 0) {
       sendWeeklyBriefs().catch(() => {});
+      // Storage retention: one sweep per day, in the quiet early hours.
+      const today = new Date().toISOString().slice(0, 10);
+      if (new Date().getHours() >= 4 && lastSweepDay !== today) {
+        lastSweepDay = today;
+        import("./maintenance")
+          .then(({ runRetentionSweep }) => runRetentionSweep())
+          .catch(() => {});
+      }
       // Competitor watchlist: weekly re-audits, a few per hour (YouTube quota).
       (async () => {
         const { listWatchDue } = await import("./db");

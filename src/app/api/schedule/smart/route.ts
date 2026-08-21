@@ -17,7 +17,6 @@ export const dynamic = "force-dynamic";
 const DEFAULT_HOURS: Record<string, number> = {
   TikTok: 19,
   YouTube: 15,
-  Instagram: 12,
   LinkedIn: 9,
   X: 10,
 };
@@ -45,7 +44,7 @@ function platformForType(type: string): string | null {
   const t = type.toLowerCase();
   if (t.includes("short")) return "YouTube";
   if (t.includes("tiktok")) return "TikTok";
-  if (t.includes("reel")) return "Instagram";
+  if (t.includes("reel")) return "TikTok"; // Reels deliver via TikTok until a Meta connector exists
   if (t.includes("carousel") || t.includes("linkedin")) return "LinkedIn";
   if (t.includes("thread")) return "X";
   if (t.includes("newsletter") || t.includes("email")) return null; // broadcast, not a platform post
