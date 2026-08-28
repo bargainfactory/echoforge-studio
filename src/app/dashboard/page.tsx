@@ -452,6 +452,15 @@ export default function Dashboard() {
         </nav>
 
         <div className="p-4 border-t border-cyber-border">
+          {user.isAdmin && (
+            <Link
+              href="/admin"
+              className="mb-2 flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-amber-300/90 bg-amber-500/5 border border-amber-500/20 hover:bg-amber-500/10 hover:border-amber-500/40 transition-colors"
+            >
+              <ShieldCheck className="w-4 h-4" />
+              Operator Console
+            </Link>
+          )}
           <div className="flex items-center gap-3 px-3 py-2">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-neon-purple to-electric-blue flex items-center justify-center text-white text-xs font-bold">
               {user.initials}
@@ -504,6 +513,14 @@ export default function Dashboard() {
                 {t(item.tKey)}
               </button>
             ))}
+            {user.isAdmin && (
+              <Link
+                href="/admin"
+                className="px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap text-amber-300/90 border border-amber-500/30"
+              >
+                Console
+              </Link>
+            )}
           </div>
         </header>
 

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSessionUser } from "@/lib/server/auth";
+import { getSessionUser, isAdminEmail } from "@/lib/server/auth";
 import { isEmailVerified, listProjects, listAssets, listNotifications } from "@/lib/server/db";
 
 export const dynamic = "force-dynamic";
@@ -11,7 +11,11 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   return NextResponse.json({
-    user: { ...user, emailVerified: isEmailVerified(user.email) },
+    user: {
+      ...user,
+      emailVerified: isEmailVerified(user.email),
+      isAdmin: isAdminEmail(user.email),
+    },
     projects: listProjects(user.email),
     assets: listAssets(user.email),
     notifications: listNotifications(user.email),

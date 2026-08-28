@@ -19,6 +19,8 @@ export interface User {
   plan: string;
   /** false only when the account still has a pending verification email. */
   emailVerified?: boolean;
+  /** true for platform operators (ADMIN_EMAILS) — unlocks the console link. */
+  isAdmin?: boolean;
 }
 
 export interface Toast {
