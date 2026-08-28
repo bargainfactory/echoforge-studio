@@ -107,6 +107,7 @@ export const INTEGRATIONS: IntegrationDef[] = [
     fields: [
       { key: "resendApiKey", label: "Resend API key", envVar: "RESEND_API_KEY", secret: true, placeholder: "re_...", required: true },
       { key: "fromEmail", label: "From address", envVar: "EMAIL_FROM", placeholder: "Virafold <hello@yourdomain.com>", required: true },
+      { key: "replyTo", label: "Reply-to address", envVar: "EMAIL_REPLY_TO", placeholder: "hello@yourdomain.com" },
     ],
   },
   {
